@@ -4,6 +4,7 @@ import { stripe } from '@/lib/stripe';
 import { db } from '@/lib/db';
 import { processOrderWithMobimatter } from '@/services/order-service';
 import { logAudit } from '@/lib/audit';
+import { sendOrderConfirmation } from '@/services/email-service';
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -55,7 +56,25 @@ export async function POST(request: NextRequest) {
 
         if (!fulfillment.success) {
           console.error(`Fulfillment failed for order ${orderId}:`, fulfillment.error);
-          // In production, you would trigger an alert/admin notification here
+        }
+
+        // 3. Send order confirmation email
+        const order = await db.order.findUnique({
+          where: { id: orderId },
+          include: { items: true },
+        });
+
+        if (order) {
+          await sendOrderConfirmation(
+            order.email,
+            order.orderNumber,
+            order.items.map(item => ({
+              name: item.productName,
+              quantity: item.quantity,
+              price: item.unitPrice,
+            })),
+            order.total
+          );
         }
 
         await logAudit({
@@ -92,8 +111,3 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export const config = {
-  api: {
-    bodyParser: false, // Stripe webhooks need raw body
-  },
-};
