@@ -118,7 +118,7 @@ export default function CheckoutPage() {
 
   const finalTotal = total - discountAmount
 
-  // Handle checkout - Process order on MobiaL
+  // Handle checkout - Create order and redirect to Stripe
   const handleCheckout = async () => {
     if (!email.trim()) {
       setError("Please enter your email address")
@@ -134,18 +134,55 @@ export default function CheckoutPage() {
     setError(null)
 
     try {
-      // TODO: Once MobiMatter order API is available:
-      // 1. Create order (pending state)
-      // 2. Process payment (Stripe)
-      // 3. Complete order (capture from wallet)
-      // 4. Notify customer (send email)
-      
-      // For now, show a message that payment integration is coming soon
-      throw new Error('Payment integration coming soon! Please contact support to complete your order manually.')
-      
+      // 1. Create order via API
+      const orderRes = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          items: items.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+          })),
+          email: email.trim(),
+          phone: phone.trim() || undefined,
+          affiliateCode: affiliateValidation?.valid ? affiliateValidation.affiliateCode : undefined,
+        }),
+      })
+
+      const orderData = await orderRes.json()
+
+      if (!orderRes.ok || !orderData.success) {
+        throw new Error(orderData.message || "Failed to create order")
+      }
+
+      const orderId = orderData.data.order.id
+      const orderNumber = orderData.data.order.orderNumber
+
+      // Store order reference for success page
+      sessionStorage.setItem("mobial_pending_order", JSON.stringify({ orderId, orderNumber }))
+
+      // 2. Create Stripe checkout session
+      const sessionRes = await fetch("/api/checkout/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId }),
+      })
+
+      const sessionData = await sessionRes.json()
+
+      if (!sessionRes.ok || !sessionData.success) {
+        throw new Error(sessionData.message || "Failed to create checkout session")
+      }
+
+      // 3. Redirect to Stripe checkout
+      const stripeUrl = sessionData.data.url
+      if (!stripeUrl) {
+        throw new Error("No checkout URL received")
+      }
+
+      window.location.href = stripeUrl
     } catch (err) {
       setError(err instanceof Error ? err.message : "An unexpected error occurred")
-    } finally {
       setProcessing(false)
     }
   }
@@ -296,7 +333,7 @@ export default function CheckoutPage() {
                       <Shield className="h-12 w-12 mx-auto mb-3 text-primary" />
                       <p className="font-medium mb-1">Secure Checkout</p>
                       <p className="text-sm">
-                        Payment integration placeholder. Your order will be created in pending status.
+                        You'll be redirected to Stripe's secure checkout to complete your payment.
                       </p>
                     </div>
                   </CardContent>
@@ -330,7 +367,7 @@ export default function CheckoutPage() {
                   )}
                 </Button>
                 <p className="text-xs text-center text-muted-foreground mt-2">
-                  Note: Payment integration coming soon. Contact support to complete manually.
+                  You will be securely redirected to Stripe to complete your payment.
                 </p>
 
                 {/* Trust Signals */}
