@@ -362,15 +362,20 @@ export async function notifyUser(
 }
 
 /**
- * Cancel order
- * Cancel a pending order and release authorized amount
+ * Top up an existing order
+ * Extends data/validity of an existing eSIM
  */
-export async function cancelOrder(orderId: string): Promise<{
-  success: boolean;
-  refundedAmount?: number;
-}> {
-  return makeRequest(`/api/v2/order/${orderId}/cancel`, {
+export async function topupOrder(params: {
+  orderId: string;
+  productId: string;
+  quantity?: number;
+}): Promise<OrderResponse> {
+  return makeRequest<OrderResponse>(`/api/v2/order/${params.orderId}/topup`, {
     method: 'POST',
+    body: {
+      productId: params.productId,
+      quantity: params.quantity || 1,
+    },
   });
 }
 

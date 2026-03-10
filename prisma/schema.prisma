@@ -118,6 +118,11 @@ model Product {
   networks              String?  // JSON array of local carriers and their tech (5G/4G)
   bestFitReason         String?  // AI-generated or rule-based fit reason
   
+  // Advanced MobiMatter Meta
+  activationPolicy      String?  // e.g., "First use", "At purchase"
+  topUpAvailable        Boolean  @default(false)
+  requiresKyc           Boolean  @default(false)
+  
   // Coverage
   countries             String?  // JSON array of country codes
   regions               String?  // JSON array of regions
@@ -167,6 +172,11 @@ model Product {
 model Order {
   id                    String   @id @default(cuid())
   orderNumber           String   @unique
+  
+  // Fulfillment Tracking
+  notifySent            Boolean  @default(false)
+  isTopUp               Boolean  @default(false)
+  parentOrderId         String?  // If this is a top-up
   
   // Customer
   userId                String?

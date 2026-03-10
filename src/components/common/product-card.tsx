@@ -12,7 +12,9 @@ import {
   ShieldCheck,
   Check,
   ShoppingCart,
-  Signal
+  Signal,
+  RefreshCw,
+  Power
 } from "lucide-react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -46,6 +48,9 @@ interface ProductCardProps {
     isUnlimited?: boolean
     networks?: string | null
     bestFitReason?: string | null
+    activationPolicy?: string | null
+    topUpAvailable?: boolean
+    requiresKyc?: boolean
   }
   onBuy?: (productId: string) => void
   showLink?: boolean
@@ -58,37 +63,41 @@ export function ProductCard({ product, onBuy, showLink = true, className }: Prod
   
   const productLink = product.slug ? `/products/${product.slug}` : `/products/${product.id}`
 
-  const handleBuyClick = (e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    onBuy?.(product.id)
-  }
-
   return (
     <Card className={cn(
       "group relative flex flex-col h-full overflow-hidden transition-all duration-500 hover:shadow-[0_20px_50px_rgba(0,0,0,0.4)] hover:-translate-y-1 border-white/5 bg-white/[0.03] backdrop-blur-2xl",
       product.bestFitReason && "ring-1 ring-primary/40",
       className
     )}>
-      {/* Fit Badge */}
-      {product.bestFitReason && (
-        <div className="absolute top-3 left-3 z-10">
+      {/* Dynamic Trust Badges */}
+      <div className="absolute top-3 left-3 z-10 flex flex-col gap-2">
+        {product.bestFitReason && (
           <Badge className="bg-primary/20 text-primary border-primary/30 text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full backdrop-blur-md">
             {product.bestFitReason}
           </Badge>
-        </div>
-      )}
+        )}
+        {product.topUpAvailable && (
+          <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full backdrop-blur-md flex items-center gap-1">
+            <RefreshCw className="h-2.5 w-2.5" />
+            Refillable
+          </Badge>
+        )}
+      </div>
 
-      {/* Signal Type */}
-      <div className="absolute top-3 right-3 z-10 flex gap-1">
+      <div className="absolute top-3 right-3 z-10 flex flex-col gap-2 items-end">
         {has5G && (
           <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px] font-black rounded-full">
             5G READY
           </Badge>
         )}
+        {product.requiresKyc && (
+          <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/20 text-[9px] font-black rounded-full">
+            KYC REQ
+          </Badge>
+        )}
       </div>
 
-      <CardHeader className="p-6 pb-2">
+      <CardHeader className="p-6 pb-2 mt-8">
         <div className="space-y-1">
           <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">{product.provider}</p>
           <h3 className="font-bold text-xl leading-tight group-hover:text-primary transition-colors line-clamp-2 min-h-[3.5rem]">
@@ -100,7 +109,6 @@ export function ProductCard({ product, onBuy, showLink = true, className }: Prod
       </CardHeader>
 
       <CardContent className="p-6 pt-0 flex-1 space-y-6">
-        {/* Core Utility Stats */}
         <div className="flex items-end gap-1">
           <span className="text-4xl font-black tracking-tighter">
             {product.isUnlimited ? "∞" : product.dataAmount}
@@ -114,29 +122,18 @@ export function ProductCard({ product, onBuy, showLink = true, className }: Prod
           </div>
         </div>
 
-        {/* Carrier Truth Layer */}
-        <div className="space-y-3">
-          <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-2">
-            <Signal className="h-3 w-3" />
-            Local Networks
-          </p>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 border-y border-white/5 py-2">
+            <span className="flex items-center gap-1.5"><Power className="h-3 w-3" /> {product.activationPolicy || "At Connection"}</span>
+            <span className="flex items-center gap-1.5"><Signal className="h-3 w-3" /> {networks.length} Networks</span>
+          </div>
+
           <div className="flex flex-wrap gap-1.5">
-            {networks.length > 0 ? (
-              networks.slice(0, 3).map((net, i) => (
-                <div key={i} className="px-2.5 py-1 rounded-full border border-white/5 bg-white/[0.02] text-[10px] font-bold text-foreground/80 group-hover:bg-white/5 transition-colors">
-                  {net.networkName}
-                </div>
-              ))
-            ) : (
-              <div className="px-2.5 py-1 rounded-full border border-white/5 bg-white/[0.02] text-[10px] font-bold text-muted-foreground italic">
-                Local Carrier Partners
+            {networks.slice(0, 3).map((net, i) => (
+              <div key={i} className="px-2.5 py-1 rounded-full border border-white/5 bg-white/[0.02] text-[10px] font-bold text-foreground/80">
+                {net.networkName}
               </div>
-            )}
-            {networks.length > 3 && (
-              <div className="px-2.5 py-1 rounded-full border border-white/5 bg-white/[0.02] text-[10px] font-bold text-muted-foreground">
-                +{networks.length - 3}
-              </div>
-            )}
+            ))}
           </div>
         </div>
       </CardContent>
@@ -149,16 +146,16 @@ export function ProductCard({ product, onBuy, showLink = true, className }: Prod
               ${product.price.toFixed(2)}
             </span>
             <span className="text-[10px] font-mono text-muted-foreground">
-              / ${(product.price / (product.validityDays || 1)).toFixed(2)} day
+              / ${(product.price / (product.validityDays || 1)).toFixed(2)}d
             </span>
           </div>
         </div>
         
         <Button 
-          onClick={handleBuyClick}
+          onClick={(e) => { e.preventDefault(); onBuy?.(product.id); }}
           className="rounded-xl px-6 font-black uppercase tracking-widest text-[11px] shadow-xl shadow-primary/20 hover:shadow-primary/40 active:scale-95 transition-all h-11 bg-primary text-primary-foreground"
         >
-          Activate
+          Select Plan
         </Button>
       </CardFooter>
     </Card>
