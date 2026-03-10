@@ -16,6 +16,7 @@ import {
   X,
   LogOut,
   ChevronRight,
+  Activity,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -36,6 +37,7 @@ const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/affiliates", label: "Affiliates", icon: Users },
   { href: "/admin/orders", label: "Orders", icon: Package },
+  { href: "/admin/monitoring", label: "Monitoring", icon: Activity },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ]
 
