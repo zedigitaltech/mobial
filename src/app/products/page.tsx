@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/sheet"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
+import { useSearchParams } from "next/navigation"
 import { useCart } from "@/contexts/cart-context"
 import { ErrorBoundary } from "@/components/common/error-boundary"
 
@@ -87,6 +88,7 @@ interface Provider {
 // Fetch products
 async function fetchProducts(params: {
   country?: string
+  region?: string
   provider?: string
   minPrice?: number
   maxPrice?: number
@@ -98,6 +100,7 @@ async function fetchProducts(params: {
   const searchParams = new URLSearchParams()
   
   if (params.country) searchParams.set("country", params.country)
+  if (params.region) searchParams.set("region", params.region)
   if (params.provider) searchParams.set("provider", params.provider)
   if (params.minPrice !== undefined) searchParams.set("minPrice", params.minPrice.toString())
   if (params.maxPrice !== undefined) searchParams.set("maxPrice", params.maxPrice.toString())
@@ -243,11 +246,15 @@ function FilterContent({
 
 export default function ProductsPage() {
   const { addItem, isInCart } = useCart()
+  const searchParams = useSearchParams()
+  const initialRegion = searchParams.get('region') || ""
+  const initialSearch = searchParams.get('search') || ""
 
   // Filter state
-  const [search, setSearch] = useState("")
-  const [debouncedSearch, setDebouncedSearch] = useState("")
+  const [search, setSearch] = useState(initialSearch)
+  const [debouncedSearch, setDebouncedSearch] = useState(initialSearch)
   const [selectedCountry, setSelectedCountry] = useState<string>("")
+  const [selectedRegion, setSelectedRegion] = useState<string>(initialRegion)
   const [selectedProviders, setSelectedProviders] = useState<string[]>([])
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 200])
   const [sortBy, setSortBy] = useState("createdAt")
@@ -267,10 +274,11 @@ export default function ProductsPage() {
 
   // Queries
   const { data: productsData, isLoading: productsLoading, error: productsError } = useQuery({
-    queryKey: ["products", debouncedSearch, selectedCountry, selectedProviders, priceRange, sortBy, page],
+    queryKey: ["products", debouncedSearch, selectedCountry, selectedRegion, selectedProviders, priceRange, sortBy, page],
     queryFn: () => fetchProducts({
       search: debouncedSearch || undefined,
       country: selectedCountry || undefined,
+      region: selectedRegion || undefined,
       provider: selectedProviders.length === 1 ? selectedProviders[0] : undefined,
       minPrice: priceRange[0],
       maxPrice: priceRange[1],

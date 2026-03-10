@@ -113,6 +113,10 @@ model Product {
   description           String?
   provider              String
   category              String?  // data, voice, combo
+
+  // Carrier Truth Layer
+  networks              String?  // JSON array of local carriers and their tech (5G/4G)
+  bestFitReason         String?  // AI-generated or rule-based fit reason
   
   // Coverage
   countries             String?  // JSON array of country codes
@@ -156,7 +160,6 @@ model Product {
   @@index([slug])
   @@index([isActive])
   @@index([provider])
-  @@index([countries])
 }
 
 // ==================== ORDERS ====================

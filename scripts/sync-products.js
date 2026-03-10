@@ -4,40 +4,28 @@
  * Syncs products from MobiMatter API to local database
  * 
  * Usage: bun run sync:products
- * 
- * Requires MOBIMATTER_MERCHANT_ID and MOBIMATTER_API_KEY in .env.local
  */
 
 const { PrismaClient } = require('@prisma/client');
-
 const prisma = new PrismaClient();
-
 const MOBIMATTER_BASE_URL = 'https://api.mobimatter.com/mobimatter';
 
 async function syncProducts() {
   console.log('🔄 Syncing products from MobiMatter...\n');
   
-  // Check credentials
   const merchantId = process.env.MOBIMATTER_MERCHANT_ID;
   const apiKey = process.env.MOBIMATTER_API_KEY;
   
   if (!merchantId || !apiKey) {
     console.error('❌ Missing MobiMatter credentials!');
-    console.error('\nAdd to your .env.local:');
-    console.error('   MOBIMATTER_MERCHANT_ID=your-merchant-id');
-    console.error('   MOBIMATTER_API_KEY=your-api-key');
-    console.error('\nYou can get these from: https://mobimatter.com\n');
     process.exit(1);
   }
   
   try {
-    // 0. Clean slate - remove all existing products to purge old "test" data
     console.log('🗑️ Purging existing products...');
     await prisma.product.deleteMany({});
     
-    // Fetch products from MobiMatter
     console.log('📡 Fetching products from MobiMatter API...');
-    
     const response = await fetch(`${MOBIMATTER_BASE_URL}/api/v2/products`, {
       headers: {
         'merchantId': merchantId,
@@ -47,22 +35,20 @@ async function syncProducts() {
     });
     
     if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`MobiMatter API error: ${response.status} - ${error}`);
+      throw new Error(`MobiMatter API error: ${response.status}`);
     }
     
     const data = await response.json();
     const mobimatterProducts = data.result || [];
-    
     console.log(`✅ Found ${mobimatterProducts.length} products\n`);
     
     let created = 0;
-    let updated = 0;
     let skipped = 0;
-    let errors = 0;
     
-    // Process each product
-    for (const mp of mobimatterProducts) {
+    // Process first 100 products for speed and to avoid rate limits during dev
+    const productsToSync = mobimatterProducts.slice(0, 100);
+
+    for (const mp of productsToSync) {
       try {
         const id = mp.productId || mp.uniqueId;
         const name = mp.productFamilyName || mp.title || "";
@@ -70,132 +56,78 @@ async function syncProducts() {
         const category = mp.productCategory || "";
         const price = mp.retailPrice || mp.price || 0;
 
-        // Extract data from productDetails for filtering
         const details = Object.fromEntries(
           (mp.productDetails || []).map(d => [d.name, d.value])
         );
 
-        // Parse data amount correctly
         let dataAmount = 0;
         const dataLimitStr = details.PLAN_DATA_LIMIT;
         const dataUnit = details.PLAN_DATA_UNIT || "GB";
-        
         if (dataLimitStr) {
           dataAmount = parseFloat(dataLimitStr);
-          // If unit is MB, convert to GB
-          if (dataUnit.toUpperCase() === "MB") {
-            dataAmount = dataAmount / 1000;
-          }
+          if (dataUnit.toUpperCase() === "MB") dataAmount = dataAmount / 1000;
         }
 
-        // AGGRESSIVE FILTERING
         const isTestProduct = 
           name.toLowerCase().includes('test') || 
           provider.toLowerCase().includes('test') ||
-          category.toLowerCase().includes('test') ||
-          id.toLowerCase().includes('test') ||
-          id === '75b98dc7-c026-48c1-9fee-465681382d39' || // Specific test ID
-          price < 1.0 || // Products under $1 are likely tests
-          (dataAmount > 0 && dataAmount < 0.05) || // Products under 50MB are likely tests
-          name.startsWith('TELNA_') || // Internal codes
-          name.startsWith('TV_SP') ||
-          name.includes('DEBUG') ||
-          details.EXTERNALLY_SHOWN === "0"; // Respect MobiMatter's internal flag
+          price < 1.0 || 
+          (dataAmount > 0 && dataAmount < 0.05) ||
+          details.EXTERNALLY_SHOWN === "0";
 
         if (isTestProduct) {
           skipped++;
           continue;
         }
 
-        // Generate slug from product name
-        const slug = name
-          .toLowerCase()
-          .trim()
-          .replace(/[^\w\s-]/g, '')
-          .replace(/\s+/g, '-')
-          .replace(/-+/g, '-')
-          .replace(/^-+|-+$/g, '');
+        // Carrier Truth Layer
+        let networks = [];
+        try {
+          const networkRes = await fetch(`${MOBIMATTER_BASE_URL}/api/v2/products/${id}/networks`, {
+            headers: { 'merchantId': merchantId, 'api-key': apiKey }
+          });
+          if (networkRes.ok) {
+            const netData = await networkRes.json();
+            networks = netData.result || [];
+          }
+        } catch (e) {}
 
-        // Parse validity from PLAN_VALIDITY (in hours)
-        let validityDays = null;
-        const validityStr = details.PLAN_VALIDITY;
-        if (validityStr) {
-          validityDays = Math.floor(parseInt(validityStr) / 24);
-        }
+        let bestFitReason = null;
+        if (price < 5) bestFitReason = "Budget Choice";
+        else if (dataAmount >= 20) bestFitReason = "Best for Streaming";
+        else if (dataAmount >= 10) bestFitReason = "Balanced Travel";
 
-        // Check if product exists
-        const existing = await prisma.product.findUnique({
-          where: { mobimatterId: id },
+        const slug = name.toLowerCase().replace(/[^\w\s-]/g, '').replace(/\s+/g, '-') + '-' + id.slice(0, 4);
+
+        await prisma.product.create({
+          data: {
+            mobimatterId: id,
+            name,
+            provider,
+            category,
+            price,
+            dataAmount,
+            dataUnit: 'GB',
+            validityDays: details.PLAN_VALIDITY ? Math.floor(parseInt(details.PLAN_VALIDITY) / 24) : 30,
+            networks: JSON.stringify(networks),
+            bestFitReason,
+            countries: mp.countries ? JSON.stringify(mp.countries) : "[]",
+            regions: mp.regions ? JSON.stringify(mp.regions) : "[]",
+            slug,
+            syncedAt: new Date()
+          }
         });
-        
-        const productData = {
-          mobimatterId: id,
-          name: name,
-          description: mp.description || details.PLAN_DETAILS || null,
-          provider: mp.providerName,
-          category: mp.productCategory || null,
-          countries: mp.countries ? JSON.stringify(mp.countries) : null,
-          regions: mp.regions ? JSON.stringify(mp.regions) : null,
-          dataAmount: dataAmount,
-          dataUnit: 'GB',
-          validityDays: validityDays,
-          price: mp.retailPrice || mp.price,
-          currency: mp.currencyCode || 'USD',
-          originalPrice: mp.retailPrice || null,
-          features: mp.features ? JSON.stringify(mp.features) : null,
-          isUnlimited: dataAmount >= 999,
-          supportsHotspot: true,
-          supportsCalls: false,
-          supportsSms: false,
-          isActive: true,
-          isFeatured: false,
-          slug: slug + '-' + id.slice(0, 4), // Make unique
-          metaTitle: null,
-          metaDescription: null,
-          syncedAt: new Date(),
-        };
-        
-        if (existing) {
-          // Update existing product
-          await prisma.product.update({
-            where: { id: existing.id },
-            data: productData,
-          });
-          updated++;
-          process.stdout.write('📝');
-        } else {
-          // Create new product
-          await prisma.product.create({
-            data: productData,
-          });
-          created++;
-          process.stdout.write('➕');
-        }
+        created++;
+        process.stdout.write('.');
       } catch (err) {
-        errors++;
-        console.error(`\n❌ Error processing product ${mp.id}:`, err.message);
+        console.error(`\nError syncing ${mp.productId}:`, err.message);
       }
     }
     
-    console.log('\n\n✅ Sync completed!\n');
-    console.log('📊 Results:');
-    console.log(`   Created: ${created}`);
-    console.log(`   Updated: ${updated}`);
-    console.log(`   Skipped: ${skipped}`);
-    console.log(`   Errors:  ${errors}`);
-    console.log(`   Total:   ${mobimatterProducts.length}\n`);
-    
-    if (created + updated > 0) {
-      console.log('🎉 Products are now available at: http://localhost:3000/products\n');
-    }
-    
+    console.log(`\n\n✅ Sync completed! Created: ${created}, Skipped: ${skipped}`);
   } catch (error) {
     console.error('\n❌ Sync failed:', error.message);
-    process.exit(1);
   }
 }
 
-syncProducts()
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+syncProducts().finally(() => prisma.$disconnect());

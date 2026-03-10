@@ -1,75 +1,93 @@
 /**
  * Products API Routes
  * GET /api/products - List all active products with filtering and pagination
+ * Uses local database for production-ready, filtered data
  */
 
 import { NextRequest } from 'next/server';
-import { fetchProducts as fetchMobiMatterProducts } from '@/lib/mobimatter';
+import { db } from '@/lib/db';
 import { successResponse, errorResponse } from '@/lib/auth-helpers';
+import { Prisma } from '@prisma/client';
 
-/**
- * GET /api/products
- * List all active products with filtering and pagination
- * Fetches directly from MobiMatter API
- */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
 
-    // Parse query parameters
-    const country = searchParams.get('country') || undefined;
-    const provider = searchParams.get('provider') || undefined;
+    // Parse parameters
+    const country = searchParams.get('country');
+    const region = searchParams.get('region');
+    const provider = searchParams.get('provider');
+    const search = searchParams.get('search');
     const minPrice = searchParams.get('minPrice');
     const maxPrice = searchParams.get('maxPrice');
-    const sortBy = searchParams.get('sortBy') || undefined;
-    const limitParam = searchParams.get('limit');
-    const offsetParam = searchParams.get('offset');
+    const sortBy = searchParams.get('sortBy') || 'price_asc';
+    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50);
+    const offset = parseInt(searchParams.get('offset') || '0');
 
-    // Parse numeric values
-    const limit = Math.min(Math.max(parseInt(limitParam || '20') || 20, 1), 100);
-    const offset = Math.max(parseInt(offsetParam || '0') || 0, 0);
-    const minPriceNum = minPrice ? parseFloat(minPrice) : undefined;
-    const maxPriceNum = maxPrice ? parseFloat(maxPrice) : undefined;
+    // Build Where Clause
+    const where: Prisma.ProductWhereInput = {
+      isActive: true,
+    };
 
-    // Fetch products from MobiMatter API
-    const allProducts = await fetchMobiMatterProducts({
-      country: country || undefined,
-      provider: provider || undefined,
-    });
-    
-    // Filter products
-    let filteredProducts = allProducts.filter(p => {
-      if (minPriceNum && p.price < minPriceNum) return false;
-      if (maxPriceNum && p.price > maxPriceNum) return false;
-      return true;
-    });
-    
-    // Sort products
-    if (sortBy === 'price_asc') {
-      filteredProducts.sort((a, b) => a.price - b.price);
-    } else if (sortBy === 'price_desc') {
-      filteredProducts.sort((a, b) => b.price - a.price);
-    } else if (sortBy === 'name' && a.name && b.name) {
-      filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
-    } else {
-      // Default: sortBy price (lowest first)
-      filteredProducts.sort((a, b) => a.price - b.price);
+    if (country) {
+      where.countries = { contains: country };
     }
-    
-    // Apply pagination
-    const paginatedProducts = filteredProducts.slice(offset, offset + limit);
-    
+    if (region) {
+      where.regions = { contains: region };
+    }
+    if (provider) {
+      where.provider = provider;
+    }
+    if (search) {
+      where.OR = [
+        { name: { contains: search } },
+        { provider: { contains: search } },
+        { countries: { contains: search } }
+      ];
+    }
+    if (minPrice || maxPrice) {
+      where.price = {
+        gte: minPrice ? parseFloat(minPrice) : undefined,
+        lte: maxPrice ? parseFloat(maxPrice) : undefined,
+      };
+    }
+
+    // Build Order Clause
+    let orderBy: Prisma.ProductOrderByWithRelationInput = { price: 'asc' };
+    if (sortBy === 'price_desc') orderBy = { price: 'desc' };
+    if (sortBy === 'name') orderBy = { name: 'asc' };
+    if (sortBy === 'createdAt') orderBy = { createdAt: 'desc' };
+
+    // Execute Queries
+    const [products, total] = await Promise.all([
+      db.product.findMany({
+        where,
+        orderBy,
+        take: limit,
+        skip: offset,
+      }),
+      db.product.count({ where })
+    ]);
+
+    // Format products (parse JSON strings)
+    const formattedProducts = products.map(p => ({
+      ...p,
+      countries: p.countries ? JSON.parse(p.countries) : [],
+      regions: p.regions ? JSON.parse(p.regions) : [],
+      features: p.features ? JSON.parse(p.features) : [],
+    }));
+
     return successResponse({
-      products: paginatedProducts,
+      products: formattedProducts,
       pagination: {
-        total: filteredProducts.length,
+        total,
         limit,
         offset,
-        hasMore: offset + limit < filteredProducts.length,
+        hasMore: offset + limit < total,
       },
     });
   } catch (error) {
-    console.error('Error fetching products:', error);
+    console.error('Error fetching products from DB:', error);
     return errorResponse('Failed to fetch products', 500);
   }
 }
