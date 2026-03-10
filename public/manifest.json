@@ -1,11 +1,11 @@
 {
-  "name": "MobiaL eSIM",
+  "name": "MobiaL - Global eSIM",
   "short_name": "MobiaL",
-  "description": "Stay connected worldwide with affordable eSIM",
+  "description": "Instant high-speed eSIM data in 190+ countries. No roaming fees, no physical SIMs.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#10b981",
+  "background_color": "#0a0a0a",
+  "theme_color": "#0a0a0a",
   "orientation": "portrait-primary",
   "scope": "/",
   "lang": "en",
@@ -81,14 +81,14 @@
       "name": "Browse eSIM Plans",
       "short_name": "eSIMs",
       "description": "Browse all available eSIM plans",
-      "url": "/#esims",
+      "url": "/products",
       "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
     },
     {
-      "name": "My Cart",
-      "short_name": "Cart",
-      "description": "View your shopping cart",
-      "url": "/#cart",
+      "name": "My Orders",
+      "short_name": "Orders",
+      "description": "View your order history",
+      "url": "/orders",
       "icons": [{ "src": "/icons/icon-96x96.png", "sizes": "96x96" }]
     }
   ],

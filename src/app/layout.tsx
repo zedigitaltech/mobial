@@ -6,6 +6,7 @@ import { AuthProvider } from "@/components/providers/auth-provider"
 import { ReactQueryProvider } from "@/components/providers/react-query-provider"
 import { Toaster } from "@/components/ui/sonner"
 import { CartProvider } from "@/contexts/cart-context"
+import { NotificationPrompt } from "@/components/common/notification-prompt"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -81,6 +82,7 @@ export default function RootLayout({
             >
               <CartProvider>
                 {children}
+                <NotificationPrompt />
                 <Toaster position="top-center" expand={true} richColors />
               </CartProvider>
             </ThemeProvider>

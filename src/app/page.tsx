@@ -22,6 +22,8 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/components/providers/auth-provider"
+import { TrustBadges } from "@/components/store/trust-badges"
+import { ReviewsSection } from "@/components/store/reviews-section"
 import Link from "next/link"
 import Image from "next/image"
 
@@ -126,6 +128,7 @@ export default function HomePage() {
                     </Link>
                   </Button>
                 ))}
+              <TrustBadges />
               </div>
             </motion.div>
           </div>
@@ -249,6 +252,8 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+
+        <ReviewsSection />
 
         {/* CTA Section */}
         <section className="py-20">

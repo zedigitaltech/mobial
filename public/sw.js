@@ -1,13 +1,13 @@
 // MobiaL eSIM Service Worker
-// Version 1.0.0
+// Version 2.0.0
 
-const CACHE_NAME = 'mobial-esim-v1';
-const STATIC_CACHE_NAME = 'mobial-static-v1';
-const IMAGE_CACHE_NAME = 'mobial-images-v1';
-const API_CACHE_NAME = 'mobial-api-v1';
+const CACHE_VERSION = 'v2';
+const STATIC_CACHE_NAME = `mobial-static-${CACHE_VERSION}`;
+const IMAGE_CACHE_NAME = `mobial-images-${CACHE_VERSION}`;
+const API_CACHE_NAME = `mobial-api-${CACHE_VERSION}`;
 
-// Static assets to cache on install
-const STATIC_ASSETS = [
+// App shell - static assets to cache on install
+const APP_SHELL = [
   '/',
   '/manifest.json',
   '/favicon.ico',
@@ -15,40 +15,38 @@ const STATIC_ASSETS = [
   '/offline.html',
 ];
 
-// Install event - cache static assets
+// Install event - cache app shell
 self.addEventListener('install', (event) => {
-  console.log('[SW] Installing service worker...');
-  
+  console.log('[SW] Installing service worker v2...');
+
   event.waitUntil(
     caches.open(STATIC_CACHE_NAME)
       .then((cache) => {
-        console.log('[SW] Caching static assets');
-        return cache.addAll(STATIC_ASSETS);
+        console.log('[SW] Caching app shell');
+        return cache.addAll(APP_SHELL);
       })
       .then(() => {
-        console.log('[SW] Static assets cached successfully');
+        console.log('[SW] App shell cached');
         return self.skipWaiting();
       })
       .catch((error) => {
-        console.error('[SW] Failed to cache static assets:', error);
+        console.error('[SW] Failed to cache app shell:', error);
       })
   );
 });
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating service worker...');
-  
+  console.log('[SW] Activating service worker v2...');
+
+  const currentCaches = [STATIC_CACHE_NAME, IMAGE_CACHE_NAME, API_CACHE_NAME];
+
   event.waitUntil(
     caches.keys()
       .then((cacheNames) => {
         return Promise.all(
           cacheNames
-            .filter((cacheName) => {
-              return cacheName !== STATIC_CACHE_NAME && 
-                     cacheName !== IMAGE_CACHE_NAME && 
-                     cacheName !== API_CACHE_NAME;
-            })
+            .filter((cacheName) => !currentCaches.includes(cacheName))
             .map((cacheName) => {
               console.log('[SW] Deleting old cache:', cacheName);
               return caches.delete(cacheName);
@@ -62,210 +60,165 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - handle different request types
+// Fetch event - route requests to appropriate strategy
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
   // Skip non-GET requests
-  if (request.method !== 'GET') {
-    return;
-  }
+  if (request.method !== 'GET') return;
 
-  // Handle different request types
-  if (isImageRequest(request)) {
-    event.respondWith(cacheFirstForImages(request));
-  } else if (isApiRequest(url)) {
-    event.respondWith(networkFirstForApi(request));
+  // Skip chrome-extension and other non-http(s) requests
+  if (!url.protocol.startsWith('http')) return;
+
+  if (isApiRequest(url)) {
+    event.respondWith(networkFirst(request, API_CACHE_NAME));
+  } else if (isImageRequest(request, url)) {
+    event.respondWith(cacheFirst(request, IMAGE_CACHE_NAME));
   } else if (isStaticAsset(url)) {
     event.respondWith(cacheFirst(request, STATIC_CACHE_NAME));
   } else {
-    event.respondWith(networkFirst(request));
+    event.respondWith(networkFirst(request, STATIC_CACHE_NAME));
   }
 });
 
-// Check if request is for an image
-function isImageRequest(request) {
-  const acceptHeader = request.headers.get('accept');
-  return acceptHeader && acceptHeader.includes('image');
-}
+// --- Request classification ---
 
-// Check if request is for API
 function isApiRequest(url) {
-  return url.pathname.startsWith('/api/') || 
-         url.hostname.includes('api.');
+  return url.pathname.startsWith('/api/') || url.hostname.includes('api.');
 }
 
-// Check if request is for static asset
+function isImageRequest(request, url) {
+  const imageExtensions = ['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.ico', '.avif'];
+  if (imageExtensions.some((ext) => url.pathname.endsWith(ext))) return true;
+  const accept = request.headers.get('accept');
+  return accept && accept.includes('image');
+}
+
 function isStaticAsset(url) {
-  const staticExtensions = ['.js', '.css', '.woff', '.woff2', '.ttf', '.eot', '.ico', '.svg', '.png', '.jpg', '.jpeg', '.gif', '.webp'];
-  return staticExtensions.some(ext => url.pathname.endsWith(ext)) ||
-         url.pathname === '/';
+  const staticExtensions = ['.js', '.css', '.woff', '.woff2', '.ttf', '.eot'];
+  return staticExtensions.some((ext) => url.pathname.endsWith(ext));
 }
 
-// Cache-first strategy for images
-async function cacheFirstForImages(request) {
-  const cache = await caches.open(IMAGE_CACHE_NAME);
-  
-  // Try cache first
-  const cachedResponse = await cache.match(request);
-  if (cachedResponse) {
-    // Update cache in background
-    fetchAndCache(request, cache);
-    return cachedResponse;
-  }
+// --- Caching strategies ---
 
-  // Fetch from network and cache
-  try {
-    const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
-      cache.put(request, networkResponse.clone());
-    }
-    return networkResponse;
-  } catch (error) {
-    console.error('[SW] Failed to fetch image:', error);
-    // Return placeholder image for offline
-    return new Response(
-      '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect fill="#f0f0f0" width="200" height="200"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#999" font-family="sans-serif" font-size="14">Offline</text></svg>',
-      {
-        headers: { 'Content-Type': 'image/svg+xml' }
-      }
-    );
-  }
-}
-
-// Cache-first strategy
-async function cacheFirst(request, cacheName = CACHE_NAME) {
+// Cache-first: try cache, fall back to network, update cache
+async function cacheFirst(request, cacheName) {
   const cache = await caches.open(cacheName);
-  const cachedResponse = await cache.match(request);
-  
-  if (cachedResponse) {
-    return cachedResponse;
+  const cached = await cache.match(request);
+
+  if (cached) {
+    // Stale-while-revalidate: update in background
+    fetchAndCache(request, cache);
+    return cached;
   }
 
   try {
-    const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
-      cache.put(request, networkResponse.clone());
+    const response = await fetch(request);
+    if (response.ok) {
+      cache.put(request, response.clone());
     }
-    return networkResponse;
+    return response;
   } catch (error) {
-    console.error('[SW] Cache-first fetch failed:', error);
+    // For images, return a placeholder SVG
+    if (cacheName === IMAGE_CACHE_NAME) {
+      return new Response(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect fill="#1a1a2e" width="200" height="200"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#555" font-family="sans-serif" font-size="14">Offline</text></svg>',
+        { headers: { 'Content-Type': 'image/svg+xml' } }
+      );
+    }
     return createOfflineResponse();
   }
 }
 
-// Network-first strategy for API calls
-async function networkFirstForApi(request) {
-  const cache = await caches.open(API_CACHE_NAME);
-  
-  try {
-    const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
-      // Cache successful API responses
-      cache.put(request, networkResponse.clone());
-    }
-    return networkResponse;
-  } catch (error) {
-    console.log('[SW] Network failed, trying cache for API:', request.url);
-    
-    // Try cache as fallback
-    const cachedResponse = await cache.match(request);
-    if (cachedResponse) {
-      return cachedResponse;
-    }
-    
-    // Return error response
-    return new Response(
-      JSON.stringify({ error: 'offline', message: 'You are currently offline' }),
-      {
-        status: 503,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
-  }
-}
+// Network-first: try network, fall back to cache
+async function networkFirst(request, cacheName) {
+  const cache = await caches.open(cacheName);
 
-// Network-first strategy for general requests
-async function networkFirst(request) {
   try {
-    const networkResponse = await fetch(request);
-    
-    // Cache successful responses
-    if (networkResponse.ok) {
-      const cache = await caches.open(CACHE_NAME);
-      cache.put(request, networkResponse.clone());
+    const response = await fetch(request);
+    if (response.ok) {
+      cache.put(request, response.clone());
     }
-    
-    return networkResponse;
+    return response;
   } catch (error) {
-    console.log('[SW] Network failed, trying cache:', request.url);
-    
-    const cache = await caches.open(CACHE_NAME);
-    const cachedResponse = await cache.match(request);
-    
-    if (cachedResponse) {
-      return cachedResponse;
-    }
-    
-    // For navigation requests, return offline page
+    const cached = await cache.match(request);
+    if (cached) return cached;
+
+    // For navigation requests, show offline page
     if (request.mode === 'navigate') {
-      return caches.match('/offline.html');
+      const offlinePage = await caches.match('/offline.html');
+      if (offlinePage) return offlinePage;
     }
-    
+
+    // For API requests, return JSON error
+    if (cacheName === API_CACHE_NAME) {
+      return new Response(
+        JSON.stringify({ error: 'offline', message: 'You are currently offline' }),
+        { status: 503, headers: { 'Content-Type': 'application/json' } }
+      );
+    }
+
     return createOfflineResponse();
   }
 }
 
-// Fetch and update cache in background
+// Background fetch and cache update
 async function fetchAndCache(request, cache) {
   try {
-    const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
-      cache.put(request, networkResponse);
+    const response = await fetch(request);
+    if (response.ok) {
+      cache.put(request, response);
     }
   } catch (error) {
-    // Silently fail - we already have cached version
+    // Silently fail - cached version already served
   }
 }
 
-// Create offline response
 function createOfflineResponse() {
-  return new Response('Offline', {
-    status: 503,
-    statusText: 'Service Unavailable'
-  });
+  return new Response('Offline', { status: 503, statusText: 'Service Unavailable' });
 }
 
-// Handle push notifications
+// --- Push notifications ---
+
 self.addEventListener('push', (event) => {
   console.log('[SW] Push received');
-  
-  let data = { title: 'MobiaL eSIM', body: 'You have a new notification!' };
-  
+
+  let data = {
+    title: 'MobiaL',
+    body: 'You have a new notification!',
+    icon: '/icons/icon-192x192.png',
+    badge: '/icons/icon-72x72.png',
+    url: '/',
+    tag: 'mobial-general',
+  };
+
   if (event.data) {
     try {
-      data = event.data.json();
+      const payload = event.data.json();
+      data = { ...data, ...payload };
     } catch (e) {
       data.body = event.data.text();
     }
   }
-  
+
   const options = {
     body: data.body,
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-72x72.png',
+    icon: data.icon,
+    badge: data.badge,
     vibrate: [100, 50, 100],
+    tag: data.tag,
+    renotify: true,
     data: {
-      url: data.url || '/',
+      url: data.url,
       dateOfArrival: Date.now(),
     },
     actions: [
       { action: 'view', title: 'View' },
-      { action: 'close', title: 'Close' }
-    ]
+      { action: 'dismiss', title: 'Dismiss' },
+    ],
   };
-  
+
   event.waitUntil(
     self.registration.showNotification(data.title, options)
   );
@@ -273,48 +226,51 @@ self.addEventListener('push', (event) => {
 
 // Handle notification click
 self.addEventListener('notificationclick', (event) => {
-  console.log('[SW] Notification clicked');
-  
+  console.log('[SW] Notification clicked:', event.action);
+
   event.notification.close();
-  
-  if (event.action === 'view') {
-    const urlToOpen = event.notification.data?.url || '/';
-    
-    event.waitUntil(
-      clients.matchAll({ type: 'window', includeUncontrolled: true })
-        .then((clientList) => {
-          // Check if there's already a window open
-          for (const client of clientList) {
-            if (client.url === urlToOpen && 'focus' in client) {
-              return client.focus();
-            }
+
+  if (event.action === 'dismiss') return;
+
+  const urlToOpen = event.notification.data?.url || '/';
+
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then((clientList) => {
+        // Focus existing window if available
+        for (const client of clientList) {
+          if (client.url.includes(urlToOpen) && 'focus' in client) {
+            return client.focus();
           }
-          // Open new window if none exists
-          if (clients.openWindow) {
-            return clients.openWindow(urlToOpen);
-          }
-        })
-    );
-  }
+        }
+        // Open new window
+        if (clients.openWindow) {
+          return clients.openWindow(urlToOpen);
+        }
+      })
+  );
+});
+
+// Handle notification close
+self.addEventListener('notificationclose', (event) => {
+  console.log('[SW] Notification dismissed');
 });
 
 // Handle background sync
 self.addEventListener('sync', (event) => {
   console.log('[SW] Background sync:', event.tag);
-  
+
   if (event.tag === 'sync-cart') {
     event.waitUntil(syncCart());
   }
 });
 
-// Sync cart data when back online
 async function syncCart() {
   try {
-    // Get pending cart updates from IndexedDB and sync
     console.log('[SW] Syncing cart data...');
   } catch (error) {
     console.error('[SW] Cart sync failed:', error);
   }
 }
 
-console.log('[SW] Service worker loaded');
+console.log('[SW] Service worker v2 loaded');
