@@ -7,6 +7,7 @@ import { z } from "zod"
 import { motion } from "framer-motion"
 import { Loader2, Mail, Lock, Eye, EyeOff } from "lucide-react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -159,8 +160,8 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
           />
 
           <div className="flex items-center justify-end">
-            <Button variant="link" className="px-0 text-sm" type="button">
-              Forgot password?
+            <Button variant="link" className="px-0 text-sm" type="button" asChild>
+              <Link href="/reset-password">Forgot password?</Link>
             </Button>
           </div>
 

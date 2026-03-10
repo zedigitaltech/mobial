@@ -6,15 +6,16 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { hashPassword, checkPasswordStrength } from '@/lib/password';
-import { generateTokenPair } from '@/lib/jwt';
+import { generateTokenPair, generateEmailVerificationToken } from '@/lib/jwt';
 import { logAuditWithContext } from '@/lib/audit';
 import { db } from '@/lib/db';
-import { 
-  successResponse, 
-  errorResponse, 
-  parseJsonBody, 
-  getClientIP, 
-  getUserAgent 
+import { sendEmailVerification } from '@/services/email-service';
+import {
+  successResponse,
+  errorResponse,
+  parseJsonBody,
+  getClientIP,
+  getUserAgent
 } from '@/lib/auth-helpers';
 
 // Validation schema
@@ -90,6 +91,22 @@ export async function POST(request: NextRequest) {
       },
     });
     
+    // Generate email verification token and store it
+    const verificationToken = generateEmailVerificationToken();
+    const verificationExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    await db.systemConfig.create({
+      data: {
+        key: `verify_token:${user.id}`,
+        value: JSON.stringify({
+          token: verificationToken,
+          expiresAt: verificationExpiry.toISOString(),
+        }),
+      },
+    });
+
+    await sendEmailVerification(user.email, verificationToken);
+
     // Log audit event
     await logAuditWithContext({
       userId: user.id,
@@ -102,7 +119,7 @@ export async function POST(request: NextRequest) {
         role: user.role,
       },
     });
-    
+
     // Return user and tokens (exclude sensitive fields)
     const { passwordHash: _, ...safeUser } = user;
     

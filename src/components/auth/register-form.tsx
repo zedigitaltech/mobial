@@ -241,11 +241,11 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
                 <div className="space-y-1 leading-none">
                   <FormLabel className="text-sm font-normal cursor-pointer">
                     I agree to the{" "}
-                    <a href="#" className="text-primary hover:underline">
+                    <a href="/terms" className="text-primary hover:underline">
                       Terms of Service
                     </a>{" "}
                     and{" "}
-                    <a href="#" className="text-primary hover:underline">
+                    <a href="/privacy" className="text-primary hover:underline">
                       Privacy Policy
                     </a>
                   </FormLabel>
