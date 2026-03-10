@@ -17,23 +17,22 @@ import { Separator } from "@/components/ui/separator"
 
 const footerLinks = {
   product: [
-    { name: "eSIM Products", href: "#products" },
-    { name: "Regional eSIMs", href: "#" },
-    { name: "Global eSIMs", href: "#" },
-    { name: "Pricing", href: "#" },
+    { name: "eSIM Products", href: "/products" },
+    { name: "Regional eSIMs", href: "/products?region=europe" },
+    { name: "Global eSIMs", href: "/products?region=global" },
+    { name: "How It Works", href: "/#how-it-works" },
   ],
   company: [
-    { name: "About Us", href: "#about" },
-    { name: "Contact", href: "#" },
-    { name: "Blog", href: "#" },
-    { name: "Careers", href: "#" },
-    { name: "How It Works", href: "#how-it-works" },
+    { name: "About Us", href: "/about" },
+    { name: "Contact", href: "/contact" },
+    { name: "FAQ", href: "/faq" },
+    { name: "How It Works", href: "/#how-it-works" },
   ],
   legal: [
-    { name: "Privacy Policy", href: "#" },
-    { name: "Terms of Service", href: "#" },
-    { name: "GDPR Compliance", href: "#" },
-    { name: "Cookie Policy", href: "#" },
+    { name: "Privacy Policy", href: "/privacy" },
+    { name: "Terms of Service", href: "/terms" },
+    { name: "Refund Policy", href: "/refund-policy" },
+    { name: "Cookie Policy", href: "/cookies" },
   ],
 }
 
