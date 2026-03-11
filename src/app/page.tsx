@@ -1,3 +1,4 @@
+import { Suspense } from "react"
 import {
   Globe,
   Zap,
@@ -39,13 +40,13 @@ const STEPS = [
   },
 ]
 
-export default async function HomePage() {
+async function HomepageProducts() {
   const [popularResult, latestResult] = await Promise.all([
     getProducts({ sortBy: "price_asc", limit: 8 }),
     getProducts({ sortBy: "createdAt", limit: 8 }),
   ])
 
-  const popularProducts = popularResult.products.map((p) => ({
+  const mapProduct = (p: (typeof popularResult.products)[number]) => ({
     id: p.id,
     name: p.name,
     slug: p.slug,
@@ -57,21 +58,42 @@ export default async function HomePage() {
     networkType: p.networkType,
     topUpAvailable: p.topUpAvailable,
     providerLogo: p.providerLogo,
-  }))
+  })
 
-  const latestProducts = latestResult.products.map((p) => ({
-    id: p.id,
-    name: p.name,
-    slug: p.slug,
-    provider: p.provider,
-    price: p.price,
-    dataAmount: p.dataAmount,
-    validityDays: p.validityDays,
-    countries: p.countries,
-    networkType: p.networkType,
-    topUpAvailable: p.topUpAvailable,
-    providerLogo: p.providerLogo,
-  }))
+  return (
+    <ProductsSection
+      popularProducts={popularResult.products.map(mapProduct)}
+      latestProducts={latestResult.products.map(mapProduct)}
+    />
+  )
+}
+
+function ProductsSkeleton() {
+  return (
+    <section className="py-16">
+      <div className="container mx-auto px-4">
+        <div className="h-8 w-48 rounded bg-muted animate-pulse mb-8" />
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="rounded-2xl border border-border/50 p-5 space-y-4">
+              <div className="flex justify-between">
+                <div className="h-5 w-16 rounded bg-muted animate-pulse" />
+                <div className="h-5 w-12 rounded bg-muted animate-pulse" />
+              </div>
+              <div className="space-y-2">
+                <div className="h-4 w-full rounded bg-muted animate-pulse" />
+                <div className="h-3 w-2/3 rounded bg-muted animate-pulse" />
+              </div>
+              <div className="h-7 w-16 rounded bg-muted animate-pulse" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+export default function HomePage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-background selection:bg-primary/20">
@@ -169,11 +191,10 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* Product Offers (Client Component) */}
-        <ProductsSection
-          popularProducts={popularProducts}
-          latestProducts={latestProducts}
-        />
+        {/* Product Offers — streamed in via Suspense */}
+        <Suspense fallback={<ProductsSkeleton />}>
+          <HomepageProducts />
+        </Suspense>
 
         {/* Features Grid */}
         <section className="py-24 bg-muted/30">
