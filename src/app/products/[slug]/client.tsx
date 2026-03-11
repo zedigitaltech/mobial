@@ -20,6 +20,7 @@ import {
   Shield,
   CreditCard,
   Loader2,
+  RefreshCw,
 } from "lucide-react"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
@@ -107,6 +108,36 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
     },
   ]
 
+  const parsedTags: { item: string; color?: string }[] = (() => {
+    if (!product.tags) return []
+    try {
+      return JSON.parse(product.tags)
+    } catch {
+      return []
+    }
+  })()
+
+  const getTagClasses = (color?: string) => {
+    switch (color) {
+      case "green":
+      case "emerald":
+        return "bg-emerald-500/10 text-emerald-400"
+      case "blue":
+        return "bg-blue-500/10 text-blue-400"
+      case "amber":
+      case "yellow":
+        return "bg-amber-500/10 text-amber-400"
+      case "red":
+        return "bg-red-500/10 text-red-400"
+      default:
+        return "bg-primary/10 text-primary"
+    }
+  }
+
+  const sanitizeHtml = (html: string) => {
+    return html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -152,6 +183,18 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                     )}
                     <div>
                       <p className="text-sm text-muted-foreground">{product.provider}</p>
+                      {parsedTags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mb-1">
+                          {parsedTags.map((tag, i) => (
+                            <span
+                              key={i}
+                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${getTagClasses(tag.color)}`}
+                            >
+                              {tag.item}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                       <h1 className="text-2xl font-bold">{product.name}</h1>
                     </div>
                     <div className="ml-auto flex flex-col gap-1">
@@ -161,6 +204,11 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                       {product.networkType && (
                         <Badge className="bg-primary/10 text-primary border-0 text-[10px] font-black">
                           {product.networkType}
+                        </Badge>
+                      )}
+                      {product.is5G && (
+                        <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-[10px] font-black">
+                          5G
                         </Badge>
                       )}
                     </div>
@@ -219,10 +267,15 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                     <Zap className="h-3 w-3" /> Top-Up Available
                   </Badge>
                 )}
+                {product.phoneNumberPrefix && (
+                  <Badge variant="secondary" className="gap-1">
+                    <Phone className="h-3 w-3" /> {product.phoneNumberPrefix} number included
+                  </Badge>
+                )}
               </div>
 
               {/* Detailed Specs */}
-              {(product.activationPolicy || product.networkType || product.speedInfo || product.ipRouting) && (
+              {(product.activationPolicy || product.networkType || product.speedInfo || product.ipRouting || product.speedLong || product.usageTracking || product.supportsHotspot) && (
                 <Card>
                   <CardContent className="p-5 space-y-3">
                     <h3 className="font-semibold text-sm">Plan Details</h3>
@@ -251,7 +304,36 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                           <p className="font-semibold">{product.ipRouting}</p>
                         </div>
                       )}
+                      {product.speedLong && (
+                        <div className="p-3 rounded-lg bg-muted/50 col-span-2">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Speed Details</p>
+                          <p className="font-semibold">{product.speedLong}</p>
+                        </div>
+                      )}
+                      {product.usageTracking && (
+                        <div className="p-3 rounded-lg bg-muted/50">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Usage Tracking</p>
+                          <p className="font-semibold">Real-time Tracking</p>
+                        </div>
+                      )}
+                      <div className="p-3 rounded-lg bg-muted/50">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Hotspot</p>
+                        <p className="font-semibold">{product.supportsHotspot ? "Yes" : "No"}</p>
+                      </div>
                     </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Additional Details */}
+              {product.additionalDetails && (
+                <Card>
+                  <CardContent className="p-5 space-y-3">
+                    <h3 className="font-semibold text-sm">Additional Information</h3>
+                    <div
+                      className="prose prose-sm prose-invert max-w-none"
+                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(product.additionalDetails) }}
+                    />
                   </CardContent>
                 </Card>
               )}
@@ -310,6 +392,16 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                       </>
                     )}
                   </Button>
+
+                  {/* Top-Up Link */}
+                  {product.topUpAvailable && (
+                    <Button variant="outline" size="lg" className="w-full" asChild>
+                      <Link href="/topup">
+                        <RefreshCw className="h-4 w-4 mr-2" />
+                        Top Up This Plan
+                      </Link>
+                    </Button>
+                  )}
 
                   {/* Actions */}
                   <div className="flex gap-2">
