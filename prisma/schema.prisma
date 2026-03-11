@@ -154,7 +154,8 @@ model Product {
   // Pricing
   price                 Float
   currency              String   @default("USD")
-  originalPrice         Float?   // If discounted
+  originalPrice         Float?   // MobiMatter retailPrice before markup
+  wholesalePrice        Float?   // MobiMatter wholesale cost
   
   // Features
   features              String?  // JSON array of features

@@ -7,14 +7,18 @@ import { db } from '@/lib/db';
 import { fetchProducts } from '@/lib/mobimatter';
 import { Prisma } from '@prisma/client';
 
+// Pricing
+const MARKUP_PERCENTAGE = 0.10; // 10% markup on MobiMatter retail price
+
 // Types
 export interface ProductFilters {
   country?: string;
   region?: string;
   provider?: string;
+  category?: string;
   minPrice?: number;
   maxPrice?: number;
-  sortBy?: 'price_asc' | 'price_desc' | 'name' | 'validity' | 'data' | 'createdAt';
+  sortBy?: 'price_asc' | 'price_desc' | 'name' | 'validity' | 'data' | 'createdAt' | 'rank';
   limit?: number;
   offset?: number;
   isActive?: boolean;
@@ -188,9 +192,10 @@ function transformMobimatterProduct(raw: {
     dataAmount: raw.dataAmount || null,
     dataUnit: raw.dataUnit || null,
     validityDays: raw.validityDays || null,
-    price: raw.price,
+    price: Math.round(raw.price * (1 + MARKUP_PERCENTAGE) * 100) / 100,
     currency: raw.currency || 'USD',
-    originalPrice: null,
+    originalPrice: raw.price,
+    wholesalePrice: raw.wholesalePrice || null,
     features: raw.features ? JSON.stringify(raw.features) : null,
     isUnlimited: raw.isUnlimited,
     supportsHotspot: raw.supportsHotspot,
@@ -298,15 +303,36 @@ export async function syncProductsFromMobimatter(): Promise<SyncResult> {
 
     for (const rawProduct of mobimatterProducts) {
       try {
+        // Skip junk products (deactivate if they already exist)
+        const isJunk = rawProduct.price <= 0
+          || /\btest\b/i.test(rawProduct.name)
+          || rawProduct.productCategory === 'esim_replacement';
+
+        if (isJunk) {
+          const existingJunk = await db.product.findUnique({
+            where: { mobimatterId: rawProduct.id },
+          });
+          if (existingJunk && existingJunk.isActive) {
+            await db.product.update({
+              where: { id: existingJunk.id },
+              data: { isActive: false, syncedAt: new Date() },
+            });
+          }
+          result.skipped++;
+          continue;
+        }
+
         // Check if product already exists
         const existing = await db.product.findUnique({
           where: { mobimatterId: rawProduct.id },
         });
 
+        const markedUpPrice = Math.round(rawProduct.price * (1 + MARKUP_PERCENTAGE) * 100) / 100;
+
         if (existing) {
           // Update existing product
           const slug = await generateUniqueSlug(rawProduct.name, existing.id);
-          
+
           await db.product.update({
             where: { id: existing.id },
             data: {
@@ -320,7 +346,9 @@ export async function syncProductsFromMobimatter(): Promise<SyncResult> {
               dataAmount: rawProduct.dataAmount ?? existing.dataAmount,
               dataUnit: rawProduct.dataUnit ?? existing.dataUnit,
               validityDays: rawProduct.validityDays ?? existing.validityDays,
-              price: rawProduct.price,
+              price: markedUpPrice,
+              originalPrice: rawProduct.price,
+              wholesalePrice: rawProduct.wholesalePrice || null,
               currency: rawProduct.currency || existing.currency,
               features: rawProduct.features ? JSON.stringify(rawProduct.features) : existing.features,
               isUnlimited: rawProduct.isUnlimited,
@@ -418,6 +446,7 @@ export async function getProducts(filters: ProductFilters = {}): Promise<Paginat
     country,
     region,
     provider,
+    category,
     minPrice,
     maxPrice,
     sortBy = 'createdAt',
@@ -430,6 +459,7 @@ export async function getProducts(filters: ProductFilters = {}): Promise<Paginat
   const where: Prisma.ProductWhereInput = {
     isActive,
     ...(provider && { provider }),
+    ...(category && { category }),
     ...(minPrice !== undefined && { price: { gte: minPrice } }),
     ...(maxPrice !== undefined && { price: { lte: maxPrice } }),
     ...(country && {
@@ -457,6 +487,9 @@ export async function getProducts(filters: ProductFilters = {}): Promise<Paginat
       break;
     case 'data':
       orderBy.dataAmount = 'desc';
+      break;
+    case 'rank':
+      orderBy.rank = 'desc';
       break;
     case 'createdAt':
     default:

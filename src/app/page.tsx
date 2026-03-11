@@ -42,8 +42,8 @@ const STEPS = [
 
 async function HomepageProducts() {
   const [popularResult, latestResult] = await Promise.all([
-    getProducts({ sortBy: "price_asc", limit: 8 }),
-    getProducts({ sortBy: "createdAt", limit: 8 }),
+    getProducts({ sortBy: "rank", category: "esim_realtime", limit: 8 }),
+    getProducts({ sortBy: "createdAt", category: "esim_realtime", limit: 8 }),
   ])
 
   const mapProduct = (p: (typeof popularResult.products)[number]) => ({
