@@ -29,7 +29,7 @@ export async function middleware(request: NextRequest) {
 
   const cspHeader = `
     default-src 'self';
-    script-src 'self' https://js.stripe.com;
+    script-src 'self' 'unsafe-inline' https://js.stripe.com;
     style-src 'self' 'unsafe-inline';
     img-src 'self' blob: data: https://api.mobimatter.com https://mobimatterstorage.blob.core.windows.net https://api.qrserver.com;
     font-src 'self' data:;
