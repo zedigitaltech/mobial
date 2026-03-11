@@ -61,10 +61,10 @@ export default function ContactPage() {
                       <div>
                         <h3 className="font-bold text-lg">Email Us</h3>
                         <a
-                          href="mailto:support@mobial.com"
+                          href="mailto:support@mobialo.eu"
                           className="text-primary hover:underline"
                         >
-                          support@mobial.com
+                          support@mobialo.eu
                         </a>
                         <p className="text-sm text-muted-foreground mt-1">
                           For all inquiries and support requests

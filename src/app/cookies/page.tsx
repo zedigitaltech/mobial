@@ -172,8 +172,8 @@ export default function CookiePolicyPage() {
                 If you have questions about our use of cookies, please contact us:
               </p>
               <ul className="list-none pl-0 text-muted-foreground space-y-1">
-                <li>Email: <a href="mailto:privacy@mobial.com" className="text-primary hover:underline">privacy@mobial.com</a></li>
-                <li>General Support: <a href="mailto:support@mobial.com" className="text-primary hover:underline">support@mobial.com</a></li>
+                <li>Email: <a href="mailto:privacy@mobialo.eu" className="text-primary hover:underline">privacy@mobialo.eu</a></li>
+                <li>General Support: <a href="mailto:support@mobialo.eu" className="text-primary hover:underline">support@mobialo.eu</a></li>
               </ul>
             </section>
           </div>

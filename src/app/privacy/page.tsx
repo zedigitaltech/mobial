@@ -131,7 +131,7 @@ export default function PrivacyPolicyPage() {
                 <li><strong>Right to Withdraw Consent:</strong> Where processing is based on consent, you can withdraw it at any time.</li>
               </ul>
               <p className="text-muted-foreground leading-relaxed">
-                To exercise any of these rights, please contact us at privacy@mobial.com. We will respond to your request within 30 days.
+                To exercise any of these rights, please contact us at privacy@mobialo.eu. We will respond to your request within 30 days.
               </p>
             </section>
 
@@ -162,8 +162,8 @@ export default function PrivacyPolicyPage() {
                 If you have any questions or concerns about this Privacy Policy or our data practices, please contact us:
               </p>
               <ul className="list-none pl-0 text-muted-foreground space-y-1">
-                <li>Email: <a href="mailto:privacy@mobial.com" className="text-primary hover:underline">privacy@mobial.com</a></li>
-                <li>General Support: <a href="mailto:support@mobial.com" className="text-primary hover:underline">support@mobial.com</a></li>
+                <li>Email: <a href="mailto:privacy@mobialo.eu" className="text-primary hover:underline">privacy@mobialo.eu</a></li>
+                <li>General Support: <a href="mailto:support@mobialo.eu" className="text-primary hover:underline">support@mobialo.eu</a></li>
               </ul>
             </section>
           </div>

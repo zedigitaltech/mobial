@@ -202,8 +202,8 @@ export function Footer() {
             <span className="hidden sm:inline">&bull;</span>
             <div className="flex items-center space-x-1">
               <Mail className="h-4 w-4" />
-              <a href="mailto:support@mobial.com" className="hover:text-primary transition-colors">
-                support@mobial.com
+              <a href="mailto:support@mobialo.eu" className="hover:text-primary transition-colors">
+                support@mobialo.eu
               </a>
             </div>
           </div>

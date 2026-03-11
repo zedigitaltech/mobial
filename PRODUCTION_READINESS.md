@@ -180,7 +180,7 @@ async function processPendingOrders() {
 **Required Action:**
 ```bash
 bun run seed:admin
-# Login: admin@mobial.com / Admin123!
+# Login: admin@mobialo.eu / Admin123!
 ```
 
 **Estimated Effort:** 5 minutes

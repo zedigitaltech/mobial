@@ -31,7 +31,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     if (!affiliateCode) {
       // If no affiliate code, just redirect to home
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://mobial.com';
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://mobialo.eu';
       return NextResponse.redirect(baseUrl, 302);
     }
 
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const profile = await getAffiliateByCode(affiliateCode.toUpperCase());
     if (!profile || profile.status !== 'ACTIVE') {
       // Invalid affiliate, redirect without tracking
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://mobial.com';
+      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://mobialo.eu';
       return NextResponse.redirect(baseUrl, 302);
     }
 
@@ -95,7 +95,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     console.error('Track click error:', error);
 
     // On error, still redirect to home page to not break user experience
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://mobial.com';
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://mobialo.eu';
     return NextResponse.redirect(baseUrl, 302);
   }
 }

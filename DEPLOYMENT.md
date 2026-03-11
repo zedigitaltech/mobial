@@ -24,7 +24,7 @@ bun run dev
 Access:
 - **Homepage:** http://localhost:3000
 - **Admin Panel:** http://localhost:3000/admin
-- **Login:** admin@mobial.com / Admin123!
+- **Login:** admin@mobialo.eu / Admin123!
 
 ---
 

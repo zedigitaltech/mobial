@@ -45,7 +45,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://mobial.com",
+    url: "https://mobialo.eu",
     siteName: "MobiaL",
     images: [
       {

@@ -163,7 +163,7 @@ export default function TroubleshootingPage() {
                           </p>
                           <div className="flex flex-wrap gap-3">
                             <Button variant="outline" className="rounded-xl" asChild>
-                              <a href="mailto:support@mobial.com">
+                              <a href="mailto:support@mobialo.eu">
                                 <Mail className="h-4 w-4 mr-2" /> Email Support
                               </a>
                             </Button>

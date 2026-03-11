@@ -24,7 +24,7 @@ export default function TermsOfServicePage() {
                 MobiaL (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;) operates an online marketplace for eSIM (embedded SIM) products. We resell eSIM data plans sourced through our partnership with MobiMatter, providing travelers and digital nomads with convenient mobile connectivity in over 150 countries.
               </p>
               <p className="text-muted-foreground leading-relaxed">
-                By accessing or using our platform at mobial.com (the &quot;Service&quot;), you agree to be bound by these Terms of Service. If you do not agree to these terms, you must not use our Service.
+                By accessing or using our platform at mobialo.eu (the &quot;Service&quot;), you agree to be bound by these Terms of Service. If you do not agree to these terms, you must not use our Service.
               </p>
             </section>
 
@@ -163,8 +163,8 @@ export default function TermsOfServicePage() {
                 If you have questions about these Terms of Service, please contact us:
               </p>
               <ul className="list-none pl-0 text-muted-foreground space-y-1">
-                <li>Email: <a href="mailto:legal@mobial.com" className="text-primary hover:underline">legal@mobial.com</a></li>
-                <li>General Support: <a href="mailto:support@mobial.com" className="text-primary hover:underline">support@mobial.com</a></li>
+                <li>Email: <a href="mailto:legal@mobialo.eu" className="text-primary hover:underline">legal@mobialo.eu</a></li>
+                <li>General Support: <a href="mailto:support@mobialo.eu" className="text-primary hover:underline">support@mobialo.eu</a></li>
               </ul>
             </section>
           </div>

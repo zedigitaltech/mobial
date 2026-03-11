@@ -4,7 +4,7 @@ import { getAllRegionSlugs } from "@/lib/regions"
 import { db } from "@/lib/db"
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://mobial.com"
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://mobialo.eu"
 
   // Static pages
   const staticPages = [

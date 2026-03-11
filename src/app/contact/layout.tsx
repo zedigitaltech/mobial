@@ -3,7 +3,7 @@ import { Metadata } from "next"
 export const metadata: Metadata = {
   title: "Contact",
   description:
-    "Get in touch with MobiaL support. We typically respond within 24 hours. Email us at support@mobial.com.",
+    "Get in touch with MobiaL support. We typically respond within 24 hours. Email us at support@mobialo.eu.",
   openGraph: {
     title: "Contact Us | MobiaL",
     description:

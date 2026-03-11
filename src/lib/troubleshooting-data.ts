@@ -143,12 +143,12 @@ export const troubleshootingTree: Record<string, TroubleshootingNode> = {
     solution: {
       title: "Restore Data Connection",
       steps: [
-        "Check your data usage — you may have used all your data. Check at mobial.com/check-usage.",
+        "Check your data usage — you may have used all your data. Check at mobialo.eu/check-usage.",
         "Toggle Airplane Mode on and off.",
         "Restart your device.",
         "Check if Data Roaming is still enabled.",
         "Try manually selecting a different network carrier.",
-        "If your data is exhausted, you can top up at mobial.com/topup.",
+        "If your data is exhausted, you can top up at mobialo.eu/topup.",
       ],
     },
   },
@@ -230,7 +230,7 @@ export const troubleshootingTree: Record<string, TroubleshootingNode> = {
       title: "Contact Our Support Team",
       steps: [
         "Check our FAQ page for common questions and answers.",
-        "Email us at support@mobial.com with your order number and a description of the issue.",
+        "Email us at support@mobialo.eu with your order number and a description of the issue.",
         "Include screenshots if possible — they help us resolve issues faster.",
         "Our support team typically responds within 24 hours.",
       ],

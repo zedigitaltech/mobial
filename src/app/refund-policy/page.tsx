@@ -61,7 +61,7 @@ export default function RefundPolicyPage() {
               </p>
               <ol className="list-decimal pl-6 text-muted-foreground space-y-3">
                 <li>
-                  <strong>Contact our support team</strong> by emailing <a href="mailto:support@mobial.com" className="text-primary hover:underline">support@mobial.com</a> with the subject line &quot;Refund Request&quot;.
+                  <strong>Contact our support team</strong> by emailing <a href="mailto:support@mobialo.eu" className="text-primary hover:underline">support@mobialo.eu</a> with the subject line &quot;Refund Request&quot;.
                 </li>
                 <li>
                   <strong>Include the following information</strong> in your email:
@@ -114,7 +114,7 @@ export default function RefundPolicyPage() {
             <section className="space-y-4 mb-10">
               <h2 className="text-2xl font-bold">7. Disputes</h2>
               <p className="text-muted-foreground leading-relaxed">
-                If you disagree with a refund decision, you may escalate the matter by contacting us at <a href="mailto:legal@mobial.com" className="text-primary hover:underline">legal@mobial.com</a>. We are committed to resolving disputes fairly and promptly. Please do not initiate a chargeback with your bank before contacting us, as this may delay the resolution process.
+                If you disagree with a refund decision, you may escalate the matter by contacting us at <a href="mailto:legal@mobialo.eu" className="text-primary hover:underline">legal@mobialo.eu</a>. We are committed to resolving disputes fairly and promptly. Please do not initiate a chargeback with your bank before contacting us, as this may delay the resolution process.
               </p>
             </section>
 
@@ -124,7 +124,7 @@ export default function RefundPolicyPage() {
                 For any questions about this Refund Policy, please contact us:
               </p>
               <ul className="list-none pl-0 text-muted-foreground space-y-1">
-                <li>Email: <a href="mailto:support@mobial.com" className="text-primary hover:underline">support@mobial.com</a></li>
+                <li>Email: <a href="mailto:support@mobialo.eu" className="text-primary hover:underline">support@mobialo.eu</a></li>
                 <li>Refund requests: Include &quot;Refund Request&quot; in the subject line</li>
               </ul>
             </section>

@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
       data: {
         status: 'DELETED',
         deletedAt: new Date(),
-        email: `deleted_${user.id}_${Date.now()}@deleted.mobial.com`, // Anonymize email
+        email: `deleted_${user.id}_${Date.now()}@deleted.mobialo.eu`, // Anonymize email
         name: 'Deleted User',
         phone: null,
         avatar: null,

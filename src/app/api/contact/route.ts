@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail } from '@/lib/email';
 import { checkRateLimit, createRateLimitHeaders } from '@/lib/rate-limit';
 
-const CONTACT_EMAIL = process.env.CONTACT_EMAIL || 'support@mobial.com';
+const CONTACT_EMAIL = process.env.CONTACT_EMAIL || 'support@mobialo.eu';
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()

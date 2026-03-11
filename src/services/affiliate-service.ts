@@ -50,7 +50,7 @@ export async function trackClick(
   },
   linkCode?: string
 ) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://mobial.com';
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://mobialo.eu';
   const clickId = crypto.randomUUID();
 
   await db.auditLog.create({

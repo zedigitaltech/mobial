@@ -68,7 +68,7 @@ export default function AdminSettingsPage() {
 
   const [generalSettings, setGeneralSettings] = useState({
     storeName: "MobiaL",
-    supportEmail: "support@mobial.com",
+    supportEmail: "support@mobialo.eu",
   })
 
   const [pricingSettings, setPricingSettings] = useState({
@@ -102,7 +102,7 @@ export default function AdminSettingsPage() {
 
       setGeneralSettings({
         storeName: settings["setting:store_name"] || "MobiaL",
-        supportEmail: settings["setting:support_email"] || "support@mobial.com",
+        supportEmail: settings["setting:support_email"] || "support@mobialo.eu",
       })
       setPricingSettings({
         markupRate: settings["setting:markup_rate"] || "15",
@@ -546,7 +546,7 @@ export default function AdminSettingsPage() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">From Address</span>
-                <span className="font-mono text-xs">noreply@mobial.com</span>
+                <span className="font-mono text-xs">noreply@mobialo.eu</span>
               </div>
             </div>
 

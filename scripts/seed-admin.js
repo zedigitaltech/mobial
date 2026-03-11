@@ -11,7 +11,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 // Admin user credentials
-const ADMIN_EMAIL = 'admin@mobial.com';
+const ADMIN_EMAIL = 'admin@mobialo.eu';
 const ADMIN_PASSWORD = 'Admin123!'; // Change this in production!
 const ADMIN_NAME = 'Platform Admin';
 

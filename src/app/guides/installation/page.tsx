@@ -214,7 +214,7 @@ const troubleshooting = [
   {
     question: "I accidentally deleted my eSIM",
     answer:
-      "Contact our support team immediately at support@mobial.com. In some cases, we can issue a replacement eSIM. However, this depends on the provider and is not always guaranteed.",
+      "Contact our support team immediately at support@mobialo.eu. In some cases, we can issue a replacement eSIM. However, this depends on the provider and is not always guaranteed.",
   },
   {
     question: "Can I install the eSIM on a different device?",

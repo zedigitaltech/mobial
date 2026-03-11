@@ -133,7 +133,7 @@ const faqCategories = [
       },
       {
         q: "How do I delete my account?",
-        a: "You can request account deletion by contacting our support team at support@mobial.com. We'll process your request in accordance with GDPR requirements. Note that order history may be retained for legal compliance purposes.",
+        a: "You can request account deletion by contacting our support team at support@mobialo.eu. We'll process your request in accordance with GDPR requirements. Note that order history may be retained for legal compliance purposes.",
       },
     ],
   },
