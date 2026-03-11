@@ -34,6 +34,7 @@ export interface ProductWithDetails {
   name: string;
   description: string | null;
   provider: string;
+  providerLogo: string | null;
   category: string | null;
   countries: string[];
   regions: string[];
@@ -53,6 +54,13 @@ export interface ProductWithDetails {
   slug: string;
   metaTitle: string | null;
   metaDescription: string | null;
+  networks: string | null;
+  activationPolicy: string | null;
+  topUpAvailable: boolean;
+  networkType: string | null;
+  speedInfo: string | null;
+  ipRouting: string | null;
+  usageTracking: boolean;
   createdAt: Date;
   updatedAt: Date;
   syncedAt: Date | null;
@@ -124,6 +132,7 @@ function transformMobimatterProduct(raw: {
   id: string;
   name: string;
   provider: string;
+  providerLogo?: string;
   description?: string;
   countries?: string[];
   regions?: string[];
@@ -137,13 +146,20 @@ function transformMobimatterProduct(raw: {
   supportsHotspot: boolean;
   supportsCalls: boolean;
   supportsSms: boolean;
+  networkType?: string;
+  activationPolicy?: string;
+  ipRouting?: string;
+  speedInfo?: string;
+  topUpAvailable?: boolean;
+  usageTracking?: boolean;
 }): Prisma.ProductCreateInput {
   return {
     mobimatterId: raw.id,
     name: raw.name,
     description: raw.description || null,
     provider: raw.provider,
-    category: null, // Could be derived from regions or product type
+    providerLogo: raw.providerLogo || null,
+    category: null,
     countries: raw.countries ? JSON.stringify(raw.countries) : null,
     regions: raw.regions ? JSON.stringify(raw.regions) : null,
     dataAmount: raw.dataAmount || null,
@@ -157,9 +173,15 @@ function transformMobimatterProduct(raw: {
     supportsHotspot: raw.supportsHotspot,
     supportsCalls: raw.supportsCalls,
     supportsSms: raw.supportsSms,
+    networkType: raw.networkType || null,
+    activationPolicy: raw.activationPolicy || null,
+    ipRouting: raw.ipRouting || null,
+    speedInfo: raw.speedInfo || null,
+    topUpAvailable: raw.topUpAvailable || false,
+    usageTracking: raw.usageTracking || false,
     isActive: true,
     isFeatured: false,
-    slug: '', // Will be set separately
+    slug: '',
     syncedAt: new Date(),
   };
 }
@@ -240,6 +262,7 @@ export async function syncProductsFromMobimatter(): Promise<SyncResult> {
               name: rawProduct.name,
               description: rawProduct.description || existing.description,
               provider: rawProduct.provider,
+              providerLogo: rawProduct.providerLogo || existing.providerLogo,
               countries: rawProduct.countries ? JSON.stringify(rawProduct.countries) : existing.countries,
               regions: rawProduct.regions ? JSON.stringify(rawProduct.regions) : existing.regions,
               dataAmount: rawProduct.dataAmount ?? existing.dataAmount,
@@ -252,6 +275,12 @@ export async function syncProductsFromMobimatter(): Promise<SyncResult> {
               supportsHotspot: rawProduct.supportsHotspot,
               supportsCalls: rawProduct.supportsCalls,
               supportsSms: rawProduct.supportsSms,
+              networkType: rawProduct.networkType || existing.networkType,
+              activationPolicy: rawProduct.activationPolicy || existing.activationPolicy,
+              ipRouting: rawProduct.ipRouting || existing.ipRouting,
+              speedInfo: rawProduct.speedInfo || existing.speedInfo,
+              topUpAvailable: rawProduct.topUpAvailable ?? existing.topUpAvailable,
+              usageTracking: rawProduct.usageTracking ?? existing.usageTracking,
               slug,
               syncedAt: new Date(),
             },

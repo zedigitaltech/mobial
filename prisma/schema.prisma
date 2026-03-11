@@ -122,6 +122,11 @@ model Product {
   activationPolicy      String?  // e.g., "First use", "At purchase"
   topUpAvailable        Boolean  @default(false)
   requiresKyc           Boolean  @default(false)
+  providerLogo          String?  // URL to provider logo
+  networkType           String?  // e.g., "5G", "4G/LTE", "3G"
+  speedInfo             String?  // e.g., "Up to 100 Mbps"
+  ipRouting             String?  // e.g., "Local", "International"
+  usageTracking         Boolean  @default(false)
   
   // Coverage
   countries             String?  // JSON array of country codes

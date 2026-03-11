@@ -137,16 +137,31 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
               <Card className="overflow-hidden">
                 <div className="p-8 bg-gradient-to-br from-primary/5 to-primary/10">
                   <div className="flex items-center gap-4 mb-6">
-                    <div className="h-16 w-16 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <Wifi className="h-8 w-8 text-primary" />
-                    </div>
+                    {product.providerLogo ? (
+                      <img
+                        src={product.providerLogo}
+                        alt={product.provider}
+                        className="h-16 w-16 rounded-xl object-contain bg-white p-2"
+                      />
+                    ) : (
+                      <div className="h-16 w-16 rounded-xl bg-primary/10 flex items-center justify-center">
+                        <Wifi className="h-8 w-8 text-primary" />
+                      </div>
+                    )}
                     <div>
                       <p className="text-sm text-muted-foreground">{product.provider}</p>
                       <h1 className="text-2xl font-bold">{product.name}</h1>
                     </div>
-                    {product.isFeatured && (
-                      <Badge variant="default" className="ml-auto">Popular</Badge>
-                    )}
+                    <div className="ml-auto flex flex-col gap-1">
+                      {product.isFeatured && (
+                        <Badge variant="default">Popular</Badge>
+                      )}
+                      {product.networkType && (
+                        <Badge className="bg-primary/10 text-primary border-0 text-[10px] font-black">
+                          {product.networkType}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
 
                   {/* Data Amount Display */}
@@ -197,7 +212,47 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                     <Zap className="h-3 w-3" /> Unlimited Data
                   </Badge>
                 )}
+                {product.topUpAvailable && (
+                  <Badge variant="secondary" className="gap-1">
+                    <Zap className="h-3 w-3" /> Top-Up Available
+                  </Badge>
+                )}
               </div>
+
+              {/* Detailed Specs */}
+              {(product.activationPolicy || product.networkType || product.speedInfo || product.ipRouting) && (
+                <Card>
+                  <CardContent className="p-5 space-y-3">
+                    <h3 className="font-semibold text-sm">Plan Details</h3>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      {product.networkType && (
+                        <div className="p-3 rounded-lg bg-muted/50">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Network</p>
+                          <p className="font-semibold">{product.networkType}</p>
+                        </div>
+                      )}
+                      {product.activationPolicy && (
+                        <div className="p-3 rounded-lg bg-muted/50">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Activation</p>
+                          <p className="font-semibold">{product.activationPolicy}</p>
+                        </div>
+                      )}
+                      {product.speedInfo && (
+                        <div className="p-3 rounded-lg bg-muted/50">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Speed</p>
+                          <p className="font-semibold">{product.speedInfo}</p>
+                        </div>
+                      )}
+                      {product.ipRouting && (
+                        <div className="p-3 rounded-lg bg-muted/50">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">IP Routing</p>
+                          <p className="font-semibold">{product.ipRouting}</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </motion.div>
 
             {/* Right Column - Pricing & Purchase */}

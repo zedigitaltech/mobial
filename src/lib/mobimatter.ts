@@ -24,6 +24,7 @@ export interface Product {
   id: string;
   name: string;
   provider: string;
+  providerLogo?: string;
   description?: string;
   countries?: string[];
   regions?: string[];
@@ -37,6 +38,12 @@ export interface Product {
   supportsHotspot: boolean;
   supportsCalls: boolean;
   supportsSms: boolean;
+  networkType?: string;
+  activationPolicy?: string;
+  ipRouting?: string;
+  speedInfo?: string;
+  topUpAvailable?: boolean;
+  usageTracking?: boolean;
 }
 
 interface OrderRequest {
@@ -231,11 +238,23 @@ function transformProduct(product: MobiMatterProduct): Product {
   
   // Use retailPrice for display price
   const price = product.retailPrice || 0;
-  
+
+  // Extract enriched fields from productDetails
+  const networkType = details.PLAN_NETWORK_TYPE || null;
+  const activationPolicy = details.PLAN_ACTIVATION_POLICY || null;
+  const ipRouting = details.PLAN_IP_ROUTING || null;
+  const speedInfo = details.PLAN_SPEED || null;
+  const topUpAvailable = details.PLAN_TOPUP_AVAILABLE === 'true' || details.PLAN_TOPUP_AVAILABLE === '1';
+  const usageTracking = details.PLAN_USAGE_TRACKING === 'true' || details.PLAN_USAGE_TRACKING === '1';
+  const supportsHotspot = details.PLAN_HOTSPOT !== 'false' && details.PLAN_HOTSPOT !== '0';
+  const supportsCalls = details.PLAN_INCLUDES_CALLS === 'true' || details.PLAN_INCLUDES_CALLS === '1';
+  const supportsSms = details.PLAN_INCLUDES_SMS === 'true' || details.PLAN_INCLUDES_SMS === '1';
+
   return {
     id: product.productId || product.uniqueId || '',
     name: name,
     provider: product.providerName || 'Unknown',
+    providerLogo: product.providerLogo || null,
     description: description,
     countries: product.countries || [],
     regions: product.regions || [],
@@ -247,9 +266,15 @@ function transformProduct(product: MobiMatterProduct): Product {
     currency: product.currencyCode || 'USD',
     features: [],
     isUnlimited: dataAmount === null || dataAmount === 0 ? false : dataAmount >= 999,
-    supportsHotspot: true,
-    supportsCalls: false,
-    supportsSms: false,
+    supportsHotspot,
+    supportsCalls,
+    supportsSms,
+    networkType,
+    activationPolicy,
+    ipRouting,
+    speedInfo,
+    topUpAvailable,
+    usageTracking,
   };
 }
 

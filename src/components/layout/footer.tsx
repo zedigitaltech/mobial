@@ -44,7 +44,7 @@ export function Footer() {
     <footer className="bg-muted/30 border-t">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Main Footer Content */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-8">
           {/* Brand Section */}
           <div className="lg:col-span-1">
             <Link href="/" className="flex items-center space-x-2 mb-4">
@@ -95,6 +95,43 @@ export function Footer() {
                   </Link>
                 </li>
               ))}
+            </ul>
+          </div>
+
+          {/* Destinations */}
+          <div>
+            <h3 className="font-semibold mb-4">Destinations</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link href="/esim/region/europe" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  eSIM for Europe
+                </Link>
+              </li>
+              <li>
+                <Link href="/esim/region/asia" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  eSIM for Asia
+                </Link>
+              </li>
+              <li>
+                <Link href="/esim/region/americas" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  eSIM for Americas
+                </Link>
+              </li>
+              <li>
+                <Link href="/esim/region/middle-east" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  eSIM for Middle East
+                </Link>
+              </li>
+              <li>
+                <Link href="/esim/region/oceania" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  eSIM for Oceania
+                </Link>
+              </li>
+              <li>
+                <Link href="/esim/region/africa" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  eSIM for Africa
+                </Link>
+              </li>
             </ul>
           </div>
 

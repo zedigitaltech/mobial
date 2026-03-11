@@ -1,9 +1,11 @@
 import { Metadata } from "next"
+import Link from "next/link"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { Badge } from "@/components/ui/badge"
-import { Globe } from "lucide-react"
+import { Globe, ArrowRight } from "lucide-react"
 import { countries, getAllCountrySlugs } from "@/lib/countries"
+import { regions } from "@/lib/regions"
 import { DestinationGrid } from "./destination-grid"
 
 export const dynamic = 'force-dynamic'
@@ -98,6 +100,30 @@ export default async function EsimDestinationsPage() {
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-medium">
               Find the perfect data plan for your destination. Instant activation, no roaming fees, no physical SIM needed.
             </p>
+          </div>
+        </section>
+
+        {/* Regions */}
+        <section className="py-8">
+          <div className="container mx-auto px-4">
+            <h2 className="text-2xl font-black tracking-tight mb-6">Browse by Region</h2>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+              {regions.map((region) => (
+                <Link
+                  key={region.slug}
+                  href={`/esim/region/${region.slug}`}
+                  className="p-4 rounded-2xl bg-card border border-border/50 hover:shadow-lg hover:border-primary/20 transition-all group text-center"
+                >
+                  <Globe className="h-6 w-6 text-primary mx-auto mb-2 group-hover:scale-110 transition-transform" />
+                  <h3 className="font-bold text-sm group-hover:text-primary transition-colors">
+                    {region.name}
+                  </h3>
+                  <p className="text-[10px] text-muted-foreground mt-1">
+                    {region.countries.length}+ countries
+                  </p>
+                </Link>
+              ))}
+            </div>
           </div>
         </section>
 
