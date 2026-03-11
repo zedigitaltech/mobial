@@ -662,6 +662,48 @@ model AnalyticsEvent {
   @@index([name, createdAt])
 }
 
+// ==================== FREE TRIAL ====================
+
+model FreeTrial {
+  id              String        @id @default(cuid())
+
+  // Customer
+  email           String
+  userId          String?       // If claimed while logged in
+
+  // Trial details
+  destination     String        // Country code for the trial
+  productId       String?       // MobiMatter product used
+  status          TrialStatus   @default(CLAIMED)
+
+  // MobiMatter fulfillment
+  mobimatterOrderId String?
+  esimQrCode      String?
+  esimActivationCode String?
+  esimSmdpAddress String?
+
+  // Conversion tracking
+  convertedOrderId String?      // Order ID if user purchased after trial
+  convertedAt     DateTime?
+
+  // Timestamps
+  claimedAt       DateTime      @default(now())
+  activatedAt     DateTime?
+  expiresAt       DateTime?
+
+  @@unique([email])             // One trial per email
+  @@index([status])
+  @@index([destination])
+  @@index([claimedAt])
+}
+
+enum TrialStatus {
+  CLAIMED
+  ACTIVATED
+  EXPIRED
+  CONVERTED
+}
+
 // ==================== ABANDONED CART RECOVERY ====================
 
 model AbandonedCart {
