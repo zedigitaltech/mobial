@@ -8,6 +8,7 @@ import {
   RefreshCw,
   HelpCircle,
   ArrowRight,
+  MapPin,
 } from "lucide-react"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
@@ -125,9 +126,55 @@ export default function GuidesPage() {
             </div>
           </div>
         </section>
+
+        {/* Country Travel Guides */}
+        <section className="py-12 bg-muted/30">
+          <div className="container mx-auto px-4">
+            <div className="max-w-5xl mx-auto">
+              <div className="flex items-center gap-2 mb-6">
+                <MapPin className="h-5 w-5 text-primary" />
+                <h2 className="text-2xl font-black tracking-tight">
+                  Country Travel Guides
+                </h2>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                {POPULAR_COUNTRIES.map((c) => (
+                  <Link key={c.slug} href={`/guides/${c.slug}`}>
+                    <Card className="h-full group hover:border-primary/20 transition-all border-border/50">
+                      <CardContent className="p-4 flex items-center gap-3">
+                        <span className="text-2xl">{c.flag}</span>
+                        <div>
+                          <p className="font-bold text-sm group-hover:text-primary transition-colors">
+                            {c.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">eSIM Guide</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
       </main>
 
       <Footer />
     </div>
   )
 }
+
+const POPULAR_COUNTRIES = [
+  { slug: "japan", name: "Japan", flag: "\u{1F1EF}\u{1F1F5}" },
+  { slug: "united-states", name: "USA", flag: "\u{1F1FA}\u{1F1F8}" },
+  { slug: "turkey", name: "Turkey", flag: "\u{1F1F9}\u{1F1F7}" },
+  { slug: "thailand", name: "Thailand", flag: "\u{1F1F9}\u{1F1ED}" },
+  { slug: "spain", name: "Spain", flag: "\u{1F1EA}\u{1F1F8}" },
+  { slug: "italy", name: "Italy", flag: "\u{1F1EE}\u{1F1F9}" },
+  { slug: "united-kingdom", name: "UK", flag: "\u{1F1EC}\u{1F1E7}" },
+  { slug: "germany", name: "Germany", flag: "\u{1F1E9}\u{1F1EA}" },
+  { slug: "france", name: "France", flag: "\u{1F1EB}\u{1F1F7}" },
+  { slug: "australia", name: "Australia", flag: "\u{1F1E6}\u{1F1FA}" },
+  { slug: "south-korea", name: "S. Korea", flag: "\u{1F1F0}\u{1F1F7}" },
+  { slug: "singapore", name: "Singapore", flag: "\u{1F1F8}\u{1F1EC}" },
+]
