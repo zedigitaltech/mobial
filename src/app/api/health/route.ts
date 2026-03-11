@@ -16,6 +16,11 @@ interface HealthResponse {
       responseTime?: number;
       error?: string;
     };
+    mobimatter: {
+      status: 'up' | 'down' | 'not_configured';
+      responseTime?: number;
+      error?: string;
+    };
     environment: {
       status: 'configured' | 'missing_vars';
       missingVars?: string[];
@@ -27,13 +32,14 @@ export async function GET(): Promise<NextResponse<HealthResponse>> {
   const startTime = Date.now();
   const checks: HealthResponse['checks'] = {
     database: { status: 'down' },
+    mobimatter: { status: 'down' },
     environment: { status: 'configured' },
   };
 
   const missingVars: string[] = [];
 
   // Check required environment variables
-  const requiredVars = ['DATABASE_URL', 'JWT_SECRET', 'ENCRYPTION_KEY'];
+  const requiredVars = ['DATABASE_URL', 'JWT_SECRET', 'ENCRYPTION_KEY', 'MOBIMATTER_MERCHANT_ID', 'MOBIMATTER_API_KEY'];
   for (const envVar of requiredVars) {
     if (!process.env[envVar]) {
       missingVars.push(envVar);
@@ -62,11 +68,51 @@ export async function GET(): Promise<NextResponse<HealthResponse>> {
     };
   }
 
+  // Check MobiMatter API connectivity
+  const merchantId = process.env.MOBIMATTER_MERCHANT_ID;
+  const apiKey = process.env.MOBIMATTER_API_KEY;
+
+  if (!merchantId || !apiKey) {
+    checks.mobimatter = { status: 'not_configured' };
+  } else {
+    try {
+      const mmStart = Date.now();
+      const mmResponse = await fetch(
+        'https://api.mobimatter.com/mobimatter/api/v2/products?limit=1',
+        {
+          headers: {
+            'merchantId': merchantId,
+            'api-key': apiKey,
+          },
+          signal: AbortSignal.timeout(5000),
+        }
+      );
+      const mmResponseTime = Date.now() - mmStart;
+
+      if (mmResponse.ok) {
+        checks.mobimatter = { status: 'up', responseTime: mmResponseTime };
+      } else {
+        checks.mobimatter = {
+          status: 'down',
+          responseTime: mmResponseTime,
+          error: `HTTP ${mmResponse.status}`,
+        };
+      }
+    } catch (error) {
+      checks.mobimatter = {
+        status: 'down',
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
   // Determine overall health status
   let status: HealthResponse['status'] = 'healthy';
   
   if (checks.database.status === 'down' || checks.environment.status === 'missing_vars') {
     status = 'unhealthy';
+  } else if (checks.mobimatter.status === 'down') {
+    status = 'degraded';
   } else if (checks.database.responseTime && checks.database.responseTime > 1000) {
     status = 'degraded';
   }
