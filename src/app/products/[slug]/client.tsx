@@ -22,6 +22,7 @@ import {
   Loader2,
   RefreshCw,
 } from "lucide-react"
+import DOMPurify from "isomorphic-dompurify"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { CartDrawer } from "@/components/store/cart-drawer"
@@ -132,10 +133,6 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
       default:
         return "bg-primary/10 text-primary"
     }
-  }
-
-  const sanitizeHtml = (html: string) => {
-    return html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
   }
 
   return (
@@ -332,7 +329,7 @@ export function ProductDetailClient({ product, relatedProducts }: ProductDetailC
                     <h3 className="font-semibold text-sm">Additional Information</h3>
                     <div
                       className="prose prose-sm prose-invert max-w-none"
-                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(product.additionalDetails) }}
+                      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(product.additionalDetails) }}
                     />
                   </CardContent>
                 </Card>

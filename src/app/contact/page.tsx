@@ -27,15 +27,40 @@ export default function ContactPage() {
     e.preventDefault()
     setIsSubmitting(true)
 
-    // Simulate sending
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    const formData = new FormData(e.currentTarget)
+    const data = {
+      name: formData.get("name") as string,
+      email: formData.get("email") as string,
+      subject: formData.get("subject") as string,
+      message: formData.get("message") as string,
+    }
 
-    toast.success("Message sent!", {
-      description: "We'll get back to you within 24 hours.",
-    })
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      })
 
-    setIsSubmitting(false)
-    ;(e.target as HTMLFormElement).reset()
+      const result = await res.json()
+
+      if (res.ok && result.success) {
+        toast.success("Message sent!", {
+          description: "We'll get back to you within 24 hours.",
+        })
+        ;(e.target as HTMLFormElement).reset()
+      } else {
+        toast.error("Failed to send message", {
+          description: result.error || "Please try again later.",
+        })
+      }
+    } catch {
+      toast.error("Failed to send message", {
+        description: "Please check your connection and try again.",
+      })
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (

@@ -5,7 +5,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 }
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2025-01-27.acacia' as any,
+  apiVersion: '2026-02-25.clover',
   appInfo: {
     name: 'Mobial eSIM Store',
     version: '0.1.0',

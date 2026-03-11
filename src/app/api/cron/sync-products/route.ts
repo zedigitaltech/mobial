@@ -81,7 +81,7 @@ export async function GET(request: NextRequest) {
     return Response.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Sync failed',
+        error: process.env.NODE_ENV === 'production' ? 'Sync failed' : (error instanceof Error ? error.message : 'Sync failed'),
       },
       { status: 500 }
     );

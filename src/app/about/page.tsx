@@ -129,7 +129,7 @@ export default function AboutPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-8">
                 {[
                   { value: "190+", label: "Countries" },
-                  { value: "50K+", label: "Happy Travelers" },
+                  { value: "Growing", label: "Community" },
                   { value: "24/7", label: "Support" },
                   { value: "< 2min", label: "Activation" },
                 ].map((stat, i) => (

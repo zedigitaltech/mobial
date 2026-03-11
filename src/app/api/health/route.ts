@@ -49,7 +49,7 @@ export async function GET(): Promise<NextResponse<HealthResponse>> {
   if (missingVars.length > 0) {
     checks.environment = {
       status: 'missing_vars',
-      missingVars,
+      ...(process.env.NODE_ENV !== 'production' && { missingVars }),
     };
   }
 
@@ -64,7 +64,7 @@ export async function GET(): Promise<NextResponse<HealthResponse>> {
   } catch (error) {
     checks.database = {
       status: 'down',
-      error: error instanceof Error ? error.message : 'Unknown error',
+      ...(process.env.NODE_ENV !== 'production' && { error: error instanceof Error ? error.message : 'Unknown error' }),
     };
   }
 
@@ -101,7 +101,7 @@ export async function GET(): Promise<NextResponse<HealthResponse>> {
     } catch (error) {
       checks.mobimatter = {
         status: 'down',
-        error: error instanceof Error ? error.message : 'Unknown error',
+        ...(process.env.NODE_ENV !== 'production' && { error: error instanceof Error ? error.message : 'Unknown error' }),
       };
     }
   }

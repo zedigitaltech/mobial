@@ -159,7 +159,7 @@ export default function CheckoutPage() {
       const orderNumber = orderData.data.order.orderNumber
 
       // Store order reference for success page
-      sessionStorage.setItem("mobial_pending_order", JSON.stringify({ orderId, orderNumber }))
+      sessionStorage.setItem("mobial_pending_order", JSON.stringify({ orderId, orderNumber, email: email.trim() }))
 
       // 2. Create Stripe checkout session
       const sessionRes = await fetch("/api/checkout/session", {

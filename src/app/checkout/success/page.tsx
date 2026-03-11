@@ -72,10 +72,12 @@ export default function CheckoutSuccessPage() {
         }
 
         let orderIdentifier: string | null = null
+        let orderEmail: string | null = null
 
         if (pendingRaw) {
-          const pending = JSON.parse(pendingRaw) as { orderId: string; orderNumber: string }
+          const pending = JSON.parse(pendingRaw) as { orderId: string; orderNumber: string; email?: string }
           orderIdentifier = pending.orderNumber
+          orderEmail = pending.email || null
           sessionStorage.removeItem("mobial_pending_order")
         }
 
@@ -83,8 +85,9 @@ export default function CheckoutSuccessPage() {
           throw new Error("Unable to locate your order. Please check your email for confirmation details.")
         }
 
-        // Fetch the full order details by order number
-        const orderRes = await fetch(`/api/orders/${orderIdentifier}`)
+        // Fetch the full order details by order number, including email for guest verification
+        const emailParam = orderEmail ? `?email=${encodeURIComponent(orderEmail)}` : ""
+        const orderRes = await fetch(`/api/orders/${orderIdentifier}${emailParam}`)
         const orderData = await orderRes.json()
 
         if (!orderRes.ok || !orderData.success) {
