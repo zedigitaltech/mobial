@@ -534,7 +534,130 @@ model RateLimitLog {
   requestCount          Int      @default(1)
   windowStart           DateTime @default(now())
   blockedAt             DateTime?
-  
+
   @@index([identifier, endpoint])
   @@index([windowStart])
+}
+
+// ==================== MONITORING & ANALYTICS ====================
+
+model ErrorLog {
+  id            String        @id @default(cuid())
+
+  // Error classification
+  level         ErrorLevel    @default(ERROR)
+  source        ErrorSource   @default(SERVER)
+
+  // Error details
+  message       String
+  stack         String?
+  digest        String?       // Next.js error digest for deduplication
+
+  // Request context
+  path          String?       // URL path where error occurred
+  method        String?       // HTTP method (GET, POST, etc.)
+  statusCode    Int?          // HTTP status code if applicable
+
+  // User context
+  userId        String?
+  ipAddress     String?
+  userAgent     String?
+
+  // Additional data
+  metadata      String?       // JSON — request body, headers, etc.
+
+  // Deduplication
+  fingerprint   String?       // Hash of message + stack for grouping
+  occurrences   Int           @default(1)
+  lastSeenAt    DateTime      @default(now())
+
+  // Resolution
+  resolved      Boolean       @default(false)
+  resolvedAt    DateTime?
+  resolvedBy    String?
+
+  createdAt     DateTime      @default(now())
+
+  @@index([level])
+  @@index([source])
+  @@index([fingerprint])
+  @@index([resolved])
+  @@index([createdAt])
+  @@index([path])
+}
+
+enum ErrorLevel {
+  DEBUG
+  INFO
+  WARNING
+  ERROR
+  CRITICAL
+}
+
+enum ErrorSource {
+  SERVER      // API routes, server components, services
+  CLIENT      // Browser-side errors
+  MIDDLEWARE  // Middleware errors
+  CRON        // Scheduled job errors
+  WEBHOOK     // Webhook processing errors
+}
+
+model PageView {
+  id            String   @id @default(cuid())
+
+  // Page info
+  path          String
+  referrer      String?
+
+  // Visitor info
+  sessionId     String        // Anonymous session identifier
+  userId        String?       // If logged in
+  ipAddress     String?
+  userAgent     String?
+
+  // Device/browser
+  device        String?       // mobile, tablet, desktop
+  browser       String?       // chrome, safari, firefox, etc.
+  os            String?       // windows, macos, ios, android, etc.
+  country       String?       // Detected from IP or Accept-Language
+
+  // Performance
+  loadTimeMs    Int?          // Page load time in milliseconds
+
+  createdAt     DateTime      @default(now())
+
+  @@index([path])
+  @@index([sessionId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([country])
+}
+
+model AnalyticsEvent {
+  id            String   @id @default(cuid())
+
+  // Event identification
+  name          String        // e.g., product_view, add_to_cart, checkout_start, purchase
+  category      String?       // e.g., ecommerce, engagement, navigation
+
+  // Event data
+  properties    String?       // JSON — event-specific data (productId, price, etc.)
+  value         Float?        // Numeric value (e.g., order total, product price)
+
+  // Visitor info
+  sessionId     String
+  userId        String?
+  ipAddress     String?
+
+  // Context
+  path          String?       // Page where event occurred
+
+  createdAt     DateTime      @default(now())
+
+  @@index([name])
+  @@index([category])
+  @@index([sessionId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([name, createdAt])
 }

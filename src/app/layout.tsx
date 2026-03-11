@@ -11,6 +11,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { CartProvider } from "@/contexts/cart-context"
 import { CurrencyProvider } from "@/contexts/currency-context"
 import { NotificationPrompt } from "@/components/common/notification-prompt"
+import { MonitoringProvider } from "@/components/providers/monitoring-provider"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -95,9 +96,11 @@ export default async function RootLayout({
               >
                 <CurrencyProvider>
                   <CartProvider>
-                    {children}
-                    <NotificationPrompt />
-                    <Toaster position="top-center" expand={true} richColors />
+                    <MonitoringProvider>
+                      {children}
+                      <NotificationPrompt />
+                      <Toaster position="top-center" expand={true} richColors />
+                    </MonitoringProvider>
                   </CartProvider>
                 </CurrencyProvider>
               </ThemeProvider>
