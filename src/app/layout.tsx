@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next"
+import { headers } from "next/headers"
 import { Inter, JetBrains_Mono } from "next/font/google"
 import "./globals.css"
 import { NextIntlClientProvider } from "next-intl"
@@ -77,6 +78,7 @@ export default async function RootLayout({
 }>) {
   const locale = await getLocale()
   const messages = await getMessages()
+  const nonce = (await headers()).get("x-nonce") ?? undefined
 
   return (
     <html lang={locale} suppressHydrationWarning className="dark">
@@ -89,6 +91,7 @@ export default async function RootLayout({
                 defaultTheme="dark"
                 enableSystem={false}
                 disableTransitionOnChange
+                nonce={nonce}
               >
                 <CurrencyProvider>
                   <CartProvider>

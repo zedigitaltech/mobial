@@ -25,23 +25,37 @@ function getTokenFromRequest(request: NextRequest): string | null {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const response = NextResponse.next();
+  // Generate a cryptographic nonce for this request
+  const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
 
   const cspHeader = `
     default-src 'self';
-    script-src 'self' 'unsafe-inline' https://js.stripe.com;
+    script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://js.stripe.com;
     style-src 'self' 'unsafe-inline';
     img-src 'self' blob: data: https://api.mobimatter.com https://mobimatterstorage.blob.core.windows.net https://api.qrserver.com;
     font-src 'self' data:;
     object-src 'none';
     base-uri 'self';
     form-action 'self';
+    connect-src 'self' https://api.stripe.com https://checkout.stripe.com;
     frame-src https://checkout.stripe.com https://js.stripe.com;
     frame-ancestors 'none';
     block-all-mixed-content;
     upgrade-insecure-requests;
   `.replace(/\s{2,}/g, ' ').trim();
 
+  // Pass nonce to Next.js via request headers so it can add it to inline scripts
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set('Content-Security-Policy', cspHeader);
+
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+
+  // Set CSP on the response
   response.headers.set('Content-Security-Policy', cspHeader);
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('X-Content-Type-Options', 'nosniff');
@@ -50,6 +64,7 @@ export async function middleware(request: NextRequest) {
   response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
   response.headers.set('X-XSS-Protection', '1; mode=block');
 
+  // Admin route protection
   const isProtectedPath = pathname.startsWith('/admin') ||
                           pathname.startsWith('/api/admin');
 
