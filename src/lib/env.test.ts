@@ -42,8 +42,7 @@ describe("validateEnv", () => {
 
   beforeEach(() => {
     vi.resetModules()
-    process.env = { ...originalEnv }
-    process.env.NODE_ENV = "development"
+    process.env = { ...originalEnv, NODE_ENV: "development" }
   })
 
   afterEach(() => {

@@ -316,3 +316,137 @@ export async function sendWelcome(
     return { success: false, error: message };
   }
 }
+
+export async function sendInstallationReminder(
+  email: string,
+  orderNumber: string,
+  productName: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const html = layout(`
+      <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#ffffff;">Time to install your eSIM</h1>
+      <p style="margin:0 0 24px;font-size:14px;color:#9ca3af;line-height:1.6;">
+        Your <strong style="color:#ffffff;">${productName}</strong> eSIM (order ${orderNumber}) is ready to install.
+        Follow these steps to get connected:
+      </p>
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+        <tr>
+          <td style="padding:16px;background:rgba(255,255,255,0.03);border-radius:12px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="padding:8px 0;color:#e5e7eb;font-size:14px;line-height:1.6;">
+                  <strong style="color:#4da6e8;">1.</strong> Open your email with the QR code on your phone
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:8px 0;color:#e5e7eb;font-size:14px;line-height:1.6;">
+                  <strong style="color:#4da6e8;">2.</strong> Go to Settings &rarr; Cellular &rarr; Add eSIM
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:8px 0;color:#e5e7eb;font-size:14px;line-height:1.6;">
+                  <strong style="color:#4da6e8;">3.</strong> Scan the QR code or enter the activation code
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:8px 0;color:#e5e7eb;font-size:14px;line-height:1.6;">
+                  <strong style="color:#4da6e8;">4.</strong> Turn on the eSIM when you arrive at your destination
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+
+      ${button(`${BASE_URL}/guides/installation`, 'Full Installation Guide')}
+
+      <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.6;">
+        Having trouble? Visit our <a href="${BASE_URL}/troubleshooting" style="color:#4da6e8;text-decoration:none;">troubleshooting page</a> or reply to this email.
+      </p>
+    `);
+
+    const result = await sendEmail({
+      to: email,
+      subject: `Install your eSIM - Order ${orderNumber}`,
+      html,
+    });
+
+    return { success: result.success, error: result.error };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to send installation reminder';
+    console.error('[EmailService] sendInstallationReminder error:', message);
+    return { success: false, error: message };
+  }
+}
+
+export async function sendFeedbackRequest(
+  email: string,
+  orderNumber: string,
+  productName: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const html = layout(`
+      <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#ffffff;">How was your experience?</h1>
+      <p style="margin:0 0 24px;font-size:14px;color:#9ca3af;line-height:1.6;">
+        You recently used <strong style="color:#ffffff;">${productName}</strong> (order ${orderNumber}).
+        We'd love to hear how it went!
+      </p>
+
+      <p style="margin:0 0 16px;font-size:14px;color:#9ca3af;line-height:1.6;">
+        Your feedback helps other travelers choose the right plan, and helps us improve our service.
+      </p>
+
+      ${button(`${BASE_URL}/reviews?order=${orderNumber}`, 'Leave a Review')}
+
+      <p style="margin:24px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">
+        Planning another trip? <a href="${BASE_URL}/esim" style="color:#4da6e8;text-decoration:none;">Browse plans for your next destination</a>.
+      </p>
+    `);
+
+    const result = await sendEmail({
+      to: email,
+      subject: `How was your eSIM experience? - MobiaL`,
+      html,
+    });
+
+    return { success: result.success, error: result.error };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to send feedback request';
+    console.error('[EmailService] sendFeedbackRequest error:', message);
+    return { success: false, error: message };
+  }
+}
+
+export async function sendTravelAgainReminder(
+  email: string,
+  lastDestination: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const html = layout(`
+      <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#ffffff;">Traveling again?</h1>
+      <p style="margin:0 0 24px;font-size:14px;color:#9ca3af;line-height:1.6;">
+        Last time you used MobiaL for your trip to <strong style="color:#ffffff;">${lastDestination}</strong>.
+        Planning your next adventure? We have plans for 190+ countries.
+      </p>
+
+      ${button(`${BASE_URL}/esim`, 'Browse Destinations')}
+
+      <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.6;">
+        Don't forget: you can install your eSIM before you travel, so you're connected the moment you land.
+      </p>
+    `);
+
+    const result = await sendEmail({
+      to: email,
+      subject: 'Planning your next trip? Stay connected with MobiaL',
+      html,
+    });
+
+    return { success: result.success, error: result.error };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to send travel reminder';
+    console.error('[EmailService] sendTravelAgainReminder error:', message);
+    return { success: false, error: message };
+  }
+}

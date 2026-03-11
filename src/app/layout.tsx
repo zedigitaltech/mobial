@@ -12,6 +12,7 @@ import { CartProvider } from "@/contexts/cart-context"
 import { CurrencyProvider } from "@/contexts/currency-context"
 import { CompareProvider } from "@/contexts/compare-context"
 import { CompareBar, CompareDrawer } from "@/components/store/compare-drawer"
+import { ChatWidget } from "@/components/common/chat-widget"
 import { NotificationPrompt } from "@/components/common/notification-prompt"
 import { MonitoringProvider } from "@/components/providers/monitoring-provider"
 
@@ -103,6 +104,7 @@ export default async function RootLayout({
                         {children}
                         <CompareBar />
                         <CompareDrawer />
+                        <ChatWidget />
                         <NotificationPrompt />
                         <Toaster position="top-center" expand={true} richColors />
                       </MonitoringProvider>

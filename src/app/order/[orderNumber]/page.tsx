@@ -43,6 +43,67 @@ interface OrderData {
   items: Array<{ productName: string }>
 }
 
+const ORDER_STEPS = [
+  { key: "PENDING", label: "Ordered" },
+  { key: "PROCESSING", label: "Processing" },
+  { key: "COMPLETED", label: "Active" },
+] as const
+
+function OrderProgress({ status }: { status: string }) {
+  const currentIndex = ORDER_STEPS.findIndex((s) => s.key === status)
+  const activeIndex = currentIndex >= 0 ? currentIndex : 0
+  const isFailed = status === "FAILED" || status === "CANCELLED"
+
+  return (
+    <div className="flex items-center gap-2 mb-2">
+      {ORDER_STEPS.map((step, i) => {
+        const isActive = i <= activeIndex && !isFailed
+        const isCurrent = i === activeIndex && !isFailed
+        return (
+          <div key={step.key} className="flex items-center gap-2 flex-1">
+            <div className="flex items-center gap-2 flex-1">
+              <div
+                className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                  isCurrent
+                    ? "bg-primary text-primary-foreground"
+                    : isActive
+                      ? "bg-emerald-500/20 text-emerald-400"
+                      : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {isActive && i < activeIndex ? (
+                  <Check className="h-4 w-4" />
+                ) : (
+                  i + 1
+                )}
+              </div>
+              <span
+                className={`text-xs font-bold ${
+                  isCurrent ? "text-primary" : isActive ? "text-foreground" : "text-muted-foreground"
+                }`}
+              >
+                {step.label}
+              </span>
+            </div>
+            {i < ORDER_STEPS.length - 1 && (
+              <div
+                className={`h-0.5 flex-1 rounded-full ${
+                  i < activeIndex && !isFailed ? "bg-emerald-500/40" : "bg-muted"
+                }`}
+              />
+            )}
+          </div>
+        )
+      })}
+      {isFailed && (
+        <Badge variant="destructive" className="ml-2">
+          {status}
+        </Badge>
+      )}
+    </div>
+  )
+}
+
 export default function OrderSuccessPage() {
   const { orderNumber } = useParams()
   const [order, setOrder] = useState<OrderData | null>(null)
@@ -114,10 +175,9 @@ export default function OrderSuccessPage() {
             {/* Left: Status & Activation */}
             <div className="lg:col-span-3 space-y-8">
               <header className="space-y-4">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">
-                  <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                  Order {order.status}
-                </div>
+                {/* Order Progress */}
+                <OrderProgress status={order.status} />
+
                 <h1 className="text-4xl md:text-5xl font-black tracking-tight leading-[1.1]">
                   Your Connectivity <br />is <span className="text-primary italic">Ready.</span>
                 </h1>
