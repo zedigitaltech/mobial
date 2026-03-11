@@ -22,11 +22,13 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
   const [currency, setCurrencyState] = useState(DEFAULT_CURRENCY)
   const [rates, setRates] = useState<Record<string, number>>({ USD: 1 })
   const [isLoading, setIsLoading] = useState(false)
+  const [isMounted, setIsMounted] = useState(false)
 
-  // Load saved currency preference
+  // Load saved currency preference after hydration
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY)
     if (saved) setCurrencyState(saved)
+    setIsMounted(true)
   }, [])
 
   // Fetch exchange rates
@@ -71,22 +73,24 @@ export function CurrencyProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, code)
   }, [])
 
+  const activeCurrency = isMounted ? currency : DEFAULT_CURRENCY
+
   const formatPrice = useCallback(
-    (amountUsd: number) => formatPriceFn(amountUsd, currency, rates),
-    [currency, rates]
+    (amountUsd: number) => formatPriceFn(amountUsd, activeCurrency, rates),
+    [activeCurrency, rates]
   )
 
   const convertPrice = useCallback(
     (amountUsd: number) => {
-      const rate = rates[currency] || 1
+      const rate = rates[activeCurrency] || 1
       return amountUsd * rate
     },
-    [currency, rates]
+    [activeCurrency, rates]
   )
 
   return (
     <CurrencyContext.Provider
-      value={{ currency, setCurrency, rates, formatPrice, convertPrice, isLoading }}
+      value={{ currency: activeCurrency, setCurrency, rates, formatPrice, convertPrice, isLoading }}
     >
       {children}
     </CurrencyContext.Provider>
