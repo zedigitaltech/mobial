@@ -1,11 +1,22 @@
 import { NextRequest } from "next/server"
 import { claimTrial, hasClaimedTrial } from "@/services/trial-service"
 import { logger } from "@/lib/logger"
+import { checkRateLimit, createRateLimitHeaders } from "@/lib/rate-limit"
 
 const log = logger.child("api:free-trial")
 
 export async function POST(request: NextRequest) {
   try {
+    const ip =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
+    const rateLimit = await checkRateLimit(ip, "api:write")
+    if (!rateLimit.success) {
+      return Response.json(
+        { success: false, error: "Too many requests. Please try again later." },
+        { status: 429, headers: createRateLimitHeaders(rateLimit) }
+      )
+    }
+
     const body = await request.json()
     const { email, destination } = body
 

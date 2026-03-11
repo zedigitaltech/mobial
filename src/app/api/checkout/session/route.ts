@@ -1,12 +1,13 @@
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { 
-  successResponse, 
-  errorResponse, 
-  parseJsonBody 
+import {
+  successResponse,
+  errorResponse,
+  parseJsonBody
 } from '@/lib/auth-helpers';
 import { getOrderById } from '@/services/order-service';
 import { createCheckoutSession } from '@/lib/stripe';
+import { checkRateLimit, createRateLimitHeaders } from '@/lib/rate-limit';
 
 const checkoutSessionSchema = z.object({
   orderId: z.string().min(1, 'Order ID is required'),
@@ -16,6 +17,12 @@ const checkoutSessionSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const rateLimit = await checkRateLimit(ip, 'order:create');
+    if (!rateLimit.success) {
+      return errorResponse('Too many checkout attempts. Please try again later.', 429);
+    }
+
     const body = await parseJsonBody(request);
     const validation = checkoutSessionSchema.safeParse(body);
 

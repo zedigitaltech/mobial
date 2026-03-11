@@ -1,9 +1,23 @@
 import { NextRequest } from "next/server"
 import { db } from "@/lib/db"
 import { randomBytes } from "crypto"
+import { checkRateLimit } from "@/lib/rate-limit"
+import { logger } from "@/lib/logger"
+
+const log = logger.child("api:cart-recovery")
 
 export async function POST(request: NextRequest) {
   try {
+    const ip =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
+    const rateLimit = await checkRateLimit(ip, "api:write")
+    if (!rateLimit.success) {
+      return Response.json(
+        { success: false, error: "Too many requests" },
+        { status: 429 }
+      )
+    }
+
     const body = await request.json()
     const { email, cartItems, totalAmount, sessionId } = body
 
@@ -51,7 +65,7 @@ export async function POST(request: NextRequest) {
 
     return Response.json({ success: true })
   } catch (error) {
-    console.error("Cart recovery save error:", error)
+    log.errorWithException("Cart recovery save failed", error)
     return Response.json(
       { success: false, error: "Failed to save cart" },
       { status: 500 }
