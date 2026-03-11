@@ -1,50 +1,49 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { X, Download, Smartphone } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { usePWA } from "@/hooks/use-pwa"
 
+function isDismissedInStorage(): boolean {
+  if (typeof window === "undefined") return true
+  const wasDismissed = localStorage.getItem("mobial_install_dismissed")
+  if (!wasDismissed) return false
+  const dismissedAt = parseInt(wasDismissed, 10)
+  return Date.now() - dismissedAt < 7 * 24 * 60 * 60 * 1000
+}
+
 export function InstallPrompt() {
   const { canInstall, isPWA, promptInstall } = usePWA()
-  const [dismissed, setDismissed] = useState(true)
   const [visible, setVisible] = useState(false)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
-    if (isPWA) return
-
-    const wasDismissed = localStorage.getItem("mobial_install_dismissed")
-    if (wasDismissed) {
-      const dismissedAt = parseInt(wasDismissed, 10)
-      // Show again after 7 days
-      if (Date.now() - dismissedAt < 7 * 24 * 60 * 60 * 1000) return
+    if (isPWA || isDismissedInStorage() || !canInstall) {
+      return
     }
 
-    setDismissed(false)
-
     // Show after user has browsed for 30 seconds
-    const timer = setTimeout(() => {
-      if (canInstall) setVisible(true)
+    timerRef.current = setTimeout(() => {
+      setVisible(true)
     }, 30000)
 
-    return () => clearTimeout(timer)
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
   }, [canInstall, isPWA])
 
-  useEffect(() => {
-    if (!dismissed && canInstall) setVisible(true)
-  }, [canInstall, dismissed])
-
-  const handleDismiss = () => {
+  const handleDismiss = useCallback(() => {
     setVisible(false)
     localStorage.setItem("mobial_install_dismissed", Date.now().toString())
-  }
+  }, [])
 
-  const handleInstall = async () => {
+  const handleInstall = useCallback(async () => {
     const accepted = await promptInstall()
     if (accepted) {
       setVisible(false)
     }
-  }
+  }, [promptInstall])
 
   if (!visible || isPWA) return null
 
