@@ -5,7 +5,7 @@
 
 import { db } from '@/lib/db';
 import { logAudit } from '@/lib/audit';
-import { createOrder as mobimatterCreateOrder, completeOrder as mobimatterCompleteOrder, getOrderStatus } from '@/lib/mobimatter';
+import { createOrder as mobimatterCreateOrder, completeOrder as mobimatterCompleteOrder, getOrderInfo as mobimatterGetOrderInfo } from '@/lib/mobimatter';
 import { Prisma, OrderStatus, PaymentStatus } from '@prisma/client';
 
 // Types
@@ -343,27 +343,27 @@ export async function processOrderWithMobimatter(
       activationCode?: string;
       smdpAddress?: string;
       iccid?: string;
+      kycUrl?: string;
       error?: string;
     }> = [];
 
     for (const item of order.items) {
       try {
-        // Step 1: Create order (pending)
+        // Step 1: Create order (pending, amount authorized from wallet)
         const pendingOrder = await mobimatterCreateOrder({
           productId: item.product.mobimatterId,
-          quantity: item.quantity,
-          customerEmail: order.email,
-          customerPhone: order.phone || undefined,
+          productCategory: 'esim_realtime',
+          label: order.orderNumber,
         });
 
-        // Step 2: Complete order (fulfill and get eSIM details)
+        // Step 2: Complete order (fulfills and returns eSIM details)
         const fulfilledOrder = await mobimatterCompleteOrder(pendingOrder.orderId);
 
-        // Extract eSIM details from the first line item
-        const lineItem = fulfilledOrder.lineItems?.[0];
+        // Extract eSIM details from the line item
+        const lineItem = fulfilledOrder.lineItem;
 
         if (!lineItem) {
-          throw new Error(`Order ${pendingOrder.orderId} completed but no line items returned`);
+          throw new Error(`Order ${pendingOrder.orderId} completed but no line item returned`);
         }
 
         // Update order item with eSIM details
@@ -382,6 +382,7 @@ export async function processOrderWithMobimatter(
           activationCode: lineItem.activationCode,
           smdpAddress: lineItem.smdpAddress,
           iccid: lineItem.iccid,
+          kycUrl: lineItem.kycUrl,
         });
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
@@ -414,17 +415,21 @@ export async function processOrderWithMobimatter(
     // Get the first MobiMatter order ID (for tracking)
     const primaryResult = mobimatterResults[0];
 
+    // Determine final status: if KYC required, stay in PROCESSING
+    const isKycPending = primaryResult?.kycUrl;
+    const finalStatus = isKycPending ? 'PROCESSING' : 'COMPLETED';
+
     // Update order with MobiMatter details
     const updatedOrder = await db.order.update({
       where: { id: orderId },
       data: {
-        status: 'COMPLETED',
+        status: finalStatus,
         mobimatterOrderId: primaryResult?.orderId,
-        mobimatterStatus: 'COMPLETED',
+        mobimatterStatus: isKycPending ? 'PROCESSING' : 'COMPLETED',
         esimQrCode: primaryResult?.qrCode,
         esimActivationCode: primaryResult?.activationCode,
         esimSmdpAddress: primaryResult?.smdpAddress,
-        completedAt: new Date(),
+        completedAt: isKycPending ? undefined : new Date(),
       },
     });
 

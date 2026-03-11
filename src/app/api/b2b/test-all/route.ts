@@ -9,7 +9,6 @@ import {
   fetchProducts,
   createOrder,
   completeOrder,
-  getOrderInfo,
   notifyUser,
 } from '@/lib/mobimatter';
 
@@ -32,7 +31,7 @@ export async function GET(request: NextRequest) {
     // Test 2: Get Products
     console.log('Testing get products...');
     try {
-      const products = await fetchProducts({ limit: 5 });
+      const products = await fetchProducts({ country: 'US' });
       results.products = {
         success: true,
         data: {
@@ -42,6 +41,8 @@ export async function GET(request: NextRequest) {
             name: p.name,
             price: p.price,
             provider: p.provider,
+            rank: p.rank,
+            productCategory: p.productCategory,
           })),
         },
       };
@@ -55,24 +56,22 @@ export async function GET(request: NextRequest) {
     // Test 3: Create Test Order (using test product if available)
     console.log('Testing create order...');
     try {
-      // Use a test product ID if available
-      const testProductId = '75b98dc7-c026-48c1-9fee-465681382d39'; // Test 1GB product
-      
+      const testProductId = '75b98dc7-c026-48c1-9fee-465681382d39';
+
       const order = await createOrder({
         productId: testProductId,
-        quantity: 1,
-        customerEmail: 'test@example.com',
+        productCategory: 'esim_realtime',
+        label: 'test-order',
       });
-      
+
       results.createOrder = {
         success: true,
         data: {
           orderId: order.orderId,
-          status: order.status,
         },
       };
 
-      // Test 4: Complete Order (if create succeeded)
+      // Test 4: Complete Order
       console.log('Testing complete order...');
       try {
         const completedOrder = await completeOrder(order.orderId);
@@ -80,21 +79,23 @@ export async function GET(request: NextRequest) {
           success: true,
           data: {
             orderId: completedOrder.orderId,
-            status: completedOrder.status,
-            hasQrCode: !!completedOrder.qrCode,
+            orderState: completedOrder.orderState,
+            hasQrCode: !!completedOrder.lineItem?.qrCode,
+            hasIccid: !!completedOrder.lineItem?.iccid,
           },
         };
 
-        // Test 5: Notify User (if complete succeeded)
+        // Test 5: Notify User
         console.log('Testing notify user...');
         try {
-          const notification = await notifyUser(
+          await notifyUser(
             completedOrder.orderId,
+            'Test User',
             'test@example.com'
           );
           results.notifyUser = {
             success: true,
-            data: notification,
+            data: { sent: true },
           };
         } catch (error) {
           results.notifyUser = {

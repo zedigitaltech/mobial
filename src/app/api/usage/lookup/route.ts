@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { successResponse, errorResponse } from '@/lib/auth-helpers';
-import { checkOrderUsage, getOrderByIccid } from '@/lib/mobimatter';
+import { getOrderByIccid, getStructuredUsage } from '@/lib/mobimatter';
 import { db } from '@/lib/db';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { logAudit } from '@/lib/audit';
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
       try {
         const orderInfo = await getOrderByIccid(trimmedValue);
         mobimatterOrderId = orderInfo.orderId;
-        iccid = orderInfo.iccid || trimmedValue;
+        iccid = orderInfo.lineItem?.iccid || trimmedValue;
       } catch {
         return errorResponse('No eSIM found with this ICCID', 404);
       }
@@ -89,12 +89,33 @@ export async function POST(request: NextRequest) {
       return errorResponse('Could not find eSIM data', 404);
     }
 
-    // Fetch live usage from MobiMatter
-    const usage = await checkOrderUsage(mobimatterOrderId);
+    // Fetch structured usage from MobiMatter
+    const usage = await getStructuredUsage(mobimatterOrderId);
 
-    const percentage = usage.dataTotal > 0
-      ? Math.min(100, Math.round((usage.dataUsed / usage.dataTotal) * 100))
+    // Aggregate usage across all packages
+    let totalDataMb = 0;
+    let usedDataMb = 0;
+    let latestExpiration: string | null = null;
+
+    for (const pkg of usage.packages) {
+      if (pkg.totalAllowanceMb) totalDataMb += pkg.totalAllowanceMb;
+      if (pkg.usedMb) usedDataMb += pkg.usedMb;
+      if (pkg.expirationDate) {
+        if (!latestExpiration || pkg.expirationDate > latestExpiration) {
+          latestExpiration = pkg.expirationDate;
+        }
+      }
+    }
+
+    const percentage = totalDataMb > 0
+      ? Math.min(100, Math.round((usedDataMb / totalDataMb) * 100))
       : 0;
+
+    const remainingDays = latestExpiration
+      ? Math.max(0, Math.ceil((new Date(latestExpiration).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+      : null;
+
+    const isActive = usage.esimStatus === 'Installed';
 
     await logAudit({
       action: 'usage_lookup',
@@ -108,13 +129,14 @@ export async function POST(request: NextRequest) {
       orderId: mobimatterOrderId,
       orderNumber,
       iccid: iccid || usage.iccid,
-      dataUsed: usage.dataUsed,
-      dataTotal: usage.dataTotal,
+      dataUsed: usedDataMb,
+      dataTotal: totalDataMb,
       dataUnit: 'MB',
       percentage,
-      remainingDays: usage.validityDaysRemaining,
-      isActive: usage.status === 'active',
-      status: usage.status,
+      remainingDays,
+      isActive,
+      status: isActive ? 'active' : usage.esimStatus === 'Available' ? 'not_activated' : 'expired',
+      packages: usage.packages,
     });
   } catch (error) {
     console.error('Usage lookup error:', error);

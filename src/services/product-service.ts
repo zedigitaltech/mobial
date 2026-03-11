@@ -132,26 +132,31 @@ function transformMobimatterProduct(raw: {
   id: string;
   name: string;
   provider: string;
-  providerLogo?: string;
-  description?: string;
+  providerLogo?: string | null;
+  description?: string | null;
   countries?: string[];
   regions?: string[];
-  dataAmount?: number;
-  dataUnit?: string;
-  validityDays?: number;
+  dataAmount?: number | null;
+  dataUnit?: string | null;
+  validityDays?: number | null;
   price: number;
+  wholesalePrice: number;
   currency: string;
   features?: string[];
   isUnlimited: boolean;
   supportsHotspot: boolean;
   supportsCalls: boolean;
   supportsSms: boolean;
-  networkType?: string;
-  activationPolicy?: string;
-  ipRouting?: string;
-  speedInfo?: string;
+  networkType?: string | null;
+  activationPolicy?: string | null;
+  ipRouting?: string | null;
+  speedInfo?: string | null;
   topUpAvailable?: boolean;
   usageTracking?: boolean;
+  rank?: number;
+  productCategory?: string;
+  productFamilyId?: string;
+  productFamilyName?: string;
 }): Prisma.ProductCreateInput {
   return {
     mobimatterId: raw.id,
@@ -159,7 +164,7 @@ function transformMobimatterProduct(raw: {
     description: raw.description || null,
     provider: raw.provider,
     providerLogo: raw.providerLogo || null,
-    category: null,
+    category: raw.productCategory || null,
     countries: raw.countries ? JSON.stringify(raw.countries) : null,
     regions: raw.regions ? JSON.stringify(raw.regions) : null,
     dataAmount: raw.dataAmount || null,
@@ -167,7 +172,7 @@ function transformMobimatterProduct(raw: {
     validityDays: raw.validityDays || null,
     price: raw.price,
     currency: raw.currency || 'USD',
-    originalPrice: null,
+    originalPrice: raw.wholesalePrice || null,
     features: raw.features ? JSON.stringify(raw.features) : null,
     isUnlimited: raw.isUnlimited,
     supportsHotspot: raw.supportsHotspot,
@@ -195,6 +200,7 @@ function parseProductJsonFields(product: {
   name: string;
   description: string | null;
   provider: string;
+  providerLogo: string | null;
   category: string | null;
   countries: string | null;
   regions: string | null;
@@ -214,6 +220,13 @@ function parseProductJsonFields(product: {
   slug: string;
   metaTitle: string | null;
   metaDescription: string | null;
+  networks: string | null;
+  activationPolicy: string | null;
+  topUpAvailable: boolean;
+  networkType: string | null;
+  speedInfo: string | null;
+  ipRouting: string | null;
+  usageTracking: boolean;
   createdAt: Date;
   updatedAt: Date;
   syncedAt: Date | null;
@@ -263,6 +276,7 @@ export async function syncProductsFromMobimatter(): Promise<SyncResult> {
               description: rawProduct.description || existing.description,
               provider: rawProduct.provider,
               providerLogo: rawProduct.providerLogo || existing.providerLogo,
+              category: rawProduct.productCategory || existing.category,
               countries: rawProduct.countries ? JSON.stringify(rawProduct.countries) : existing.countries,
               regions: rawProduct.regions ? JSON.stringify(rawProduct.regions) : existing.regions,
               dataAmount: rawProduct.dataAmount ?? existing.dataAmount,
@@ -270,6 +284,7 @@ export async function syncProductsFromMobimatter(): Promise<SyncResult> {
               validityDays: rawProduct.validityDays ?? existing.validityDays,
               price: rawProduct.price,
               currency: rawProduct.currency || existing.currency,
+              originalPrice: rawProduct.wholesalePrice || existing.originalPrice,
               features: rawProduct.features ? JSON.stringify(rawProduct.features) : existing.features,
               isUnlimited: rawProduct.isUnlimited,
               supportsHotspot: rawProduct.supportsHotspot,

@@ -4,7 +4,7 @@ import {
   errorResponse,
   getAuthUser
 } from '@/lib/auth-helpers';
-import { checkOrderUsage } from '@/lib/mobimatter';
+import { getStructuredUsage } from '@/lib/mobimatter';
 import { db } from '@/lib/db';
 
 interface RouteParams {
@@ -53,20 +53,45 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return errorResponse('Order not fulfilled yet', 400);
     }
 
-    // Fetch live usage from MobiMatter
-    const usage = await checkOrderUsage(order.mobimatterOrderId);
+    // Fetch structured usage from MobiMatter
+    const usage = await getStructuredUsage(order.mobimatterOrderId);
 
-    // Calculate percentage
-    const percentage = usage.dataTotal > 0
-      ? Math.min(100, Math.round((usage.dataUsed / usage.dataTotal) * 100))
+    // Aggregate usage across all packages
+    let totalDataMb = 0;
+    let usedDataMb = 0;
+    let latestExpiration: string | null = null;
+
+    for (const pkg of usage.packages) {
+      if (pkg.totalAllowanceMb) totalDataMb += pkg.totalAllowanceMb;
+      if (pkg.usedMb) usedDataMb += pkg.usedMb;
+      if (pkg.expirationDate) {
+        if (!latestExpiration || pkg.expirationDate > latestExpiration) {
+          latestExpiration = pkg.expirationDate;
+        }
+      }
+    }
+
+    const percentage = totalDataMb > 0
+      ? Math.min(100, Math.round((usedDataMb / totalDataMb) * 100))
       : 0;
 
+    const remainingDays = latestExpiration
+      ? Math.max(0, Math.ceil((new Date(latestExpiration).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+      : null;
+
+    const isActive = usage.esimStatus === 'Installed';
+
     return successResponse({
-      ...usage,
-      percentage,
-      isActive: usage.status === 'active',
-      remainingDays: usage.validityDaysRemaining,
+      orderId: order.mobimatterOrderId,
+      iccid: usage.iccid,
+      dataUsed: usedDataMb,
+      dataTotal: totalDataMb,
       dataUnit: 'MB',
+      percentage,
+      isActive,
+      remainingDays,
+      status: isActive ? 'active' : usage.esimStatus === 'Available' ? 'not_activated' : 'expired',
+      packages: usage.packages,
     });
 
   } catch (error) {

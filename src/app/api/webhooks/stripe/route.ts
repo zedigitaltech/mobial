@@ -4,6 +4,7 @@ import { stripe } from '@/lib/stripe';
 import { db } from '@/lib/db';
 import { processOrderWithMobimatter } from '@/services/order-service';
 import { topupOrder } from '@/lib/mobimatter';
+import type { OrderResponse } from '@/lib/mobimatter';
 import { logAudit } from '@/lib/audit';
 import { sendOrderConfirmation } from '@/services/email-service';
 
@@ -65,18 +66,21 @@ export async function POST(request: NextRequest) {
               throw new Error('Top-up order missing product data');
             }
 
-            const topupResult = await topupOrder({
-              orderId: parentMobimatterOrderId,
-              productId: order.items[0].product.mobimatterId,
-              quantity: order.items[0].quantity,
+            const topupResult: OrderResponse = await topupOrder({
+              originalOrderId: parentMobimatterOrderId,
+              topupProductId: order.items[0].product.mobimatterId,
+              label: order.orderNumber,
             });
 
             await db.order.update({
               where: { id: orderId },
               data: {
                 status: 'COMPLETED',
-                mobimatterOrderId: topupResult.orderId || parentMobimatterOrderId,
-                mobimatterStatus: 'COMPLETED',
+                mobimatterOrderId: topupResult.orderId,
+                mobimatterStatus: topupResult.orderState,
+                esimQrCode: topupResult.lineItem?.qrCode || undefined,
+                esimActivationCode: topupResult.lineItem?.activationCode || undefined,
+                esimSmdpAddress: topupResult.lineItem?.smdpAddress || undefined,
                 completedAt: new Date(),
               },
             });

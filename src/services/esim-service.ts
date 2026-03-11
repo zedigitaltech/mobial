@@ -4,7 +4,7 @@
  */
 
 import { db } from '@/lib/db';
-import { getOrderStatus } from '@/lib/mobimatter';
+import { getOrderInfo } from '@/lib/mobimatter';
 
 // Types
 export interface ESIMDetails {
@@ -392,31 +392,30 @@ export async function syncESIMStatus(orderId: string): Promise<{
       return { success: false, error: 'Order not found or no MobiMatter order ID' };
     }
 
-    const status = await getOrderStatus(order.mobimatterOrderId);
+    const orderInfo = await getOrderInfo(order.mobimatterOrderId);
 
     // Update order with latest status
     await db.order.update({
       where: { id: orderId },
       data: {
-        mobimatterStatus: status.status,
-        // Update eSIM details if provided
-        ...(status.qrCode && { esimQrCode: status.qrCode }),
-        ...(status.activationCode && { esimActivationCode: status.activationCode }),
-        ...(status.smdpAddress && { esimSmdpAddress: status.smdpAddress }),
+        mobimatterStatus: orderInfo.orderState,
+        ...(orderInfo.lineItem?.qrCode && { esimQrCode: orderInfo.lineItem.qrCode }),
+        ...(orderInfo.lineItem?.activationCode && { esimActivationCode: orderInfo.lineItem.activationCode }),
+        ...(orderInfo.lineItem?.smdpAddress && { esimSmdpAddress: orderInfo.lineItem.smdpAddress }),
       },
     });
 
     // Update order item ICCID if available
-    if (status.iccid) {
+    if (orderInfo.lineItem?.iccid) {
       await db.orderItem.updateMany({
         where: { orderId },
-        data: { esimIccid: status.iccid },
+        data: { esimIccid: orderInfo.lineItem.iccid },
       });
     }
 
     return {
       success: true,
-      status: status.status,
+      status: orderInfo.orderState,
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
