@@ -18,6 +18,8 @@ export interface CreateOrderData {
   items: CreateOrderItem[];
   email: string;
   phone?: string;
+  isTopUp?: boolean;
+  parentMobimatterOrderId?: string;
 }
 
 export interface OrderTotals {
@@ -217,6 +219,8 @@ export async function createOrder(
         discount: totals.discount,
         tax: totals.tax,
         total: totals.total,
+        isTopUp: data.isTopUp || false,
+        parentOrderId: data.parentMobimatterOrderId || null,
         ipAddress,
         userAgent,
       },

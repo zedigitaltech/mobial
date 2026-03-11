@@ -16,7 +16,8 @@ import {
   Globe,
   Gift,
   HelpCircle,
-  Info
+  TrendingUp,
+  Zap,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -31,9 +32,10 @@ import {
 
 const navigation = [
   { name: "Products", href: "/products", icon: Globe },
+  { name: "Check Usage", href: "/check-usage", icon: TrendingUp },
+  { name: "Top Up", href: "/topup", icon: Zap },
   { name: "Referrals", href: "/referrals", icon: Gift },
   { name: "How It Works", href: "/#how-it-works", icon: HelpCircle },
-  { name: "About", href: "/about", icon: Info },
 ]
 
 interface MobileNavProps {

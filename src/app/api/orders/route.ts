@@ -35,6 +35,8 @@ const createOrderSchema = z.object({
   phone: z.string().optional(),
   affiliateCode: z.string().optional(),
   affiliateClickId: z.string().optional(),
+  isTopUp: z.boolean().optional(),
+  parentMobimatterOrderId: z.string().optional(),
 });
 
 // Validation schema for query params
@@ -69,7 +71,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { items, email, phone, affiliateCode, affiliateClickId } = validationResult.data;
+    const { items, email, phone, affiliateCode, affiliateClickId, isTopUp, parentMobimatterOrderId } = validationResult.data;
 
     // Check if user is authenticated (optional)
     const user = await getAuthUser(request);
@@ -86,6 +88,8 @@ export async function POST(request: NextRequest) {
         phone,
         affiliateCode,
         affiliateClickId,
+        isTopUp,
+        parentMobimatterOrderId,
       },
       user?.id,
       ipAddress,

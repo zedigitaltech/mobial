@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { stripe } from '@/lib/stripe';
 import { db } from '@/lib/db';
 import { processOrderWithMobimatter } from '@/services/order-service';
+import { topupOrder } from '@/lib/mobimatter';
 import { logAudit } from '@/lib/audit';
 import { sendOrderConfirmation } from '@/services/email-service';
 
@@ -33,6 +34,8 @@ export async function POST(request: NextRequest) {
       case 'checkout.session.completed': {
         const session = event.data.object;
         const orderId = session.client_reference_id;
+        const isTopUp = session.metadata?.isTopUp === 'true';
+        const parentMobimatterOrderId = session.metadata?.parentMobimatterOrderId;
 
         if (!orderId) {
           console.error('No orderId found in session metadata');
@@ -50,39 +53,102 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        // 2. Trigger MobiMatter Fulfillment (Little Bro in action)
-        // This is where the magic happens - it calls the two-step API we fixed earlier
-        const fulfillment = await processOrderWithMobimatter(orderId, 'SYSTEM_WEBHOOK');
+        if (isTopUp && parentMobimatterOrderId) {
+          // TOP-UP FLOW: Call MobiMatter's topup endpoint
+          try {
+            const order = await db.order.findUnique({
+              where: { id: orderId },
+              include: { items: { include: { product: { select: { mobimatterId: true } } } } },
+            });
 
-        if (!fulfillment.success) {
-          console.error(`Fulfillment failed for order ${orderId}:`, fulfillment.error);
+            if (!order || !order.items[0]?.product?.mobimatterId) {
+              throw new Error('Top-up order missing product data');
+            }
+
+            const topupResult = await topupOrder({
+              orderId: parentMobimatterOrderId,
+              productId: order.items[0].product.mobimatterId,
+              quantity: order.items[0].quantity,
+            });
+
+            await db.order.update({
+              where: { id: orderId },
+              data: {
+                status: 'COMPLETED',
+                mobimatterOrderId: topupResult.orderId || parentMobimatterOrderId,
+                mobimatterStatus: 'COMPLETED',
+                completedAt: new Date(),
+              },
+            });
+
+            if (order) {
+              await sendOrderConfirmation(
+                order.email,
+                order.orderNumber,
+                order.items.map(item => ({
+                  name: `Top-Up: ${item.productName}`,
+                  quantity: item.quantity,
+                  price: item.unitPrice,
+                })),
+                order.total
+              );
+            }
+
+            await logAudit({
+              action: 'topup_payment_success',
+              entity: 'order',
+              entityId: orderId,
+              newValues: { sessionId: session.id, parentMobimatterOrderId, success: true }
+            });
+          } catch (error) {
+            console.error(`Top-up fulfillment failed for order ${orderId}:`, error);
+
+            await db.order.update({
+              where: { id: orderId },
+              data: { status: 'FAILED', mobimatterStatus: 'FAILED' },
+            });
+
+            await logAudit({
+              action: 'topup_payment_failed',
+              entity: 'order',
+              entityId: orderId,
+              newValues: { sessionId: session.id, error: error instanceof Error ? error.message : 'Unknown' }
+            });
+          }
+        } else {
+          // STANDARD FLOW: Create + Complete order via MobiMatter
+          const fulfillment = await processOrderWithMobimatter(orderId, 'SYSTEM_WEBHOOK');
+
+          if (!fulfillment.success) {
+            console.error(`Fulfillment failed for order ${orderId}:`, fulfillment.error);
+          }
+
+          // Send order confirmation email
+          const order = await db.order.findUnique({
+            where: { id: orderId },
+            include: { items: true },
+          });
+
+          if (order) {
+            await sendOrderConfirmation(
+              order.email,
+              order.orderNumber,
+              order.items.map(item => ({
+                name: item.productName,
+                quantity: item.quantity,
+                price: item.unitPrice,
+              })),
+              order.total
+            );
+          }
+
+          await logAudit({
+            action: 'stripe_payment_success',
+            entity: 'order',
+            entityId: orderId,
+            newValues: { sessionId: session.id, fulfillment: fulfillment.success }
+          });
         }
-
-        // 3. Send order confirmation email
-        const order = await db.order.findUnique({
-          where: { id: orderId },
-          include: { items: true },
-        });
-
-        if (order) {
-          await sendOrderConfirmation(
-            order.email,
-            order.orderNumber,
-            order.items.map(item => ({
-              name: item.productName,
-              quantity: item.quantity,
-              price: item.unitPrice,
-            })),
-            order.total
-          );
-        }
-
-        await logAudit({
-          action: 'stripe_payment_success',
-          entity: 'order',
-          entityId: orderId,
-          newValues: { sessionId: session.id, fulfillment: fulfillment.success }
-        });
 
         break;
       }

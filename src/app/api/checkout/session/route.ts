@@ -10,6 +10,8 @@ import { createCheckoutSession } from '@/lib/stripe';
 
 const checkoutSessionSchema = z.object({
   orderId: z.string().min(1, 'Order ID is required'),
+  isTopUp: z.boolean().optional(),
+  parentMobimatterOrderId: z.string().optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -21,7 +23,7 @@ export async function POST(request: NextRequest) {
       return errorResponse(validation.error.issues[0].message, 400);
     }
 
-    const { orderId } = validation.data;
+    const { orderId, isTopUp, parentMobimatterOrderId } = validation.data;
 
     // 1. Fetch the order
     const order = await getOrderById(orderId);
@@ -39,8 +41,10 @@ export async function POST(request: NextRequest) {
       orderNumber: order.orderNumber,
       email: order.email,
       amount: order.total,
+      isTopUp,
+      parentMobimatterOrderId,
       items: order.items.map(item => ({
-        name: item.productName,
+        name: isTopUp ? `Top-Up: ${item.productName}` : item.productName,
         amount: item.unitPrice,
         quantity: item.quantity
       }))

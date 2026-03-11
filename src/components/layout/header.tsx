@@ -35,8 +35,9 @@ import { LanguageSwitcher } from "@/components/common/language-switcher"
 
 const navigation = [
   { name: "Products", href: "/products" },
+  { name: "Check Usage", href: "/check-usage" },
+  { name: "Top Up", href: "/topup" },
   { name: "How It Works", href: "/#how-it-works" },
-  { name: "About", href: "/#about" },
 ]
 
 export function Header() {

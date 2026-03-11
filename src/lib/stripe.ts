@@ -18,6 +18,8 @@ export async function createCheckoutSession(params: {
   email: string;
   amount: number;
   currency?: string;
+  isTopUp?: boolean;
+  parentMobimatterOrderId?: string;
   items: Array<{
     name: string;
     description?: string;
@@ -25,7 +27,7 @@ export async function createCheckoutSession(params: {
     quantity: number;
   }>;
 }) {
-  const { orderId, orderNumber, email, amount, currency = 'usd', items } = params;
+  const { orderId, orderNumber, email, amount, currency = 'usd', isTopUp, parentMobimatterOrderId, items } = params;
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
@@ -34,6 +36,8 @@ export async function createCheckoutSession(params: {
     metadata: {
       orderId,
       orderNumber,
+      ...(isTopUp && { isTopUp: 'true' }),
+      ...(parentMobimatterOrderId && { parentMobimatterOrderId }),
     },
     line_items: items.map((item) => ({
       price_data: {

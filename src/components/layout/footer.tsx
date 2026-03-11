@@ -16,15 +16,15 @@ import { Separator } from "@/components/ui/separator"
 const footerLinks = {
   product: [
     { name: "eSIM Products", href: "/products" },
-    { name: "Regional eSIMs", href: "/products?region=europe" },
-    { name: "Global eSIMs", href: "/products?region=global" },
-    { name: "How It Works", href: "/#how-it-works" },
+    { name: "Check Usage", href: "/check-usage" },
+    { name: "Top Up eSIM", href: "/topup" },
+    { name: "Compatible Devices", href: "/compatible-devices" },
   ],
   company: [
     { name: "About Us", href: "/about" },
     { name: "Contact", href: "/contact" },
     { name: "FAQ", href: "/faq" },
-    { name: "How It Works", href: "/#how-it-works" },
+    { name: "Blog", href: "/blog" },
   ],
   legal: [
     { name: "Privacy Policy", href: "/privacy" },
