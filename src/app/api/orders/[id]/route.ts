@@ -57,10 +57,25 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       }
     } else {
       // Guest user - only allow access via order number
-      // This provides a basic level of security through obscurity
-      // In production, you might want a separate access token
       if (order.id === id && order.orderNumber !== id) {
         return errorResponse('Authentication required', 401);
+      }
+
+      const email = request.nextUrl.searchParams.get('email');
+
+      if (!email) {
+        return successResponse({
+          order: {
+            orderNumber: order.orderNumber,
+            status: order.status,
+            paymentStatus: order.paymentStatus,
+            createdAt: order.createdAt,
+          },
+        });
+      }
+
+      if (email.toLowerCase() !== order.email?.toLowerCase()) {
+        return errorResponse('Access denied', 403);
       }
     }
 
