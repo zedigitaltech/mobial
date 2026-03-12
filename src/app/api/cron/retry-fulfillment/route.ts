@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { processOrderWithMobimatter } from '@/services/order-service';
 import { logAudit } from '@/lib/audit';
+import { sendAdminAlert } from '@/services/email-service';
 
 const MAX_RETRIES = 5;
 
@@ -77,6 +78,23 @@ export async function GET(request: NextRequest) {
               orderNumber: order.orderNumber,
             },
           });
+        }
+
+        // Alert admin when fulfillment keeps failing after 3+ retries
+        if (!result.success && order.retryCount + 1 >= 3) {
+          sendAdminAlert({
+            type: 'fulfillment_failure',
+            subject: `Order ${order.orderNumber} failed fulfillment after ${order.retryCount + 1} retries`,
+            details: {
+              orderId: order.id,
+              orderNumber: order.orderNumber,
+              retryCount: order.retryCount + 1,
+              error: result.error || 'Unknown error',
+              maxRetries: MAX_RETRIES,
+            },
+          }).catch((err) =>
+            console.error('[Retry Cron] Failed to send admin alert:', err)
+          );
         }
       } catch (error) {
         results.push({
