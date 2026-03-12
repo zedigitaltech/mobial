@@ -49,7 +49,7 @@
   --primary: oklch(0.65 0.12 210); /* Cold Signal Blue */
   --primary-foreground: oklch(0.12 0.015 220);
   
-  --border: oklch(0.25 0.02 220 / 0.5);
+  --border: oklch(0.25 0.02 220 / 0.6);
   --input: oklch(0.2 0.02 220);
   --ring: oklch(0.65 0.12 210 / 0.3);
   
@@ -85,6 +85,11 @@
 
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-br from-white to-white/60;
+  }
+
+  .text-micro {
+    font-size: 0.625rem;
+    line-height: 1rem;
   }
 }
 
