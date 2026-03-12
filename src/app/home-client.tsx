@@ -15,21 +15,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/components/providers/auth-provider"
 import { CurrencySelector } from "@/components/common/currency-selector"
 import { useCurrency } from "@/contexts/currency-context"
+import { HomeProduct } from "@/types/product"
 import Link from "next/link"
 
-interface Product {
-  id: string
-  name: string
-  slug: string
-  provider: string
-  price: number
-  dataAmount: number | null
-  validityDays: number | null
-  countries: string[]
-  networkType: string | null
-  topUpAvailable: boolean
-  providerLogo: string | null
-}
+type Product = HomeProduct
 
 export function ProductsSection({
   popularProducts,
