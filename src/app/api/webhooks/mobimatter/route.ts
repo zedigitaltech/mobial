@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { logAudit } from '@/lib/audit';
 import { secureCompare } from '@/lib/encryption';
+import { encryptEsimField } from '@/lib/esim-encryption';
 
 interface MobiMatterWebhookPayload {
   eventType: string;
@@ -127,9 +128,9 @@ async function handleOrderCompleted(payload: MobiMatterWebhookPayload) {
     data: {
       status: 'COMPLETED',
       mobimatterStatus: 'COMPLETED',
-      esimQrCode: payload.qrCode || order.esimQrCode,
-      esimActivationCode: payload.activationCode || order.esimActivationCode,
-      esimSmdpAddress: payload.smdpAddress || order.esimSmdpAddress,
+      esimQrCode: payload.qrCode ? encryptEsimField(payload.qrCode) : order.esimQrCode,
+      esimActivationCode: payload.activationCode ? encryptEsimField(payload.activationCode) : order.esimActivationCode,
+      esimSmdpAddress: payload.smdpAddress ? encryptEsimField(payload.smdpAddress) : order.esimSmdpAddress,
       completedAt: new Date(),
     },
   });
@@ -139,7 +140,7 @@ async function handleOrderCompleted(payload: MobiMatterWebhookPayload) {
       where: { id: order.items[0].id },
       data: {
         esimIccid: payload.iccid,
-        esimQrCode: payload.qrCode || undefined,
+        esimQrCode: encryptEsimField(payload.qrCode),
       },
     });
   }

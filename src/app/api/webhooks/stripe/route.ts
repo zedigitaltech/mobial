@@ -7,6 +7,7 @@ import { topupOrder } from '@/lib/mobimatter';
 import type { OrderResponse } from '@/lib/mobimatter';
 import { logAudit } from '@/lib/audit';
 import { sendOrderConfirmation } from '@/services/email-service';
+import { encryptEsimField } from '@/lib/esim-encryption';
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -78,9 +79,9 @@ export async function POST(request: NextRequest) {
                 status: 'COMPLETED',
                 mobimatterOrderId: topupResult.orderId,
                 mobimatterStatus: topupResult.orderState,
-                esimQrCode: topupResult.lineItem?.qrCode || undefined,
-                esimActivationCode: topupResult.lineItem?.activationCode || undefined,
-                esimSmdpAddress: topupResult.lineItem?.smdpAddress || undefined,
+                esimQrCode: encryptEsimField(topupResult.lineItem?.qrCode),
+                esimActivationCode: encryptEsimField(topupResult.lineItem?.activationCode),
+                esimSmdpAddress: encryptEsimField(topupResult.lineItem?.smdpAddress),
                 completedAt: new Date(),
               },
             });

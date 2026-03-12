@@ -7,6 +7,7 @@ import crypto from 'crypto';
 import { db } from '@/lib/db';
 import { logAudit } from '@/lib/audit';
 import { createOrder as mobimatterCreateOrder, completeOrder as mobimatterCompleteOrder } from '@/lib/mobimatter';
+import { encryptEsimField } from '@/lib/esim-encryption';
 import { Prisma, OrderStatus, PaymentStatus } from '@prisma/client';
 
 // Types
@@ -373,7 +374,7 @@ export async function processOrderWithMobimatter(
         await db.orderItem.update({
           where: { id: item.id },
           data: {
-            esimQrCode: lineItem.qrCode,
+            esimQrCode: encryptEsimField(lineItem.qrCode),
             esimIccid: lineItem.iccid,
           },
         });
@@ -434,9 +435,9 @@ export async function processOrderWithMobimatter(
         status: finalStatus,
         mobimatterOrderId: primaryResult?.orderId,
         mobimatterStatus: isKycPending ? 'PROCESSING' : 'COMPLETED',
-        esimQrCode: qrCodeValue,
-        esimActivationCode: primaryResult?.activationCode,
-        esimSmdpAddress: primaryResult?.smdpAddress,
+        esimQrCode: encryptEsimField(qrCodeValue),
+        esimActivationCode: encryptEsimField(primaryResult?.activationCode),
+        esimSmdpAddress: encryptEsimField(primaryResult?.smdpAddress),
         completedAt: isKycPending ? undefined : new Date(),
       },
     });

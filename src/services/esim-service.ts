@@ -5,6 +5,7 @@
 
 import { db } from '@/lib/db';
 import { getOrderInfo } from '@/lib/mobimatter';
+import { encryptEsimField, decryptEsimField } from '@/lib/esim-encryption';
 
 // Types
 export interface ESIMDetails {
@@ -72,10 +73,10 @@ export async function getESIMDetails(orderId: string): Promise<ESIMDetails | nul
   }
 
   return {
-    iccid: firstItem.esimIccid || order.esimActivationCode || '',
-    qrCode: firstItem.esimQrCode || order.esimQrCode || '',
-    activationCode: order.esimActivationCode || undefined,
-    smdpAddress: order.esimSmdpAddress || undefined,
+    iccid: firstItem.esimIccid || decryptEsimField(order.esimActivationCode) || '',
+    qrCode: decryptEsimField(firstItem.esimQrCode) || decryptEsimField(order.esimQrCode) || '',
+    activationCode: decryptEsimField(order.esimActivationCode) || undefined,
+    smdpAddress: decryptEsimField(order.esimSmdpAddress) || undefined,
     status,
     product: {
       name: firstItem.product.name,
@@ -128,10 +129,10 @@ export async function getESIMDetailsForItem(orderItemId: string): Promise<ESIMDe
   }
 
   return {
-    iccid: orderItem.esimIccid || orderItem.order.esimActivationCode || '',
-    qrCode: orderItem.esimQrCode || '',
-    activationCode: orderItem.order.esimActivationCode || undefined,
-    smdpAddress: orderItem.order.esimSmdpAddress || undefined,
+    iccid: orderItem.esimIccid || decryptEsimField(orderItem.order.esimActivationCode) || '',
+    qrCode: decryptEsimField(orderItem.esimQrCode) || '',
+    activationCode: decryptEsimField(orderItem.order.esimActivationCode) || undefined,
+    smdpAddress: decryptEsimField(orderItem.order.esimSmdpAddress) || undefined,
     status,
     product: {
       name: orderItem.product.name,
@@ -365,7 +366,7 @@ export async function getUserESIMs(userId: string): Promise<Array<{
     order.items.map((item) => ({
       orderId: order.id,
       orderNumber: order.orderNumber,
-      iccid: item.esimIccid || order.esimActivationCode || '',
+      iccid: item.esimIccid || decryptEsimField(order.esimActivationCode) || '',
       status: order.status,
       productName: item.productName,
       provider: item.product.provider,
@@ -399,9 +400,9 @@ export async function syncESIMStatus(orderId: string): Promise<{
       where: { id: orderId },
       data: {
         mobimatterStatus: orderInfo.orderState,
-        ...(orderInfo.lineItem?.qrCode && { esimQrCode: orderInfo.lineItem.qrCode }),
-        ...(orderInfo.lineItem?.activationCode && { esimActivationCode: orderInfo.lineItem.activationCode }),
-        ...(orderInfo.lineItem?.smdpAddress && { esimSmdpAddress: orderInfo.lineItem.smdpAddress }),
+        ...(orderInfo.lineItem?.qrCode && { esimQrCode: encryptEsimField(orderInfo.lineItem.qrCode) }),
+        ...(orderInfo.lineItem?.activationCode && { esimActivationCode: encryptEsimField(orderInfo.lineItem.activationCode) }),
+        ...(orderInfo.lineItem?.smdpAddress && { esimSmdpAddress: encryptEsimField(orderInfo.lineItem.smdpAddress) }),
       },
     });
 
