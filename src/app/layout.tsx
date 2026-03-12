@@ -19,13 +19,13 @@ import { MonitoringProvider } from "@/components/providers/monitoring-provider"
 import { CookieConsent } from "@/components/gdpr/cookie-consent"
 
 const inter = Inter({
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext", "cyrillic", "greek"],
   variable: "--font-inter",
   display: "swap",
 })
 
 const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
+  subsets: ["latin", "latin-ext", "cyrillic", "greek"],
   variable: "--font-jetbrains",
   display: "swap",
 })

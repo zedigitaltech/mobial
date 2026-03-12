@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const SUPPORTED_LOCALES = ['en', 'de', 'es', 'fr'];
+import { SUPPORTED_LOCALES } from '@/i18n/locale';
 
 export async function POST(request: NextRequest) {
   try {
     const { locale } = await request.json();
 
-    if (!locale || !SUPPORTED_LOCALES.includes(locale)) {
+    if (!locale || !(SUPPORTED_LOCALES as readonly string[]).includes(locale)) {
       return NextResponse.json(
-        { error: 'Invalid locale. Supported: en, de, es, fr' },
+        { error: `Invalid locale. Supported: ${SUPPORTED_LOCALES.join(', ')}` },
         { status: 400 }
       );
     }

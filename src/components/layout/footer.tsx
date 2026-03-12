@@ -9,39 +9,42 @@ import {
   Facebook
 } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
-
-const footerLinks = {
-  product: [
-    { name: "eSIM Products", href: "/products" },
-    { name: "Check Usage", href: "/check-usage" },
-    { name: "Top Up eSIM", href: "/topup" },
-    { name: "Compatible Devices", href: "/compatible-devices" },
-  ],
-  support: [
-    { name: "FAQ", href: "/faq" },
-    { name: "Troubleshooting", href: "/troubleshooting" },
-    { name: "Contact", href: "/contact" },
-    { name: "Installation Guide", href: "/guides/installation" },
-  ],
-  company: [
-    { name: "About Us", href: "/about" },
-    { name: "Blog", href: "/blog" },
-    { name: "Referral Program", href: "/referrals" },
-  ],
-  legal: [
-    { name: "Privacy Policy", href: "/privacy" },
-    { name: "Terms of Service", href: "/terms" },
-    { name: "Refund Policy", href: "/refund-policy" },
-    { name: "Cookie Policy", href: "/cookies" },
-  ],
-}
+import { getTranslations } from "next-intl/server"
 
 const socialLinks = [
   { name: "Twitter", icon: Twitter, href: "https://x.com/mobial_esim" },
   { name: "Facebook", icon: Facebook, href: "https://facebook.com/mobial" },
 ]
 
-export function Footer() {
+export async function Footer() {
+  const t = await getTranslations('footer')
+
+  const footerLinks = {
+    product: [
+      { name: t('esimProducts'), href: "/products" },
+      { name: t('checkUsage'), href: "/check-usage" },
+      { name: t('topUpEsim'), href: "/topup" },
+      { name: t('compatibleDevices'), href: "/compatible-devices" },
+    ],
+    support: [
+      { name: t('faq'), href: "/faq" },
+      { name: t('troubleshooting'), href: "/troubleshooting" },
+      { name: t('contact'), href: "/contact" },
+      { name: t('installationGuide'), href: "/guides/installation" },
+    ],
+    company: [
+      { name: t('aboutUs'), href: "/about" },
+      { name: t('blog'), href: "/blog" },
+      { name: t('referralProgram'), href: "/referrals" },
+    ],
+    legal: [
+      { name: t('privacyPolicy'), href: "/privacy" },
+      { name: t('termsOfService'), href: "/terms" },
+      { name: t('refundPolicy'), href: "/refund-policy" },
+      { name: t('cookiePolicy'), href: "/cookies" },
+    ],
+  }
+
   return (
     <footer className="bg-muted/30 border-t">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -53,25 +56,24 @@ export function Footer() {
               <Image src="/logo.png" alt="MobiaL" width={120} height={40} className="h-10 w-auto" />
             </Link>
             <p className="text-sm text-muted-foreground mb-4">
-              Your trusted partner for affordable eSIM solutions worldwide.
-              Stay connected wherever you go.
+              {t('tagline')}
             </p>
             <div className="flex items-center space-x-2 text-sm text-muted-foreground">
               <Shield className="h-4 w-4 text-primary" />
-              <span>GDPR Compliant</span>
+              <span>{t('gdprCompliant')}</span>
             </div>
             <div className="flex items-center space-x-2 text-sm text-muted-foreground mt-2">
               <Lock className="h-4 w-4 text-primary" />
-              <span>Secure Payments</span>
+              <span>{t('securePayments')}</span>
             </div>
           </div>
 
           {/* Product Links */}
           <div>
-            <h3 className="font-semibold mb-4">Products</h3>
+            <h3 className="font-semibold mb-4">{t('products')}</h3>
             <ul className="space-y-2">
               {footerLinks.product.map((link) => (
-                <li key={link.name}>
+                <li key={link.href}>
                   <Link
                     href={link.href}
                     className="text-sm text-muted-foreground hover:text-primary transition-colors"
@@ -85,10 +87,10 @@ export function Footer() {
 
           {/* Support Links */}
           <div>
-            <h3 className="font-semibold mb-4">Support</h3>
+            <h3 className="font-semibold mb-4">{t('support')}</h3>
             <ul className="space-y-2">
               {footerLinks.support.map((link) => (
-                <li key={link.name}>
+                <li key={link.href}>
                   <Link
                     href={link.href}
                     className="text-sm text-muted-foreground hover:text-primary transition-colors"
@@ -102,10 +104,10 @@ export function Footer() {
 
           {/* Company Links */}
           <div>
-            <h3 className="font-semibold mb-4">Company</h3>
+            <h3 className="font-semibold mb-4">{t('company')}</h3>
             <ul className="space-y-2">
               {footerLinks.company.map((link) => (
-                <li key={link.name}>
+                <li key={link.href}>
                   <Link
                     href={link.href}
                     className="text-sm text-muted-foreground hover:text-primary transition-colors"
@@ -119,36 +121,36 @@ export function Footer() {
 
           {/* Destinations */}
           <div>
-            <h3 className="font-semibold mb-4">Destinations</h3>
+            <h3 className="font-semibold mb-4">{t('destinations')}</h3>
             <ul className="space-y-2">
               <li>
                 <Link href="/esim/region/europe" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  eSIM for Europe
+                  {t('esimForEurope')}
                 </Link>
               </li>
               <li>
                 <Link href="/esim/region/asia" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  eSIM for Asia
+                  {t('esimForAsia')}
                 </Link>
               </li>
               <li>
                 <Link href="/esim/region/americas" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  eSIM for Americas
+                  {t('esimForAmericas')}
                 </Link>
               </li>
               <li>
                 <Link href="/esim/region/middle-east" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  eSIM for Middle East
+                  {t('esimForMiddleEast')}
                 </Link>
               </li>
               <li>
                 <Link href="/esim/region/oceania" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  eSIM for Oceania
+                  {t('esimForOceania')}
                 </Link>
               </li>
               <li>
                 <Link href="/esim/region/africa" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  eSIM for Africa
+                  {t('esimForAfrica')}
                 </Link>
               </li>
             </ul>
@@ -156,10 +158,10 @@ export function Footer() {
 
           {/* Legal & Social */}
           <div>
-            <h3 className="font-semibold mb-4">Legal</h3>
+            <h3 className="font-semibold mb-4">{t('legal')}</h3>
             <ul className="space-y-2 mb-6">
               {footerLinks.legal.map((link) => (
-                <li key={link.name}>
+                <li key={link.href}>
                   <Link
                     href={link.href}
                     className="text-sm text-muted-foreground hover:text-primary transition-colors"
@@ -171,7 +173,7 @@ export function Footer() {
             </ul>
 
             {/* Social Links */}
-            <h3 className="font-semibold mb-3">Follow Us</h3>
+            <h3 className="font-semibold mb-3">{t('followUs')}</h3>
             <div className="flex space-x-3">
               {socialLinks.map((social) => (
                 <Link
@@ -192,12 +194,12 @@ export function Footer() {
         {/* Bottom Footer */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground text-center sm:text-left">
-            &copy; {new Date().getFullYear()} MobiaL. All rights reserved. Powered by MobiMatter.
+            {t('copyright', { year: new Date().getFullYear() })}
           </p>
           <div className="flex items-center space-x-4 text-sm text-muted-foreground">
             <div className="flex items-center space-x-1">
               <Globe className="h-4 w-4" />
-              <span>Worldwide Coverage</span>
+              <span>{t('worldwide')}</span>
             </div>
             <span className="hidden sm:inline">&bull;</span>
             <div className="flex items-center space-x-1">

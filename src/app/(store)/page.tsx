@@ -18,28 +18,11 @@ import { DestinationSearch } from "@/components/common/destination-search"
 import { OrganizationJsonLd, WebSiteJsonLd, BreadcrumbJsonLd } from "@/components/common/json-ld"
 import { regions } from "@/lib/regions"
 import { getProducts } from "@/services/product-service"
+import { getTranslations } from "next-intl/server"
 import Link from "next/link"
 import { ProductsSection, CTASection, LazyReviewsSection } from "./home-client"
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://mobialo.eu"
-
-const STEPS = [
-  {
-    title: "Choose your destination",
-    description: "Search for your destination and pick the best plan for your needs.",
-    icon: Globe,
-  },
-  {
-    title: "Get your QR code",
-    description: "Receive your eSIM activation details instantly via email after payment.",
-    icon: Zap,
-  },
-  {
-    title: "Stay connected",
-    description: "Scan the QR code and enjoy high-speed data as soon as you land.",
-    icon: Wifi,
-  },
-]
 
 async function HomepageProducts() {
   const [popularResult, latestResult] = await Promise.all([
@@ -94,7 +77,26 @@ function ProductsSkeleton() {
   )
 }
 
-export default function HomePage() {
+export default async function HomePage() {
+  const t = await getTranslations('home')
+
+  const STEPS = [
+    {
+      title: t('step1Title'),
+      description: t('step1Desc'),
+      icon: Globe,
+    },
+    {
+      title: t('step2Title'),
+      description: t('step2Desc'),
+      icon: Zap,
+    },
+    {
+      title: t('step3Title'),
+      description: t('step3Desc'),
+      icon: Wifi,
+    },
+  ]
 
   return (
     <div className="selection:bg-primary/20">
@@ -114,17 +116,16 @@ export default function HomePage() {
             <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider">
                 <Star className="h-3 w-3 fill-current" />
-                Trusted eSIM Marketplace
+                {t('trustedBadge')}
               </div>
 
               <h1 className="text-5xl md:text-7xl font-black tracking-tight leading-[1.1]">
-                Your Global Travel <br />
-                <span className="text-primary italic">Connectivity</span> Partner
+                {t('heroTitleLine1')} <br />
+                <span className="text-primary italic">{t('heroTitleLine2')}</span> {t('heroTitleSuffix')}
               </h1>
 
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto font-medium">
-                High-speed eSIM data plans for 150+ countries.
-                No roaming fees. No physical SIMs. Instant activation.
+                {t('heroDescription')}
               </p>
 
               <DestinationSearch />
@@ -162,32 +163,32 @@ export default function HomePage() {
                 className="p-5 rounded-2xl bg-card border border-border/50 hover:shadow-lg hover:border-primary/20 transition-all group text-center"
               >
                 <BarChart3 className="h-7 w-7 text-primary mx-auto mb-2 group-hover:scale-110 transition-transform" />
-                <h3 className="font-bold text-sm">Check Usage</h3>
-                <p className="text-[10px] text-muted-foreground mt-1">Monitor your data</p>
+                <h3 className="font-bold text-sm">{t('quickCheckUsage')}</h3>
+                <p className="text-[10px] text-muted-foreground mt-1">{t('quickCheckUsageDesc')}</p>
               </Link>
               <Link
                 href="/topup"
                 className="p-5 rounded-2xl bg-card border border-border/50 hover:shadow-lg hover:border-primary/20 transition-all group text-center"
               >
                 <RefreshCw className="h-7 w-7 text-emerald-500 mx-auto mb-2 group-hover:scale-110 transition-transform" />
-                <h3 className="font-bold text-sm">Top Up eSIM</h3>
-                <p className="text-[10px] text-muted-foreground mt-1">Add more data</p>
+                <h3 className="font-bold text-sm">{t('quickTopUp')}</h3>
+                <p className="text-[10px] text-muted-foreground mt-1">{t('quickTopUpDesc')}</p>
               </Link>
               <Link
                 href="/esim"
                 className="p-5 rounded-2xl bg-card border border-border/50 hover:shadow-lg hover:border-primary/20 transition-all group text-center"
               >
                 <Globe className="h-7 w-7 text-blue-500 mx-auto mb-2 group-hover:scale-110 transition-transform" />
-                <h3 className="font-bold text-sm">Destinations</h3>
-                <p className="text-[10px] text-muted-foreground mt-1">150+ countries</p>
+                <h3 className="font-bold text-sm">{t('quickDestinations')}</h3>
+                <p className="text-[10px] text-muted-foreground mt-1">{t('quickDestinationsDesc')}</p>
               </Link>
               <Link
                 href="/compatible-devices"
                 className="p-5 rounded-2xl bg-card border border-border/50 hover:shadow-lg hover:border-primary/20 transition-all group text-center"
               >
                 <Smartphone className="h-7 w-7 text-amber-500 mx-auto mb-2 group-hover:scale-110 transition-transform" />
-                <h3 className="font-bold text-sm">Compatibility</h3>
-                <p className="text-[10px] text-muted-foreground mt-1">Check your device</p>
+                <h3 className="font-bold text-sm">{t('quickCompatibility')}</h3>
+                <p className="text-[10px] text-muted-foreground mt-1">{t('quickCompatibilityDesc')}</p>
               </Link>
             </div>
           </div>
@@ -205,20 +206,20 @@ export default function HomePage() {
               {[
                 {
                   icon: Zap,
-                  title: "Instant Delivery",
-                  description: "Receive your QR code in your inbox immediately after purchase. Ready to scan and go.",
+                  title: t('featureInstantTitle'),
+                  description: t('featureInstantDesc'),
                   color: "text-amber-500",
                 },
                 {
                   icon: Globe,
-                  title: "Global Coverage",
-                  description: "Connect in over 150 countries with our vast network of tier-1 carrier partners.",
+                  title: t('featureGlobalTitle'),
+                  description: t('featureGlobalDesc'),
                   color: "text-blue-500",
                 },
                 {
                   icon: ShieldCheck,
-                  title: "Secure & Reliable",
-                  description: "Bank-grade payment security and 24/7 technical support for your peace of mind.",
+                  title: t('featureSecureTitle'),
+                  description: t('featureSecureDesc'),
                   color: "text-primary",
                 },
               ].map((feature, i) => (
@@ -242,10 +243,10 @@ export default function HomePage() {
           <div className="container mx-auto px-4">
             <div className="text-center space-y-4 mb-12">
               <Badge className="bg-primary/10 text-primary border-0 px-4 py-1.5 text-xs font-black uppercase tracking-wider">
-                <Globe className="h-3 w-3 mr-1" /> Destinations
+                <Globe className="h-3 w-3 mr-1" /> {t('destinationsBadge')}
               </Badge>
               <h2 className="text-3xl md:text-4xl font-black tracking-tight">
-                Browse by <span className="text-primary italic">Region</span>
+                {t('browseByRegion')}
               </h2>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 max-w-5xl mx-auto">
@@ -260,7 +261,7 @@ export default function HomePage() {
                     {region.name}
                   </h3>
                   <p className="text-[10px] text-muted-foreground mt-1">
-                    {region.countries.length}+ countries
+                    {t('countriesCount', { count: region.countries.length })}
                   </p>
                 </Link>
               ))}
@@ -275,11 +276,11 @@ export default function HomePage() {
               <div className="flex-1 space-y-8">
                 <div className="space-y-4">
                   <Badge className="bg-primary/10 text-primary border-0 px-4 py-1.5 text-xs font-black uppercase">
-                    How it works
+                    {t('howItWorksBadge')}
                   </Badge>
                   <h2 className="text-4xl md:text-5xl font-black tracking-tight">
-                    Get connected in <br />
-                    <span className="text-primary italic">less than 2 minutes</span>
+                    {t('howItWorksTitle')} <br />
+                    <span className="text-primary italic">{t('howItWorksHighlight')}</span>
                   </h2>
                 </div>
 
@@ -350,10 +351,10 @@ export default function HomePage() {
               </div>
               <div className="flex-1 text-center md:text-left">
                 <h3 className="text-2xl font-black tracking-tight mb-2">
-                  Refer a friend, earn rewards
+                  {t('referralTitle')}
                 </h3>
                 <p className="text-muted-foreground max-w-lg">
-                  Share MobiaL with your travel buddies. You both get credits when they make their first purchase.
+                  {t('referralDesc')}
                 </p>
               </div>
               <Button
@@ -362,7 +363,7 @@ export default function HomePage() {
                 asChild
               >
                 <Link href="/referrals">
-                  Start Earning <ArrowRight className="ml-2 h-4 w-4" />
+                  {t('referralButton')} <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
             </div>

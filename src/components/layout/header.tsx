@@ -6,6 +6,7 @@ import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { motion } from "framer-motion"
 import { useTheme } from "next-themes"
+import { useTranslations } from "next-intl"
 import { useAuth } from "@/components/providers/auth-provider"
 import {
   Menu,
@@ -34,18 +35,19 @@ import { CartDrawer } from "@/components/store/cart-drawer"
 import { LanguageSwitcher } from "@/components/common/language-switcher"
 import { CurrencySelector } from "@/components/common/currency-selector"
 
-const navigation = [
-  { name: "Products", href: "/products" },
-  { name: "Destinations", href: "/esim" },
-  { name: "Check Usage", href: "/check-usage" },
-  { name: "Top Up", href: "/topup" },
-]
-
 export function Header() {
   const { theme, setTheme } = useTheme()
   const { user, logout, openAuthModal } = useAuth()
   const [mobileOpen, setMobileOpen] = useState(false)
   const pathname = usePathname()
+  const t = useTranslations('common')
+
+  const navigation = [
+    { name: t('products'), href: "/products" },
+    { name: t('destinations'), href: "/esim" },
+    { name: t('checkUsage'), href: "/check-usage" },
+    { name: t('topUp'), href: "/topup" },
+  ]
 
   const isActive = (href: string) => {
     if (href.startsWith("/")) {
@@ -78,7 +80,7 @@ export function Header() {
           <nav className="hidden md:flex items-center space-x-6">
             {navigation.map((item) => (
               <Link
-                key={item.name}
+                key={item.href}
                 href={item.href}
                 className={`text-sm font-medium transition-colors ${
                   isActive(item.href)
@@ -144,25 +146,25 @@ export function Header() {
                   <DropdownMenuItem asChild>
                     <Link href="/dashboard">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
-                      Dashboard
+                      {t('dashboard')}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/orders">
                       <Package className="mr-2 h-4 w-4" />
-                      My Orders
+                      {t('myOrders')}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
                     <Link href="/settings">
                       <Settings className="mr-2 h-4 w-4" />
-                      Settings
+                      {t('settings')}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem className="text-destructive cursor-pointer" onClick={logout}>
                     <LogOut className="mr-2 h-4 w-4" />
-                    Log out
+                    {t('logout')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -170,11 +172,11 @@ export function Header() {
               <div className="hidden sm:flex items-center space-x-2">
                 <Button variant="ghost" size="sm" onClick={() => openAuthModal("login")}>
                   <LogIn className="mr-2 h-4 w-4" />
-                  Login
+                  {t('login')}
                 </Button>
                 <Button size="sm" className="gradient-accent text-accent-foreground" onClick={() => openAuthModal("register")}>
                   <UserPlus className="mr-2 h-4 w-4" />
-                  Sign Up
+                  {t('signUp')}
                 </Button>
               </div>
             )}

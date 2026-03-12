@@ -3,6 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { useTheme } from "next-themes"
+import { useTranslations } from "next-intl"
 import { useAuth } from "@/components/providers/auth-provider"
 import {
   Sun,
@@ -23,21 +24,6 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { LanguageSwitcher } from "@/components/common/language-switcher"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-
-const navigation = [
-  { name: "Products", href: "/products", icon: Globe },
-  { name: "Check Usage", href: "/check-usage", icon: TrendingUp },
-  { name: "Top Up", href: "/topup", icon: Zap },
-  { name: "Referrals", href: "/referrals", icon: Gift },
-  { name: "How It Works", href: "/#how-it-works", icon: HelpCircle },
-]
 
 interface MobileNavProps {
   onClose?: () => void
@@ -46,6 +32,15 @@ interface MobileNavProps {
 export function MobileNav({ onClose }: MobileNavProps) {
   const { theme, setTheme } = useTheme()
   const { user, logout, openAuthModal } = useAuth()
+  const t = useTranslations('common')
+
+  const navigation = [
+    { name: t('products'), href: "/products", icon: Globe },
+    { name: t('checkUsage'), href: "/check-usage", icon: TrendingUp },
+    { name: t('topUp'), href: "/topup", icon: Zap },
+    { name: t('referrals'), href: "/referrals", icon: Gift },
+    { name: t('howItWorks'), href: "/#how-it-works", icon: HelpCircle },
+  ]
 
   return (
     <div className="flex flex-col h-full">
@@ -59,7 +54,7 @@ export function MobileNav({ onClose }: MobileNavProps) {
       <nav className="flex flex-col space-y-1">
         {navigation.map((item) => (
           <Link
-            key={item.name}
+            key={item.href}
             href={item.href}
             onClick={onClose}
             className="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
@@ -74,7 +69,7 @@ export function MobileNav({ onClose }: MobileNavProps) {
 
       {/* Theme Toggle */}
       <div className="flex items-center justify-between px-3 py-2">
-        <span className="text-sm font-medium text-muted-foreground">Theme</span>
+        <span className="text-sm font-medium text-muted-foreground">{t('theme')}</span>
         <Button
           variant="outline"
           size="sm"
@@ -83,12 +78,12 @@ export function MobileNav({ onClose }: MobileNavProps) {
           {theme === "dark" ? (
             <>
               <Sun className="h-4 w-4 mr-2" />
-              Light
+              {t('light')}
             </>
           ) : (
             <>
               <Moon className="h-4 w-4 mr-2" />
-              Dark
+              {t('dark')}
             </>
           )}
         </Button>
@@ -96,7 +91,7 @@ export function MobileNav({ onClose }: MobileNavProps) {
 
       {/* Language Switcher */}
       <div className="flex items-center justify-between px-3 py-2">
-        <span className="text-sm font-medium text-muted-foreground">Language</span>
+        <span className="text-sm font-medium text-muted-foreground">{t('language')}</span>
         <LanguageSwitcher triggerClassName="flex" />
       </div>
 
@@ -127,7 +122,7 @@ export function MobileNav({ onClose }: MobileNavProps) {
                 className="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
               >
                 <LayoutDashboard className="h-5 w-5" />
-                <span>Dashboard</span>
+                <span>{t('dashboard')}</span>
               </Link>
               <Link
                 href="/settings"
@@ -135,7 +130,7 @@ export function MobileNav({ onClose }: MobileNavProps) {
                 className="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
               >
                 <Settings className="h-5 w-5" />
-                <span>Settings</span>
+                <span>{t('settings')}</span>
               </Link>
               <button
                 className="flex items-center space-x-3 px-3 py-2.5 rounded-lg text-destructive hover:bg-destructive/10 transition-colors w-full text-left"
@@ -145,7 +140,7 @@ export function MobileNav({ onClose }: MobileNavProps) {
                 }}
               >
                 <LogOut className="h-5 w-5" />
-                <span>Log out</span>
+                <span>{t('logout')}</span>
               </button>
             </div>
           </>
@@ -160,7 +155,7 @@ export function MobileNav({ onClose }: MobileNavProps) {
               }}
             >
               <LogIn className="mr-2 h-4 w-4" />
-              Login
+              {t('login')}
             </Button>
             <Button
               className="w-full justify-start gradient-accent text-accent-foreground"
@@ -170,7 +165,7 @@ export function MobileNav({ onClose }: MobileNavProps) {
               }}
             >
               <UserPlus className="mr-2 h-4 w-4" />
-              Sign Up
+              {t('signUp')}
             </Button>
           </div>
         )}

@@ -15,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/components/providers/auth-provider"
 import { CurrencySelector } from "@/components/common/currency-selector"
 import { useCurrency } from "@/contexts/currency-context"
+import { useTranslations } from "next-intl"
 import { HomeProduct } from "@/types/product"
 import Link from "next/link"
 
@@ -28,6 +29,8 @@ export function ProductsSection({
   latestProducts: Product[]
 }) {
   const { formatPrice } = useCurrency()
+  const t = useTranslations('home')
+  const tc = useTranslations('common')
 
   return (
     <section className="py-16">
@@ -35,17 +38,17 @@ export function ProductsSection({
         <div className="flex items-center justify-between mb-8">
           <div>
             <Badge className="bg-primary/10 text-primary border-0 px-4 py-1.5 text-xs font-black uppercase tracking-wider mb-3">
-              <TrendingUp className="h-3 w-3 mr-1" /> Live Offers
+              <TrendingUp className="h-3 w-3 mr-1" /> {t('liveOffers')}
             </Badge>
             <h2 className="text-3xl md:text-4xl font-black tracking-tight">
-              eSIM Data Plans
+              {t('esimDataPlans')}
             </h2>
           </div>
           <div className="flex items-center gap-3">
             <CurrencySelector />
             <Button variant="outline" className="rounded-xl font-bold text-xs" asChild>
               <Link href="/products">
-                View All <ArrowRight className="ml-1 h-4 w-4" />
+                {tc('viewAll')} <ArrowRight className="ml-1 h-4 w-4" />
               </Link>
             </Button>
           </div>
@@ -54,10 +57,10 @@ export function ProductsSection({
         <Tabs defaultValue="popular" className="w-full">
           <TabsList className="bg-muted/50 rounded-xl mb-6">
             <TabsTrigger value="popular" className="rounded-lg font-bold text-xs">
-              Most Popular
+              {t('mostPopular')}
             </TabsTrigger>
             <TabsTrigger value="latest" className="rounded-lg font-bold text-xs">
-              Latest Added
+              {t('latestAdded')}
             </TabsTrigger>
           </TabsList>
 
@@ -76,6 +79,7 @@ export function ProductsSection({
 
 export function CTASection() {
   const { openAuthModal } = useAuth()
+  const t = useTranslations('home')
 
   return (
     <section id="about" className="py-20">
@@ -85,16 +89,15 @@ export function CTASection() {
           <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-96 h-96 bg-blue-500 blur-[100px] opacity-20" />
 
           <h2 className="text-4xl md:text-6xl font-black tracking-tight relative z-10">
-            Ready for your next <br />
-            <span className="text-primary italic">Adventure?</span>
+            {t('ctaAdventureTitle')} <br />
+            <span className="text-primary italic">{t('ctaAdventureHighlight')}</span>
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto relative z-10">
-            Join thousands of travelers who save on roaming costs every day.
-            Instant connectivity is just a few clicks away.
+            {t('ctaAdventureDesc')}
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4 relative z-10">
             <Button size="lg" className="rounded-2xl px-12 h-16 text-xl font-black" asChild>
-              <Link href="/products">Get your eSIM</Link>
+              <Link href="/products">{t('ctaGetEsim')}</Link>
             </Button>
             <Button
               size="lg"
@@ -102,7 +105,7 @@ export function CTASection() {
               className="rounded-2xl px-12 h-16 text-xl font-black border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all"
               onClick={() => openAuthModal("register")}
             >
-              Start Now
+              {t('ctaStartNow')}
             </Button>
           </div>
         </div>
@@ -118,10 +121,13 @@ function ProductGrid({
   products: Product[]
   formatPrice: (amount: number) => string
 }) {
+  const t = useTranslations('home')
+  const tc = useTranslations('common')
+
   if (products.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground">No products available yet.</p>
+        <p className="text-muted-foreground">{t('noProductsAvailable')}</p>
       </div>
     )
   }
@@ -160,7 +166,7 @@ function ProductGrid({
               <div className="flex items-center justify-between pt-2">
                 <span className="text-xl font-black" suppressHydrationWarning>{formatPrice(product.price)}</span>
                 <span className="text-xs font-bold text-primary group-hover:translate-x-1 transition-transform flex items-center">
-                  View <ChevronRight className="h-3 w-3 ml-0.5" />
+                  {tc('view')} <ChevronRight className="h-3 w-3 ml-0.5" />
                 </span>
               </div>
             </CardContent>
