@@ -12,6 +12,7 @@ import {
   MapPin,
   Loader2,
 } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { countries, TOP_DESTINATIONS, getCountryByCode } from "@/lib/countries"
@@ -216,8 +217,14 @@ export function DestinationSearch() {
           </Button>
         </div>
 
+        <AnimatePresence>
         {open && (
-          <div className="absolute top-full left-0 right-0 mt-4 overflow-hidden rounded-[2rem] border border-white/10 bg-black/80 backdrop-blur-3xl shadow-2xl animate-in fade-in zoom-in-95 duration-200 z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: -8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: -8 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="absolute top-full left-0 right-0 mt-4 overflow-hidden rounded-[2rem] border border-white/10 bg-black/80 backdrop-blur-3xl shadow-2xl z-50">
             <div id="destination-listbox" role="listbox" className="p-4 max-h-[480px] overflow-y-auto custom-scrollbar">
               {/* Default view: Recent + Top Destinations */}
               {showDefault && (
@@ -400,8 +407,9 @@ export function DestinationSearch() {
                 Close
               </Button>
             </div>
-          </div>
+          </motion.div>
         )}
+        </AnimatePresence>
       </div>
 
       {/* Overlay closer */}
