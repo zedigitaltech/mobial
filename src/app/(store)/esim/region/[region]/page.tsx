@@ -25,6 +25,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     openGraph: {
       title: `eSIM Plans for ${region.name} | MobiaL`,
       description: `High-speed eSIM data plans for ${region.name}. Instant delivery, no physical SIM needed.`,
+      images: [
+        {
+          url: `/api/og?title=${encodeURIComponent(`eSIM for ${region.name}`)}&subtitle=${encodeURIComponent(`Coverage across ${region.countries.length}+ countries`)}`,
+          width: 1200,
+          height: 630,
+          alt: `eSIM for ${region.name}`,
+        },
+      ],
     },
   }
 }
