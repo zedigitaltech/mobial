@@ -22,7 +22,7 @@
 | Live Chat | Crisp + WhatsApp fallback |
 | Runtime | Bun (package manager + production server) |
 | Hosting | Vercel (standalone output) |
-| Cron | Vercel Cron Jobs (product sync every 6h, retry fulfillment daily) |
+| Cron | Vercel Cron Jobs (product sync daily 3AM UTC, retry fulfillment daily 4AM UTC) |
 
 ## Commands
 
@@ -261,7 +261,7 @@ CRON_SECRET                   # Vercel cron job auth (auto-set by Vercel)
 ## Vercel Deployment
 
 - **Build:** `next build` → standalone output → static files copied into standalone dir
-- **Cron Jobs:** Defined in `vercel.json` — product sync (every 6h), retry fulfillment (daily at 4 AM)
+- **Cron Jobs:** Defined in `vercel.json` — product sync (daily 3 AM UTC), retry fulfillment (daily 4 AM UTC). **Hobby plan limit: max 1 run/day per job**
 - **Sentry:** `withSentryConfig()` wraps the Next.js config — set `silent: true` to avoid build failures when `SENTRY_AUTH_TOKEN` is missing
 - **next-intl:** Configured via `createNextIntlPlugin("./src/i18n.ts")`
 - **Config chain:** `withSentryConfig(withNextIntl(nextConfig), sentryOptions)`
