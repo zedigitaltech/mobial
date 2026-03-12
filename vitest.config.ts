@@ -10,8 +10,9 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.test.{ts,tsx}"],
     coverage: {
+      provider: "v8",
       reporter: ["text", "html"],
-      include: ["src/services/**", "src/lib/**"],
+      include: ["src/lib/**", "src/services/**", "src/app/api/**"],
     },
   },
   resolve: {
