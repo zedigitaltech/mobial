@@ -16,6 +16,12 @@ import { ChatWidget } from "@/components/common/chat-widget"
 import { NotificationPrompt } from "@/components/common/notification-prompt"
 import { InstallPrompt } from "@/components/common/install-prompt"
 import { MonitoringProvider } from "@/components/providers/monitoring-provider"
+import dynamic from "next/dynamic"
+
+const CookieConsent = dynamic(
+  () => import("@/components/gdpr/cookie-consent").then((m) => m.CookieConsent),
+  { ssr: false }
+)
 
 const inter = Inter({
   subsets: ["latin"],
@@ -109,6 +115,7 @@ export default async function RootLayout({
                         <NotificationPrompt />
                         <InstallPrompt />
                         <Toaster position="top-center" expand={true} richColors />
+                        <CookieConsent />
                       </MonitoringProvider>
                     </CompareProvider>
                   </CartProvider>
