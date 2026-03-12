@@ -29,29 +29,9 @@ import { useCart } from "@/contexts/cart-context"
 import { ErrorBoundary } from "@/components/common/error-boundary"
 import { cn } from "@/lib/utils"
 
-// Types
-interface Product {
-  id: string
-  name: string
-  slug: string
-  provider: string
-  dataAmount: number | null
-  dataUnit: string | null
-  validityDays: number | null
-  countries: string[]
-  price: number
-  originalPrice: number | null
-  isUnlimited: boolean
-  networks?: string
-  bestFitReason?: string
-  is5G?: boolean
-  tags?: Array<{item: string; color?: string}>
-  providerLogo?: string | null
-  speedInfo?: string | null
-  activationPolicy?: string | null
-  topUpAvailable?: boolean
-  supportsCalls?: boolean
-}
+import { DisplayProduct } from "@/types/product"
+
+type Product = DisplayProduct & { slug: string }
 
 interface ProductsResponse {
   success: boolean

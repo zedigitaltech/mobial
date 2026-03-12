@@ -3,21 +3,9 @@
 import { motion } from "framer-motion"
 import { ProductCard } from "@/components/common/product-card"
 import { useCart } from "@/contexts/cart-context"
+import { BaseProduct } from "@/types/product"
 
-interface Product {
-  id: string
-  name: string
-  slug?: string
-  provider: string
-  dataAmount: number | null
-  dataUnit: string | null
-  validityDays: number | null
-  countries: string[]
-  price: number
-  originalPrice: number | null
-  isUnlimited: boolean
-  networks?: string
-}
+type Product = BaseProduct
 
 export function CountryProductGrid({ products }: { products: Product[] }) {
   const { addItem, isInCart } = useCart()
