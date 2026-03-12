@@ -8,7 +8,7 @@ import { sendEmailVerification, sendWelcome } from '@/services/email-service'
 // Mock password utilities
 vi.mock('@/lib/password', () => ({
   hashPassword: vi.fn().mockResolvedValue('hashed-password-123'),
-  checkPasswordStrength: vi.fn().mockReturnValue({ isStrong: true, feedback: [] }),
+  checkPasswordStrength: vi.fn().mockReturnValue({ isStrong: true, score: 4, feedback: [] }),
 }))
 
 // Mock JWT token generation
@@ -85,7 +85,7 @@ describe('POST /api/auth/register', () => {
     vi.mocked(db.user.findUnique).mockResolvedValue(null)
 
     // Default: password is strong
-    mockCheckPasswordStrength.mockReturnValue({ isStrong: true, feedback: [] })
+    mockCheckPasswordStrength.mockReturnValue({ isStrong: true, score: 4, feedback: [] })
   })
 
   it('should return validation error when email is missing', async () => {
@@ -128,6 +128,7 @@ describe('POST /api/auth/register', () => {
   it('should return error when password is too weak', async () => {
     mockCheckPasswordStrength.mockReturnValue({
       isStrong: false,
+      score: 1,
       feedback: ['Must contain uppercase letter', 'Must contain special character'],
     })
 
