@@ -1,4 +1,5 @@
 import type { ProductWithDetails } from "@/services/product-service"
+import { getCountryByCode } from "@/lib/countries"
 
 /**
  * JSON-LD structured data components for SEO.
@@ -37,7 +38,10 @@ export function OrganizationJsonLd({ baseUrl }: { baseUrl: string }) {
           contactType: "customer service",
           availableLanguage: ["English"],
         },
-        sameAs: [],
+        sameAs: [
+          "https://x.com/mobial_esim",
+          "https://facebook.com/mobial",
+        ],
       }}
     />
   )
@@ -107,7 +111,7 @@ export function ProductJsonLd({
         ...(product.countries.length > 0 && {
           areaServed: product.countries.map((code) => ({
             "@type": "Country",
-            name: code,
+            name: getCountryByCode(code)?.name || code,
           })),
         }),
       }}
