@@ -6,8 +6,8 @@
 import crypto from 'crypto';
 
 const JWT_ALGORITHM = 'HS256';
-const ACCESS_TOKEN_EXPIRY = '15m'; // 15 minutes
-const REFRESH_TOKEN_EXPIRY = '7d'; // 7 days
+const _ACCESS_TOKEN_EXPIRY = '15m'; // 15 minutes
+const _REFRESH_TOKEN_EXPIRY = '7d'; // 7 days
 
 interface JWTPayload {
   sub: string;

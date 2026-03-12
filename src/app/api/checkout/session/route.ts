@@ -7,7 +7,7 @@ import {
 } from '@/lib/auth-helpers';
 import { getOrderById } from '@/services/order-service';
 import { createCheckoutSession } from '@/lib/stripe';
-import { checkRateLimit, createRateLimitHeaders } from '@/lib/rate-limit';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 const checkoutSessionSchema = z.object({
   orderId: z.string().min(1, 'Order ID is required'),

@@ -39,7 +39,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const user = await requireAdmin(request);
 
     // Parse optional body for additional parameters
-    const body = await parseJsonBody<{
+    const _body = await parseJsonBody<{
       paymentReference?: string;
       forceReprocess?: boolean;
     }>(request);

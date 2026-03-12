@@ -113,6 +113,7 @@ function makeDbProduct(overrides: Record<string, unknown> = {}) {
     createdAt: new Date('2024-01-01'),
     updatedAt: new Date('2024-01-02'),
     syncedAt: new Date('2024-01-02'),
+    ...overrides,
   }
 }
 

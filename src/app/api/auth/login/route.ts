@@ -11,12 +11,11 @@ import { logAuditWithContext } from '@/lib/audit';
 import { checkRateLimit, createRateLimitHeaders } from '@/lib/rate-limit';
 import { verifyTOTPCode, verifyBackupCode } from '@/lib/two-factor';
 import { db } from '@/lib/db';
-import { 
-  successResponse, 
-  errorResponse, 
-  parseJsonBody, 
-  getClientIP, 
-  getUserAgent 
+import {
+  errorResponse,
+  parseJsonBody,
+  getClientIP,
+  getUserAgent
 } from '@/lib/auth-helpers';
 
 // Validation schema
@@ -209,11 +208,11 @@ export async function POST(request: NextRequest) {
     });
     
     // Return user and tokens (exclude sensitive fields)
-    const { 
-      passwordHash: _, 
-      twoFactorSecret: __, 
-      twoFactorBackupCodes: ___,
-      ...safeUser 
+    const {
+      passwordHash: _pw,
+      twoFactorSecret: _ts,
+      twoFactorBackupCodes: _bc,
+      ...safeUser
     } = user;
     
     const headers = createRateLimitHeaders(rateLimitResult);

@@ -6,7 +6,7 @@
 
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
-import { successResponse, errorResponse, getClientIP } from '@/lib/auth-helpers';
+import { errorResponse, getClientIP } from '@/lib/auth-helpers';
 import { checkRateLimit, createRateLimitHeaders } from '@/lib/rate-limit';
 import { Prisma } from '@prisma/client';
 
