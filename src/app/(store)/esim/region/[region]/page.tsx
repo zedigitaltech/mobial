@@ -1,7 +1,16 @@
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { Globe, Wifi, Zap, ArrowRight } from "lucide-react"
+import { Wifi, Zap, ArrowRight, Globe } from "lucide-react"
+
+const REGION_EMOJI: Record<string, string> = {
+  europe: "\u{1F1EA}\u{1F1FA}",
+  asia: "\u{1F30F}",
+  americas: "\u{1F30E}",
+  "middle-east": "\u{1F54C}",
+  oceania: "\u{1F3DD}\uFE0F",
+  africa: "\u{1F30D}",
+}
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
@@ -122,6 +131,9 @@ export default async function RegionPage({ params }: PageProps) {
           </div>
 
           <div className="container mx-auto px-4 text-center space-y-6">
+            <div className="text-6xl md:text-7xl">
+              {REGION_EMOJI[slug] || "\u{1F30D}"}
+            </div>
             <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.1]">
               eSIM for{" "}
               <span className="text-primary italic">{region.name}</span>
@@ -225,10 +237,13 @@ export default async function RegionPage({ params }: PageProps) {
                   <Link
                     key={r.slug}
                     href={`/esim/region/${r.slug}`}
-                    className="p-5 rounded-2xl bg-card border border-border/50 hover:shadow-lg hover:border-primary/20 transition-all group"
+                    className="p-5 rounded-2xl bg-card border border-border/50 hover:shadow-lg hover:border-primary/20 transition-all group text-center"
                   >
+                    <div className="text-3xl mb-2 group-hover:scale-110 transition-transform">
+                      {REGION_EMOJI[r.slug] || "\u{1F30D}"}
+                    </div>
                     <h3 className="font-bold group-hover:text-primary transition-colors">
-                      eSIM for {r.name}
+                      {r.name}
                     </h3>
                     <p className="text-xs text-muted-foreground mt-1">
                       {r.countries.length}+ countries

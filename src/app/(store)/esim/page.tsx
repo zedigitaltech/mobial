@@ -4,6 +4,15 @@ import { Badge } from "@/components/ui/badge"
 import { Globe, ArrowRight } from "lucide-react"
 import { countries, getAllCountrySlugs } from "@/lib/countries"
 import { regions } from "@/lib/regions"
+
+const REGION_EMOJI: Record<string, string> = {
+  europe: "\u{1F1EA}\u{1F1FA}",    // EU flag
+  asia: "\u{1F30F}",                // Globe Asia-Australia
+  americas: "\u{1F30E}",            // Globe Americas
+  "middle-east": "\u{1F54C}",       // Mosque (Middle East symbol)
+  oceania: "\u{1F3DD}\uFE0F",       // Desert island
+  africa: "\u{1F30D}",              // Globe Europe-Africa
+}
 import { DestinationGrid } from "./destination-grid"
 import { db } from "@/lib/db"
 
@@ -113,7 +122,9 @@ export default async function EsimDestinationsPage() {
                   href={`/esim/region/${region.slug}`}
                   className="p-4 rounded-2xl bg-card border border-border/50 hover:shadow-lg hover:border-primary/20 transition-all group text-center"
                 >
-                  <Globe className="h-6 w-6 text-primary mx-auto mb-2 group-hover:scale-110 transition-transform" />
+                  <div className="text-3xl mx-auto mb-2 group-hover:scale-110 transition-transform">
+                    {REGION_EMOJI[region.slug] || "\u{1F30D}"}
+                  </div>
                   <h3 className="font-bold text-sm group-hover:text-primary transition-colors">
                     {region.name}
                   </h3>
