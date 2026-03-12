@@ -160,6 +160,41 @@ export async function POST(request: NextRequest) {
         break;
       }
 
+      case 'checkout.session.expired': {
+        const session = event.data.object;
+        const orderId = session.client_reference_id;
+
+        if (orderId) {
+          const order = await db.order.findUnique({
+            where: { id: orderId },
+            select: { status: true, orderNumber: true },
+          });
+
+          if (order && order.status === 'PENDING') {
+            await db.order.update({
+              where: { id: orderId },
+              data: {
+                status: 'CANCELLED',
+                paymentStatus: 'FAILED',
+              },
+            });
+
+            await logAudit({
+              action: 'order_cancel',
+              entity: 'order',
+              entityId: orderId,
+              newValues: {
+                source: 'stripe_webhook',
+                reason: 'checkout_session_expired',
+                sessionId: session.id,
+                orderNumber: order.orderNumber,
+              },
+            });
+          }
+        }
+        break;
+      }
+
       case 'payment_intent.payment_failed': {
         const paymentIntent = event.data.object;
         const orderId = paymentIntent.metadata.orderId;
