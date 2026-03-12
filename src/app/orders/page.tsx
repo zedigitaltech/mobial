@@ -127,8 +127,8 @@ function OrderDetails({ order }: { order: Order }) {
           {order.esimQrCode ? (
             <>
               <div className="bg-white p-4 rounded-3xl shadow-xl mb-4">
-                <img 
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(order.esimQrCode)}`} 
+                <img
+                  src={`/api/orders/${order.id}/qr?size=200`}
                   alt="eSIM QR Code"
                   className="w-40 h-40"
                 />

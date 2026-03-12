@@ -6,6 +6,7 @@
 import { db } from '@/lib/db';
 import { getOrderInfo } from '@/lib/mobimatter';
 import { encryptEsimField, decryptEsimField } from '@/lib/esim-encryption';
+import QRCode from 'qrcode';
 
 // Types
 export interface ESIMDetails {
@@ -146,8 +147,6 @@ export async function getESIMDetailsForItem(orderItemId: string): Promise<ESIMDe
 
 /**
  * Generate QR code image data URL from QR string
- * Uses a simple QR code generation approach without external libraries
- * For production, consider using a library like 'qrcode'
  */
 export async function generateQRCodeImage(
   qrString: string,
@@ -157,131 +156,14 @@ export async function generateQRCodeImage(
     throw new Error('QR string is required');
   }
 
-  // For now, we'll return a data URL that can be used
-  // In production, use a proper QR code library
-  // Using Google Chart API as a fallback for simplicity
-  const encodedQR = encodeURIComponent(qrString);
-  const googleChartUrl = `https://chart.googleapis.com/chart?chs=${size}x${size}&cht=qr&chl=${encodedQR}&choe=UTF-8`;
+  const dataUrl = await QRCode.toDataURL(qrString, {
+    width: size,
+    margin: 2,
+    errorCorrectionLevel: 'M',
+    color: { dark: '#000000', light: '#FFFFFF' },
+  });
 
-  // Fetch the image
-  try {
-    const response = await fetch(googleChartUrl);
-    
-    if (!response.ok) {
-      // Fallback: return a placeholder or the QR string directly
-      // In production, this should use a local QR code library
-      return generateSimpleQRCode(qrString, size);
-    }
-
-    const arrayBuffer = await response.arrayBuffer();
-    const base64 = Buffer.from(arrayBuffer).toString('base64');
-    const dataUrl = `data:image/png;base64,${base64}`;
-
-    return {
-      dataUrl,
-      size,
-    };
-  } catch (error) {
-    console.error('Error generating QR code with Google Charts:', error);
-    // Fallback to simple QR code generation
-    return generateSimpleQRCode(qrString, size);
-  }
-}
-
-/**
- * Simple QR code generation fallback
- * Generates an SVG-based QR code representation
- */
-async function generateSimpleQRCode(qrString: string, size: number): Promise<QRCodeImage> {
-  // Create a simple SVG representation
-  // This is a minimal implementation - in production use 'qrcode' package
-  
-  const qrData = qrString;
-  const moduleCount = 21; // Minimum QR version
-  const moduleSize = Math.floor(size / (moduleCount + 8));
-  const margin = Math.floor((size - moduleSize * moduleCount) / 2);
-
-  // Simple pattern generation (not a real QR code)
-  // This creates a placeholder pattern - real implementation needs proper QR encoding
-  const modules: boolean[][] = [];
-  
-  // Generate a simple pattern based on the string hash
-  const hash = simpleHash(qrData);
-  
-  for (let row = 0; row < moduleCount; row++) {
-    modules[row] = [];
-    for (let col = 0; col < moduleCount; col++) {
-      // Finder patterns (corners)
-      const isFinderPattern = 
-        (row < 7 && col < 7) ||
-        (row < 7 && col >= moduleCount - 7) ||
-        (row >= moduleCount - 7 && col < 7);
-      
-      if (isFinderPattern) {
-        // Draw finder pattern
-        const inCorner = 
-          (row < 7 && col < 7) ||
-          (row < 7 && col >= moduleCount - 7) ||
-          (row >= moduleCount - 7 && col < 7);
-        
-        if (inCorner) {
-          const localRow = row < 7 ? row : row - (moduleCount - 7);
-          const localCol = col < 7 ? col : col - (moduleCount - 7);
-          
-          modules[row][col] = 
-            localRow === 0 || localRow === 6 ||
-            localCol === 0 || localCol === 6 ||
-            (localRow >= 2 && localRow <= 4 && localCol >= 2 && localCol <= 4);
-        } else {
-          modules[row][col] = false;
-        }
-      } else {
-        // Data pattern (pseudo-random based on hash)
-        const index = row * moduleCount + col;
-        modules[row][col] = ((hash >> (index % 32)) & 1) === 1;
-      }
-    }
-  }
-
-  // Generate SVG
-  let svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;
-  svg += `<rect width="${size}" height="${size}" fill="white"/>`;
-
-  for (let row = 0; row < moduleCount; row++) {
-    for (let col = 0; col < moduleCount; col++) {
-      if (modules[row][col]) {
-        const x = margin + col * moduleSize;
-        const y = margin + row * moduleSize;
-        svg += `<rect x="${x}" y="${y}" width="${moduleSize}" height="${moduleSize}" fill="black"/>`;
-      }
-    }
-  }
-
-  svg += '</svg>';
-
-  // Convert SVG to data URL
-  const base64Svg = Buffer.from(svg).toString('base64');
-  const dataUrl = `data:image/svg+xml;base64,${base64Svg}`;
-
-  return {
-    dataUrl,
-    size,
-  };
-}
-
-/**
- * Simple string hash function
- */
-function simpleHash(str: string): number {
-  let hash = 0;
-  
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash; // Convert to 32bit integer
-  }
-  
-  return Math.abs(hash);
+  return { dataUrl, size };
 }
 
 /**

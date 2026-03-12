@@ -20,7 +20,7 @@ export async function middleware(request: NextRequest) {
     default-src 'self';
     script-src 'self' 'nonce-${nonce}' https://js.stripe.com;
     style-src 'self' 'unsafe-inline';
-    img-src 'self' blob: data: https://api.mobimatter.com https://mobimatterstorage.blob.core.windows.net https://api.qrserver.com;
+    img-src 'self' blob: data: https://api.mobimatter.com https://mobimatterstorage.blob.core.windows.net;
     font-src 'self' data:;
     object-src 'none';
     base-uri 'self';

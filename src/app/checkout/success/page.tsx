@@ -234,7 +234,7 @@ export default function CheckoutSuccessPage() {
                           <div className="bg-white p-6 rounded-2xl shadow-lg mb-4">
                             {order.esim.qrCode ? (
                               <img
-                                src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(order.esim.qrCode)}`}
+                                src={`/api/orders/${order.id}/qr?size=300`}
                                 alt="eSIM QR Code"
                                 className="w-48 h-48"
                               />

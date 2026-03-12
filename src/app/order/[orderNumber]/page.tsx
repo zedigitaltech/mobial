@@ -210,7 +210,7 @@ export default function OrderSuccessPage() {
                             />
                           ) : (
                             <img
-                              src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(order.esimQrCode)}`}
+                              src={`/api/orders/${order.id}/qr?size=300`}
                               alt="eSIM QR"
                               className="w-48 h-48"
                             />
