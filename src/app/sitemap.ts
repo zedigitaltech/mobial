@@ -70,5 +70,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // DB not available during build — skip product entries
   }
 
-  return [...staticEntries, ...countryEntries, ...regionEntries, ...productEntries]
+  // Country guide pages
+  const guideCountries = ["jp", "us", "tr", "th", "es", "it", "gb", "de", "fr", "au", "kr", "sg"]
+  const guideEntries: MetadataRoute.Sitemap = guideCountries.map((code) => ({
+    url: `${baseUrl}/guides/${code}`,
+    lastModified: new Date(),
+    changeFrequency: "monthly" as const,
+    priority: 0.6,
+  }))
+
+  return [...staticEntries, ...countryEntries, ...regionEntries, ...productEntries, ...guideEntries]
 }

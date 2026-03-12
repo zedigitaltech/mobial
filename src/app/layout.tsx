@@ -76,7 +76,13 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true,
-  }
+  },
+  alternates: {
+    canonical: "https://mobialo.eu",
+    languages: {
+      "x-default": "https://mobialo.eu",
+    },
+  },
 }
 
 export default async function RootLayout({
