@@ -1,27 +1,23 @@
 import { NextRequest } from 'next/server';
-import { createResponse, createErrorResponse, createServerErrorResponse } from '@/lib/api-response';
+import { createResponse } from '@/lib/api-response';
 import { trackPageView } from '@/services/monitoring-service';
 import { checkRateLimit } from '@/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-    || request.headers.get('x-real-ip')
-    || 'unknown';
-
-  const rateLimitResult = await checkRateLimit(ip, 'monitoring-pageview', { maxRequests: 60, windowMs: 60_000 });
-  if (!rateLimitResult.success) {
-    return createResponse({ tracked: false }, { status: 200 });
-  }
-
   try {
-    const body = await request.json();
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+      || request.headers.get('x-real-ip')
+      || 'unknown';
 
-    if (!body.path || typeof body.path !== 'string') {
-      return createErrorResponse('Missing required field: path');
+    const rateLimitResult = await checkRateLimit(ip, 'monitoring-pageview', { maxRequests: 60, windowMs: 60_000 });
+    if (!rateLimitResult.success) {
+      return createResponse({ tracked: false }, { status: 200 });
     }
 
-    if (!body.sessionId || typeof body.sessionId !== 'string') {
-      return createErrorResponse('Missing required field: sessionId');
+    const body = await request.json();
+
+    if (!body.path || typeof body.path !== 'string' || !body.sessionId || typeof body.sessionId !== 'string') {
+      return createResponse({ tracked: false }, { status: 200 });
     }
 
     await trackPageView({
@@ -41,6 +37,6 @@ export async function POST(request: NextRequest) {
     return createResponse({ tracked: true }, { status: 201 });
   } catch (err) {
     console.error('[api/monitoring/pageview] Failed:', err);
-    return createServerErrorResponse();
+    return createResponse({ tracked: false }, { status: 200 });
   }
 }
