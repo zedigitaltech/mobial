@@ -13,31 +13,60 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }))
 
+// Mock next/headers
+vi.mock("next/headers", () => ({
+  headers: vi.fn().mockResolvedValue({
+    get: vi.fn().mockReturnValue(null),
+    has: vi.fn().mockReturnValue(false),
+    entries: vi.fn().mockReturnValue([]),
+    forEach: vi.fn(),
+  }),
+  cookies: vi.fn().mockResolvedValue({
+    get: vi.fn().mockReturnValue(undefined),
+    getAll: vi.fn().mockReturnValue([]),
+    has: vi.fn().mockReturnValue(false),
+    set: vi.fn(),
+    delete: vi.fn(),
+  }),
+}))
+
+// Helper to create standard model mock with common Prisma operations
+function createModelMock() {
+  return {
+    findUnique: vi.fn().mockResolvedValue(null),
+    findFirst: vi.fn().mockResolvedValue(null),
+    findMany: vi.fn().mockResolvedValue([]),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    count: vi.fn().mockResolvedValue(0),
+  }
+}
+
 // Mock Prisma client
 vi.mock("@/lib/db", () => ({
   db: {
     product: {
-      findMany: vi.fn().mockResolvedValue([]),
-      findFirst: vi.fn().mockResolvedValue(null),
-      findUnique: vi.fn().mockResolvedValue(null),
-      count: vi.fn().mockResolvedValue(0),
-      create: vi.fn(),
-      update: vi.fn(),
+      ...createModelMock(),
       upsert: vi.fn(),
     },
-    order: {
-      findMany: vi.fn().mockResolvedValue([]),
-      findFirst: vi.fn().mockResolvedValue(null),
-      findUnique: vi.fn().mockResolvedValue(null),
-      count: vi.fn().mockResolvedValue(0),
-      create: vi.fn(),
-      update: vi.fn(),
+    order: createModelMock(),
+    orderItem: createModelMock(),
+    user: createModelMock(),
+    session: createModelMock(),
+    systemConfig: createModelMock(),
+    rateLimitLog: {
+      ...createModelMock(),
+      deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
     },
+    auditLog: createModelMock(),
     abandonedCart: {
       findMany: vi.fn().mockResolvedValue([]),
       findFirst: vi.fn().mockResolvedValue(null),
       create: vi.fn(),
       update: vi.fn(),
+      delete: vi.fn(),
+      count: vi.fn().mockResolvedValue(0),
     },
     $transaction: vi.fn((fn: (tx: unknown) => unknown) => fn({
       order: {
