@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import { X, Download, Smartphone } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { usePWA } from "@/hooks/use-pwa"
+import { useCompare } from "@/contexts/compare-context"
 
 function isDismissedInStorage(): boolean {
   if (typeof window === "undefined") return true
@@ -15,6 +16,7 @@ function isDismissedInStorage(): boolean {
 
 export function InstallPrompt() {
   const { canInstall, isPWA, promptInstall } = usePWA()
+  const { items: compareItems } = useCompare()
   const [visible, setVisible] = useState(false)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -45,7 +47,7 @@ export function InstallPrompt() {
     }
   }, [promptInstall])
 
-  if (!visible || isPWA) return null
+  if (!visible || isPWA || compareItems.length > 0) return null
 
   return (
     <div className="fixed bottom-20 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 z-50 animate-in slide-in-from-bottom-4 fade-in duration-300">

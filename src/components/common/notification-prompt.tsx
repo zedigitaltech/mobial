@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Bell, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useNotifications } from "@/hooks/use-notifications"
+import { useCompare } from "@/contexts/compare-context"
 
 const STORAGE_KEY = "mobial-notification-dismissed"
 const PAGE_VIEW_KEY = "mobial-page-views"
@@ -13,6 +14,7 @@ const PAGE_VIEW_THRESHOLD = 3
 export function NotificationPrompt() {
   const [visible, setVisible] = useState(false)
   const { isSupported, permission, requestPermission, subscribe } = useNotifications()
+  const { items: compareItems } = useCompare()
 
   useEffect(() => {
     if (!isSupported) return
@@ -46,6 +48,8 @@ export function NotificationPrompt() {
     setVisible(false)
     localStorage.setItem(STORAGE_KEY, "true")
   }
+
+  if (compareItems.length > 0) return null
 
   return (
     <AnimatePresence>
