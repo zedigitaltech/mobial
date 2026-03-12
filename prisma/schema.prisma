@@ -224,7 +224,10 @@ model Order {
   esimQrCode            String?
   esimActivationCode    String?
   esimSmdpAddress       String?
-  
+
+  // Retry tracking
+  retryCount            Int      @default(0)
+
   // IP Tracking (GDPR)
   ipAddress             String?
   userAgent             String?
