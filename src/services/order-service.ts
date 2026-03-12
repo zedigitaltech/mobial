@@ -8,6 +8,7 @@ import { db } from '@/lib/db';
 import { logAudit } from '@/lib/audit';
 import { createOrder as mobimatterCreateOrder, completeOrder as mobimatterCompleteOrder } from '@/lib/mobimatter';
 import { encryptEsimField } from '@/lib/esim-encryption';
+import { sendEsimReady } from '@/services/email-service';
 import { Prisma, OrderStatus, PaymentStatus } from '@prisma/client';
 
 // Types
@@ -455,6 +456,16 @@ export async function processOrderWithMobimatter(
       },
     });
 
+    // Fire-and-forget eSIM ready notification
+    if (finalStatus === 'COMPLETED' && qrCodeValue) {
+      const qrUrl = qrCodeValue.startsWith('http')
+        ? qrCodeValue
+        : `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/qr/${order.orderNumber}`;
+      sendEsimReady(order.email, order.orderNumber, qrUrl).catch((err) =>
+        console.error('[OrderService] Failed to send eSIM ready email:', err)
+      );
+    }
+
     return {
       success: true,
       order: {
@@ -467,7 +478,7 @@ export async function processOrderWithMobimatter(
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    
+
     // Log the error
     console.error('Error processing order with MobiMatter:', error);
 

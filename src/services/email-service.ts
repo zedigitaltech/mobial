@@ -318,6 +318,96 @@ export async function sendWelcome(
   }
 }
 
+export async function sendEsimReady(
+  email: string,
+  orderNumber: string,
+  qrCodeUrl: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const html = layout(`
+      <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#ffffff;">Your eSIM is Ready</h1>
+      <p style="margin:0 0 24px;font-size:14px;color:#9ca3af;line-height:1.6;">
+        Great news! Your eSIM for order <span style="color:#4da6e8;font-weight:600;">#${escapeHtml(orderNumber)}</span> has been provisioned and is ready to install.
+      </p>
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+        <tr>
+          <td align="center" style="padding:20px;background-color:rgba(77,166,232,0.08);border-radius:12px;border:1px solid rgba(77,166,232,0.15);">
+            <p style="margin:0 0 12px;font-size:13px;color:#9ca3af;font-weight:500;">Scan to Install</p>
+            <img src="${qrCodeUrl}" alt="eSIM QR Code" width="180" height="180" style="display:block;border-radius:8px;" />
+          </td>
+        </tr>
+      </table>
+
+      ${button(`${BASE_URL}/order/${orderNumber}`, 'View Order Details')}
+
+      <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.6;">
+        Need help installing? Check our <a href="${BASE_URL}/guides/installation" style="color:#4da6e8;text-decoration:none;">installation guide</a>.
+      </p>
+    `);
+
+    const result = await sendEmail({
+      to: email,
+      subject: `Your eSIM is Ready - Order #${escapeHtml(orderNumber)}`,
+      html,
+    });
+
+    return { success: result.success, error: result.error };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to send eSIM ready email';
+    console.error('[EmailService] sendEsimReady error:', message);
+    return { success: false, error: message };
+  }
+}
+
+export async function sendActivationDetected(
+  email: string,
+  orderNumber: string,
+  destination: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const html = layout(`
+      <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#ffffff;">eSIM Activated</h1>
+      <p style="margin:0 0 24px;font-size:14px;color:#9ca3af;line-height:1.6;">
+        Your eSIM for order <span style="color:#4da6e8;font-weight:600;">#${escapeHtml(orderNumber)}</span> has been
+        activated in <strong style="color:#ffffff;">${escapeHtml(destination)}</strong>. You're now connected!
+      </p>
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 24px;">
+        <tr>
+          <td style="padding:16px;background:rgba(255,255,255,0.03);border-radius:12px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+              <tr>
+                <td style="padding:8px 0;color:#e5e7eb;font-size:14px;line-height:1.6;">
+                  <strong style="color:#4da6e8;">Tip:</strong> You can check your remaining data balance anytime from your order page.
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+
+      ${button(`${BASE_URL}/order/${orderNumber}`, 'Check Usage')}
+
+      <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.6;">
+        Running low on data? <a href="${BASE_URL}/topup" style="color:#4da6e8;text-decoration:none;">Top up your eSIM</a> anytime.
+      </p>
+    `);
+
+    const result = await sendEmail({
+      to: email,
+      subject: `eSIM Activated in ${escapeHtml(destination)} - Order #${escapeHtml(orderNumber)}`,
+      html,
+    });
+
+    return { success: result.success, error: result.error };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Failed to send activation detected email';
+    console.error('[EmailService] sendActivationDetected error:', message);
+    return { success: false, error: message };
+  }
+}
+
 export async function sendInstallationReminder(
   email: string,
   orderNumber: string,

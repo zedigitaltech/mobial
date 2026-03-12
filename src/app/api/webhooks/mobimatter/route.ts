@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { logAudit } from '@/lib/audit';
 import { secureCompare } from '@/lib/encryption';
 import { encryptEsimField } from '@/lib/esim-encryption';
+import { sendActivationDetected } from '@/services/email-service';
 
 interface MobiMatterWebhookPayload {
   eventType: string;
@@ -196,13 +197,26 @@ async function handleEsimActivated(payload: MobiMatterWebhookPayload) {
 
   const orderItem = await db.orderItem.findFirst({
     where: { esimIccid: payload.iccid },
-    include: { order: true },
+    include: {
+      order: true,
+      product: { select: { countries: true } },
+    },
   });
 
   if (!orderItem) {
     console.warn(`[MobiMatter Webhook] OrderItem not found for ICCID: ${payload.iccid}`);
     return;
   }
+
+  // Fire-and-forget activation notification
+  const destination = orderItem.product?.countries?.[0] || 'your destination';
+  sendActivationDetected(
+    orderItem.order.email,
+    orderItem.order.orderNumber,
+    destination
+  ).catch((err) =>
+    console.error('[MobiMatter Webhook] Failed to send activation email:', err)
+  );
 
   await logAudit({
     action: 'order_complete',
