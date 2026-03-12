@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     await sendEmailVerification(user.email, verificationToken);
 
     // Fire-and-forget welcome email
-    sendWelcome(user.email, user.name).catch((err) =>
+    sendWelcome(user.email, user.name ?? '').catch((err) =>
       console.error('[Register] Failed to send welcome email:', err)
     );
 
