@@ -7,7 +7,7 @@ import {
   AuthError,
 } from '@/lib/auth-helpers';
 
-function generateReferralCode(userId: string): string {
+function generateReferralCode(_userId: string): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let code = '';
   for (let i = 0; i < 8; i++) {

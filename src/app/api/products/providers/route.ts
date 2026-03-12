@@ -15,7 +15,7 @@ import { successResponse, errorResponse } from '@/lib/auth-helpers';
  * - name: Provider name
  * - productCount: Number of products from this provider
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const providers = await getAvailableProviders();
 

@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   const merchantId = process.env.MOBIMATTER_MERCHANT_ID;
   const apiKey = process.env.MOBIMATTER_API_KEY;
   

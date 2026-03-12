@@ -7,7 +7,7 @@ import { NextRequest } from 'next/server';
 import { z } from 'zod';
 import { verifyToken } from '@/lib/jwt';
 import { generateTokenPair } from '@/lib/jwt';
-import { logAuditWithContext } from '@/lib/audit';
+import { logAuditWithContext as _logAuditWithContext } from '@/lib/audit';
 import { db } from '@/lib/db';
 import { 
   successResponse, 

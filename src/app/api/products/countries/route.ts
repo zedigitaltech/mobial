@@ -5,7 +5,7 @@
 
 import { NextRequest } from 'next/server';
 import { getAvailableCountries } from '@/services/product-service';
-import { successResponse, errorResponse } from '@/lib/auth-helpers';
+import { errorResponse } from '@/lib/auth-helpers';
 
 /**
  * GET /api/products/countries
@@ -16,7 +16,7 @@ import { successResponse, errorResponse } from '@/lib/auth-helpers';
  * - name: Full country name
  * - productCount: Number of products available for this country
  */
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const countries = await getAvailableCountries();
 

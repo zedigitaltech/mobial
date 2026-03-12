@@ -191,7 +191,7 @@ export function isValidEmail(email: string): boolean {
  * Sanitize user data for response (remove sensitive fields)
  */
 export function sanitizeUser(user: User): Omit<User, 'passwordHash' | 'twoFactorSecret' | 'twoFactorBackupCodes'> {
-  const { passwordHash, twoFactorSecret, twoFactorBackupCodes, ...safeUser } = user;
+  const { passwordHash: _pw, twoFactorSecret: _ts, twoFactorBackupCodes: _bc, ...safeUser } = user;
   return safeUser;
 }
 

@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Return user and tokens (exclude sensitive fields)
-    const { passwordHash: _, ...safeUser } = user;
+    const { passwordHash: _pw, ...safeUser } = user;
     
     return successResponse({
       user: safeUser,

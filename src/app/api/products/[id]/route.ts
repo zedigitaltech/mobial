@@ -5,7 +5,7 @@
 
 import { NextRequest } from 'next/server';
 import { getProductById } from '@/services/product-service';
-import { successResponse, errorResponse } from '@/lib/auth-helpers';
+import { errorResponse } from '@/lib/auth-helpers';
 
 /**
  * GET /api/products/[id]

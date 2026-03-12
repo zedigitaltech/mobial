@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getWalletBalance } from '@/lib/mobimatter';
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   try {
     const balance = await getWalletBalance();
     
