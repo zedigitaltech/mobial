@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge"
 import { Globe, ArrowRight } from "lucide-react"
 import { countries, getAllCountrySlugs } from "@/lib/countries"
 import { regions } from "@/lib/regions"
+import { getTranslations } from "next-intl/server"
 
 const REGION_EMOJI: Record<string, string> = {
   europe: "\u{1F1EA}\u{1F1FA}",    // EU flag
@@ -86,6 +87,7 @@ async function getCountriesWithPricing(): Promise<
 
 export default async function EsimDestinationsPage() {
   const countriesWithPricing = await getCountriesWithPricing()
+  const t = await getTranslations("esim")
 
   return (
     <>
@@ -99,14 +101,14 @@ export default async function EsimDestinationsPage() {
 
           <div className="container mx-auto px-4 text-center space-y-6">
             <Badge className="bg-primary/10 text-primary border-0 px-4 py-1.5 text-xs font-black uppercase tracking-wider">
-              <Globe className="h-3 w-3 mr-1" /> 150+ Destinations
+              <Globe className="h-3 w-3 mr-1" /> {t("destinationsBadge")}
             </Badge>
             <h1 className="text-4xl md:text-6xl font-black tracking-tight leading-[1.1]">
-              eSIM Plans by{" "}
-              <span className="text-primary italic">Country</span>
+              {t("title")}{" "}
+              <span className="text-primary italic">{t("titleHighlight")}</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto font-medium">
-              Find the perfect data plan for your destination. Instant activation, no roaming fees, no physical SIM needed.
+              {t("heroDesc")}
             </p>
           </div>
         </section>
@@ -114,7 +116,7 @@ export default async function EsimDestinationsPage() {
         {/* Regions */}
         <section className="py-8">
           <div className="container mx-auto px-4">
-            <h2 className="text-2xl font-black tracking-tight mb-6">Browse by Region</h2>
+            <h2 className="text-2xl font-black tracking-tight mb-6">{t("browseByRegion")}</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
               {regions.map((region) => (
                 <Link
@@ -129,7 +131,7 @@ export default async function EsimDestinationsPage() {
                     {region.name}
                   </h3>
                   <p className="text-[10px] text-muted-foreground mt-1">
-                    {region.countries.length}+ countries
+                    {t("countriesCount", { count: region.countries.length })}
                   </p>
                 </Link>
               ))}

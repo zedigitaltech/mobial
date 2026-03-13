@@ -37,11 +37,26 @@ export interface FAQCategory {
   questions: { q: string; a: string }[]
 }
 
-interface FAQClientProps {
-  categories: FAQCategory[]
+interface FAQUIStrings {
+  helpCenter: string
+  heroTitle1: string
+  heroTitle2: string
+  heroSubtitle: string
+  searchPlaceholder: string
+  noResultsHint: string
+  contactSupport: string
+  stillHaveQuestions: string
+  supportDesc: string
+  contactSupportBtn: string
+  installationGuide: string
 }
 
-export function FAQClient({ categories }: FAQClientProps) {
+interface FAQClientProps {
+  categories: FAQCategory[]
+  ui: FAQUIStrings
+}
+
+export function FAQClient({ categories, ui }: FAQClientProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [activeCategory, setActiveCategory] = useState(categories[0]?.id || "general")
 
@@ -77,21 +92,20 @@ export function FAQClient({ categories }: FAQClientProps) {
             className="max-w-3xl mx-auto space-y-6"
           >
             <Badge className="bg-primary/10 text-primary border-0 px-4 py-1.5 text-xs font-black uppercase">
-              Help Center
+              {ui.helpCenter}
             </Badge>
             <h1 className="text-4xl md:text-6xl font-black tracking-tight">
-              Frequently Asked <br />
-              <span className="text-primary italic">Questions</span>
+              {ui.heroTitle1} <br />
+              <span className="text-primary italic">{ui.heroTitle2}</span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Find answers to common questions about eSIMs, purchasing,
-              installation, and more.
+              {ui.heroSubtitle}
             </p>
 
             <div className="max-w-lg mx-auto relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
               <Input
-                placeholder="Search for answers..."
+                placeholder={ui.searchPlaceholder}
                 className="pl-12 h-14 rounded-2xl text-base bg-card border-border/50"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -134,12 +148,12 @@ export function FAQClient({ categories }: FAQClientProps) {
               className="text-center py-16"
             >
               <p className="text-muted-foreground text-lg">
-                No results found for &quot;{searchQuery}&quot;
+                {ui.noResultsHint} &quot;{searchQuery}&quot;
               </p>
               <p className="text-muted-foreground mt-2">
-                Try a different search or{" "}
+                {ui.noResultsHint}{" "}
                 <Link href="/contact" className="text-primary hover:underline">
-                  contact support
+                  {ui.contactSupport}
                 </Link>
               </p>
             </motion.div>
@@ -194,20 +208,20 @@ export function FAQClient({ categories }: FAQClientProps) {
             className="text-center mt-16 p-8 rounded-3xl bg-muted/30 border border-border/50"
           >
             <h3 className="text-2xl font-bold mb-3">
-              Still have questions?
+              {ui.stillHaveQuestions}
             </h3>
             <p className="text-muted-foreground mb-6">
-              Our support team is available to help you with anything.
+              {ui.supportDesc}
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <Button className="rounded-2xl" asChild>
                 <Link href="/contact">
-                  Contact Support <ArrowRight className="ml-2 h-4 w-4" />
+                  {ui.contactSupportBtn} <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
               <Button variant="outline" className="rounded-2xl" asChild>
                 <Link href="/guides/installation">
-                  Installation Guide
+                  {ui.installationGuide}
                 </Link>
               </Button>
             </div>

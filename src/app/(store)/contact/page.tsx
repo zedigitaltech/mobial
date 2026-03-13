@@ -10,8 +10,11 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { ContactForm } from "./contact-form"
+import { getTranslations } from "next-intl/server"
 
-export default function ContactPage() {
+export default async function ContactPage() {
+  const t = await getTranslations("contact")
+
   return (
     <>
         {/* Hero */}
@@ -24,13 +27,13 @@ export default function ContactPage() {
           <div className="container mx-auto px-4 text-center">
             <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <Badge className="bg-primary/10 text-primary border-0 px-4 py-1.5 text-xs font-black uppercase">
-                Get in Touch
+                {t("badge")}
               </Badge>
               <h1 className="text-4xl md:text-6xl font-black tracking-tight">
-                Contact <span className="text-primary italic">Us</span>
+                {t("title")} <span className="text-primary italic">Us</span>
               </h1>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Have a question or need help? We&apos;re here for you.
+                {t("heroDesc")}
               </p>
             </div>
           </div>
@@ -54,7 +57,7 @@ export default function ContactPage() {
                         <Mail className="h-6 w-6 text-primary" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-lg">Email Us</h3>
+                        <h3 className="font-bold text-lg">{t("emailUs")}</h3>
                         <a
                           href="mailto:support@mobialo.eu"
                           className="text-primary hover:underline"
@@ -62,7 +65,7 @@ export default function ContactPage() {
                           support@mobialo.eu
                         </a>
                         <p className="text-sm text-muted-foreground mt-1">
-                          For all inquiries and support requests
+                          {t("emailDesc")}
                         </p>
                       </div>
                     </div>
@@ -76,12 +79,12 @@ export default function ContactPage() {
                         <Clock className="h-6 w-6 text-amber-500" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-lg">Response Time</h3>
+                        <h3 className="font-bold text-lg">{t("responseTime")}</h3>
                         <p className="text-muted-foreground">
-                          We typically respond within 24 hours
+                          {t("responseDesc")}
                         </p>
                         <p className="text-sm text-muted-foreground mt-1">
-                          Urgent issues are prioritized
+                          {t("responseUrgent")}
                         </p>
                       </div>
                     </div>
@@ -95,9 +98,9 @@ export default function ContactPage() {
                         <HelpCircle className="h-6 w-6 text-blue-500" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-lg">Quick Answers</h3>
+                        <h3 className="font-bold text-lg">{t("quickAnswers")}</h3>
                         <p className="text-muted-foreground mb-3">
-                          Check our FAQ for instant answers to common questions.
+                          {t("quickAnswersDesc")}
                         </p>
                         <Button
                           variant="outline"
@@ -106,7 +109,7 @@ export default function ContactPage() {
                           asChild
                         >
                           <Link href="/faq">
-                            Visit FAQ <ArrowRight className="ml-1 h-3 w-3" />
+                            {t("visitFaq")} <ArrowRight className="ml-1 h-3 w-3" />
                           </Link>
                         </Button>
                       </div>
@@ -122,10 +125,10 @@ export default function ContactPage() {
                       </div>
                       <div>
                         <h3 className="font-bold text-lg">
-                          Installation Help
+                          {t("installationHelp")}
                         </h3>
                         <p className="text-muted-foreground mb-3">
-                          Need help setting up your eSIM?
+                          {t("installationDesc")}
                         </p>
                         <Button
                           variant="outline"
@@ -134,7 +137,7 @@ export default function ContactPage() {
                           asChild
                         >
                           <Link href="/guides/installation">
-                            Setup Guide{" "}
+                            {t("setupGuide")}{" "}
                             <ArrowRight className="ml-1 h-3 w-3" />
                           </Link>
                         </Button>

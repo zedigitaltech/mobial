@@ -6,66 +6,61 @@ import {
   ArrowRight,
   QrCode,
   CreditCard,
-  Wifi,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { getTranslations } from "next-intl/server"
 
-const values = [
-  {
-    icon: DollarSign,
-    title: "Best Prices",
-    description:
-      "We compare plans across multiple providers to bring you the most competitive prices for every destination.",
-    color: "text-green-500",
-  },
-  {
-    icon: Zap,
-    title: "Instant Delivery",
-    description:
-      "Receive your eSIM QR code in seconds after payment. No waiting, no shipping, no delays.",
-    color: "text-amber-500",
-  },
-  {
-    icon: Globe,
-    title: "Global Coverage",
-    description:
-      "Access data plans for 190+ countries and territories. From major cities to remote destinations.",
-    color: "text-blue-500",
-  },
-  {
-    icon: HeadphonesIcon,
-    title: "24/7 Support",
-    description:
-      "Our dedicated support team is available around the clock to help with any issues or questions.",
-    color: "text-primary",
-  },
-]
+export default async function AboutPage() {
+  const t = await getTranslations("about")
 
-const steps = [
-  {
-    icon: Globe,
-    title: "Choose Your Plan",
-    description:
-      "Search for your destination and pick the data plan that fits your travel needs and budget.",
-  },
-  {
-    icon: CreditCard,
-    title: "Pay Securely",
-    description:
-      "Complete your purchase with our secure Stripe-powered checkout. All major cards accepted.",
-  },
-  {
-    icon: QrCode,
-    title: "Scan & Connect",
-    description:
-      "Receive your QR code instantly, scan it with your phone, and enjoy high-speed data on arrival.",
-  },
-]
+  const values = [
+    {
+      icon: DollarSign,
+      title: t("valueBestPrices"),
+      description: t("valueBestPricesDesc"),
+      color: "text-green-500",
+    },
+    {
+      icon: Zap,
+      title: t("valueInstantDelivery"),
+      description: t("valueInstantDeliveryDesc"),
+      color: "text-amber-500",
+    },
+    {
+      icon: Globe,
+      title: t("valueGlobalCoverage"),
+      description: t("valueGlobalCoverageDesc"),
+      color: "text-blue-500",
+    },
+    {
+      icon: HeadphonesIcon,
+      title: t("value247Support"),
+      description: t("value247SupportDesc"),
+      color: "text-primary",
+    },
+  ]
 
-export default function AboutPage() {
+  const steps = [
+    {
+      icon: Globe,
+      title: t("stepChoose"),
+      description: t("stepChooseDesc"),
+    },
+    {
+      icon: CreditCard,
+      title: t("stepPay"),
+      description: t("stepPayDesc"),
+    },
+    {
+      icon: QrCode,
+      title: t("stepConnect"),
+      description: t("stepConnectDesc"),
+    },
+  ]
+
   return (
     <>
         {/* Hero */}
@@ -79,15 +74,13 @@ export default function AboutPage() {
           <div className="container mx-auto px-4 text-center">
             <div className="max-w-3xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <Badge className="bg-primary/10 text-primary border-0 px-4 py-1.5 text-xs font-black uppercase">
-                Our Story
+                {t("badge")}
               </Badge>
               <h1 className="text-4xl md:text-6xl font-black tracking-tight">
-                About <span className="text-primary italic">MobiaL</span>
+                {t("title")} <span className="text-primary italic">MobiaL</span>
               </h1>
               <p className="text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
-                We believe staying connected while traveling should be simple,
-                affordable, and instant. No more hunting for local SIM cards or
-                paying outrageous roaming fees.
+                {t("heroDesc")}
               </p>
             </div>
           </div>
@@ -98,21 +91,17 @@ export default function AboutPage() {
           <div className="container mx-auto px-4 max-w-4xl">
             <div className="text-center space-y-6">
               <h2 className="text-3xl md:text-4xl font-black tracking-tight">
-                What We Do
+                {t("whatWeDoTitle")}
               </h2>
               <p className="text-lg text-muted-foreground leading-relaxed max-w-3xl mx-auto">
-                MobiaL is a premium eSIM marketplace powered by MobiMatter,
-                offering instant digital connectivity for travelers in over 190
-                countries. We aggregate plans from multiple top-tier providers so
-                you always get the best coverage and pricing for your
-                destination.
+                {t("whatWeDoDesc")}
               </p>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6 pt-8">
                 {[
-                  { value: "190+", label: "Countries" },
-                  { value: "Growing", label: "Community" },
-                  { value: "24/7", label: "Support" },
-                  { value: "< 2min", label: "Activation" },
+                  { value: "190+", label: t("statCountries") },
+                  { value: "Growing", label: t("statCommunity") },
+                  { value: "24/7", label: t("statSupport") },
+                  { value: "< 2min", label: t("statActivation") },
                 ].map((stat, i) => (
                   <div key={i} className="text-center">
                     <p className="text-3xl md:text-4xl font-black text-primary">
@@ -133,10 +122,10 @@ export default function AboutPage() {
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
               <Badge className="bg-primary/10 text-primary border-0 px-4 py-1.5 text-xs font-black uppercase mb-4">
-                Why MobiaL
+                {t("whyBadge")}
               </Badge>
               <h2 className="text-3xl md:text-4xl font-black tracking-tight">
-                Why Travelers Choose Us
+                {t("whyTitle")}
               </h2>
             </div>
 
@@ -165,10 +154,10 @@ export default function AboutPage() {
           <div className="container mx-auto px-4 max-w-4xl">
             <div className="text-center mb-16">
               <Badge className="bg-primary/10 text-primary border-0 px-4 py-1.5 text-xs font-black uppercase mb-4">
-                Simple Process
+                {t("howBadge")}
               </Badge>
               <h2 className="text-3xl md:text-4xl font-black tracking-tight">
-                How It Works
+                {t("howTitle")}
               </h2>
             </div>
 
@@ -201,11 +190,11 @@ export default function AboutPage() {
 
               <div className="relative z-10 space-y-6">
                 <h2 className="text-3xl md:text-5xl font-black tracking-tight">
-                  Ready to stay{" "}
-                  <span className="text-primary italic">connected</span>?
+                  {t("ctaTitle")}{" "}
+                  <span className="text-primary italic">{t("ctaHighlight")}</span>?
                 </h2>
                 <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                  Browse our plans and get your eSIM in under 2 minutes.
+                  {t("ctaDesc")}
                 </p>
                 <div className="flex flex-col sm:flex-row justify-center gap-4">
                   <Button
@@ -214,7 +203,7 @@ export default function AboutPage() {
                     asChild
                   >
                     <Link href="/products">
-                      Browse Plans <ArrowRight className="ml-2 h-5 w-5" />
+                      {t("ctaBrowse")} <ArrowRight className="ml-2 h-5 w-5" />
                     </Link>
                   </Button>
                   <Button
@@ -223,7 +212,7 @@ export default function AboutPage() {
                     className="rounded-2xl px-10 h-14 text-lg font-black border-2 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
                     asChild
                   >
-                    <Link href="/contact">Contact Us</Link>
+                    <Link href="/contact">{t("ctaContact")}</Link>
                   </Button>
                 </div>
               </div>
