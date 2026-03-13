@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useTranslations } from "next-intl"
 import { useQuery } from "@tanstack/react-query"
 import { motion, AnimatePresence } from "framer-motion"
 import {
@@ -67,6 +68,7 @@ async function fetchProducts(params: {
 }
 
 export default function ProductsPage() {
+  const t = useTranslations("products")
   const { addItem, isInCart } = useCart()
   const searchParams = useSearchParams()
   
@@ -155,7 +157,7 @@ export default function ProductsPage() {
                 <Calendar className="h-5 w-5 text-primary" />
               </div>
               <div className="flex-1 lg:w-64">
-                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Trip Duration: {duration} Days</p>
+                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">{t("tripDuration", { days: duration })}</p>
                 <Slider 
                   value={[duration]} 
                   onValueChange={(v) => setDuration(v[0])} 
@@ -176,7 +178,7 @@ export default function ProductsPage() {
                     usageType === type ? "bg-card text-primary shadow-lg" : "text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  {type}
+                  {t(type)}
                 </button>
               ))}
             </div>
@@ -184,7 +186,7 @@ export default function ProductsPage() {
             <div className="relative w-full lg:w-72 group">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
               <input
-                placeholder="Filter by country..."
+                placeholder={t("filterCountry")}
                 className="w-full h-11 bg-muted/50 border-0 rounded-xl pl-10 text-sm font-medium outline-none focus:ring-2 ring-primary/20 transition-all"
                 value={search}
                 onChange={(e) => {
@@ -196,12 +198,12 @@ export default function ProductsPage() {
 
             <div className="flex items-center gap-2 w-full lg:w-auto">
               {([
-                { label: "5G Only", active: show5GOnly, toggle: () => setShow5GOnly(v => !v) },
-                { label: "Unlimited", active: showUnlimitedOnly, toggle: () => setShowUnlimitedOnly(v => !v) },
-                { label: "Calls", active: showCallsOnly, toggle: () => setShowCallsOnly(v => !v) },
-              ] as const).map(({ label, active, toggle }) => (
+                { key: "fiveGOnly" as const, active: show5GOnly, toggle: () => setShow5GOnly(v => !v) },
+                { key: "unlimited" as const, active: showUnlimitedOnly, toggle: () => setShowUnlimitedOnly(v => !v) },
+                { key: "calls" as const, active: showCallsOnly, toggle: () => setShowCallsOnly(v => !v) },
+              ]).map(({ key, active, toggle }) => (
                 <button
-                  key={label}
+                  key={key}
                   onClick={toggle}
                   className={cn(
                     "px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all",
@@ -210,7 +212,7 @@ export default function ProductsPage() {
                       : "bg-muted/30 text-muted-foreground border-transparent hover:bg-muted/50"
                   )}
                 >
-                  {label}
+                  {t(key)}
                 </button>
               ))}
             </div>
@@ -221,17 +223,17 @@ export default function ProductsPage() {
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-32 space-y-4">
               <Loader2 className="h-12 w-12 animate-spin text-primary" />
-              <p className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground">Analyzing Best Fits...</p>
+              <p className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground">{t("analyzingFits")}</p>
             </div>
           ) : (
             <div className="space-y-12">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-3xl font-black tracking-tight">Recommended Plans</h2>
-                  <p className="text-muted-foreground font-medium">Ranked by your trip duration and usage style.</p>
+                  <h2 className="text-3xl font-black tracking-tight">{t("recommendedPlans")}</h2>
+                  <p className="text-muted-foreground font-medium">{t("rankedBy")}</p>
                 </div>
                 <Badge variant="outline" className="h-8 rounded-full border-primary/20 text-primary font-bold">
-                  {rankedProducts.length} Plans Available
+                  {t("plansAvailable", { count: rankedProducts.length })}
                 </Badge>
               </div>
 
@@ -240,8 +242,8 @@ export default function ProductsPage() {
                   <div className="w-20 h-20 bg-muted rounded-[2rem] flex items-center justify-center mx-auto mb-6">
                     <X className="h-10 w-10 text-muted-foreground" />
                   </div>
-                  <h3 className="text-2xl font-black">No matching plans</h3>
-                  <p className="text-muted-foreground">Try adjusting your filters or search terms.</p>
+                  <h3 className="text-2xl font-black">{t("noMatchingPlans")}</h3>
+                  <p className="text-muted-foreground">{t("adjustFilters")}</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
