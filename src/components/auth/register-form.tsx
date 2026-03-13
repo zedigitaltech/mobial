@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/form"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
+import { useTranslations } from "next-intl"
 import { GoogleSignIn } from "./google-sign-in"
 import { Separator } from "@/components/ui/separator"
 
@@ -48,6 +49,7 @@ interface RegisterFormProps {
 }
 
 export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) {
+  const t = useTranslations("auth")
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
@@ -88,12 +90,12 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
         localStorage.setItem("refreshToken", result.data.tokens.refreshToken)
       }
 
-      toast.success("Account created successfully!")
+      toast.success(t("accountCreated"))
       onSuccess?.()
       router.refresh()
     } catch (error) {
       console.error("Register error:", error)
-      toast.error(error instanceof Error ? error.message : "Registration failed")
+      toast.error(error instanceof Error ? error.message : t("registrationFailed"))
       form.setError("root", {
         message: error instanceof Error ? error.message : "Registration failed",
       })
@@ -110,9 +112,9 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
       className="space-y-6"
     >
       <div className="space-y-2 text-center">
-        <h2 className="text-2xl font-bold">Create an account</h2>
+        <h2 className="text-2xl font-bold">{t("createAccount")}</h2>
         <p className="text-sm text-muted-foreground">
-          Enter your details to get started
+          {t("enterDetails")}
         </p>
       </div>
 
@@ -123,7 +125,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
           <Separator className="w-full" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">or</span>
+          <span className="bg-background px-2 text-muted-foreground">{t("or")}</span>
         </div>
       </div>
 
@@ -140,7 +142,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Full Name</FormLabel>
+                <FormLabel>{t("name")}</FormLabel>
                 <FormControl>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -162,7 +164,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>{t("email")}</FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -185,7 +187,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Password</FormLabel>
+                <FormLabel>{t("password")}</FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -211,7 +213,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
                 </FormControl>
                 <FormMessage />
                 <p className="text-xs text-muted-foreground mt-1">
-                  Must be 8+ characters with uppercase, lowercase, and number
+                  {t("passwordRequirements")}
                 </p>
               </FormItem>
             )}
@@ -222,7 +224,7 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
             name="confirmPassword"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Confirm Password</FormLabel>
+                <FormLabel>{t("confirmPassword")}</FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -253,13 +255,13 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
                 </FormControl>
                 <div className="space-y-1 leading-none">
                   <FormLabel className="text-sm font-normal cursor-pointer">
-                    I agree to the{" "}
+                    {t("agreeToTerms")}{" "}
                     <a href="/terms" className="text-primary hover:underline">
-                      Terms of Service
+                      {t("termsOfService")}
                     </a>{" "}
-                    and{" "}
+                    {t("and")}{" "}
                     <a href="/privacy" className="text-primary hover:underline">
-                      Privacy Policy
+                      {t("privacyPolicy")}
                     </a>
                   </FormLabel>
                   <FormMessage />
@@ -270,20 +272,20 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
 
           <Button type="submit" className="w-full gradient-accent text-accent-foreground" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Create Account
+            {t("createAccountBtn")}
           </Button>
         </form>
       </Form>
 
       <div className="text-center text-sm">
-        <span className="text-muted-foreground">Already have an account? </span>
+        <span className="text-muted-foreground">{t("hasAccount")} </span>
         <Button
           variant="link"
           className="px-0"
           type="button"
           onClick={onSwitchToLogin}
         >
-          Sign in
+          {t("signInLink")}
         </Button>
       </div>
     </motion.div>

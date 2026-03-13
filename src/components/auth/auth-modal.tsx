@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { AnimatePresence } from "framer-motion"
 import { X } from "lucide-react"
 import {
@@ -20,6 +21,7 @@ interface AuthModalProps {
 }
 
 export function AuthModal({ open, onOpenChange, defaultView = "login" }: AuthModalProps) {
+  const t = useTranslations("auth")
   const [view, setView] = useState<"login" | "register">(defaultView)
 
   const handleSuccess = () => {
@@ -30,7 +32,7 @@ export function AuthModal({ open, onOpenChange, defaultView = "login" }: AuthMod
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px] p-0 overflow-hidden">
         <DialogHeader className="sr-only">
-          <DialogTitle>{view === "login" ? "Sign In" : "Create Account"}</DialogTitle>
+          <DialogTitle>{view === "login" ? t("signInModal") : t("createAccountModal")}</DialogTitle>
         </DialogHeader>
         <div className="p-6">
           <AnimatePresence mode="wait">

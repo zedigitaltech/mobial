@@ -2,23 +2,25 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { Home, Globe, Search, ShoppingCart, User } from "lucide-react"
 import { useCart } from "@/contexts/cart-context"
 import { useAuth } from "@/components/providers/auth-provider"
 import { cn } from "@/lib/utils"
 
-const NAV_ITEMS = [
-  { href: "/", icon: Home, label: "Home" },
-  { href: "/esim", icon: Globe, label: "Destinations" },
-  { href: "/products", icon: Search, label: "Browse" },
-  { href: "__cart__", icon: ShoppingCart, label: "Cart" },
-  { href: "__account__", icon: User, label: "Account" },
-] as const
-
 export function BottomNav() {
+  const t = useTranslations("bottomNav")
   const pathname = usePathname()
   const { itemCount } = useCart()
   const { user, openAuthModal } = useAuth()
+
+  const NAV_ITEMS = [
+    { href: "/", icon: Home, label: t("home") },
+    { href: "/esim", icon: Globe, label: t("destinations") },
+    { href: "/products", icon: Search, label: t("browse") },
+    { href: "__cart__", icon: ShoppingCart, label: t("cart") },
+    { href: "__account__", icon: User, label: t("account") },
+  ]
 
   const isActive = (href: string) => {
     if (href.startsWith("__")) return false

@@ -19,6 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form"
 import { toast } from "sonner"
+import { useTranslations } from "next-intl"
 import { GoogleSignIn } from "./google-sign-in"
 import { Separator } from "@/components/ui/separator"
 
@@ -35,6 +36,7 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
+  const t = useTranslations("auth")
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
@@ -68,12 +70,12 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
         localStorage.setItem("refreshToken", result.data.tokens.refreshToken)
       }
 
-      toast.success("Welcome back!")
+      toast.success(t("welcomeBackToast"))
       onSuccess?.()
       router.refresh()
     } catch (error) {
       console.error("Login error:", error)
-      toast.error(error instanceof Error ? error.message : "Login failed. Please check your credentials.")
+      toast.error(error instanceof Error ? error.message : t("loginFailed"))
       form.setError("root", {
         message: error instanceof Error ? error.message : "Login failed",
       })
@@ -90,9 +92,9 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
       className="space-y-6"
     >
       <div className="space-y-2 text-center">
-        <h2 className="text-2xl font-bold">Welcome back</h2>
+        <h2 className="text-2xl font-bold">{t("welcomeBack")}</h2>
         <p className="text-sm text-muted-foreground">
-          Enter your credentials to access your account
+          {t("enterCredentials")}
         </p>
       </div>
 
@@ -103,7 +105,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
           <Separator className="w-full" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">or</span>
+          <span className="bg-background px-2 text-muted-foreground">{t("or")}</span>
         </div>
       </div>
 
@@ -120,7 +122,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>{t("email")}</FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -143,7 +145,7 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Password</FormLabel>
+                <FormLabel>{t("password")}</FormLabel>
                 <FormControl>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -174,26 +176,26 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
 
           <div className="flex items-center justify-end">
             <Button variant="link" className="px-0 text-sm" type="button" asChild>
-              <Link href="/reset-password">Forgot password?</Link>
+              <Link href="/reset-password">{t("forgotPassword")}</Link>
             </Button>
           </div>
 
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Sign In
+            {t("signIn")}
           </Button>
         </form>
       </Form>
 
       <div className="text-center text-sm">
-        <span className="text-muted-foreground">Don&apos;t have an account? </span>
+        <span className="text-muted-foreground">{t("noAccount")} </span>
         <Button
           variant="link"
           className="px-0"
           type="button"
           onClick={onSwitchToRegister}
         >
-          Sign up
+          {t("signUp")}
         </Button>
       </div>
     </motion.div>

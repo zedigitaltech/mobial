@@ -31,6 +31,7 @@ import {
 } from "@/components/ui/drawer"
 import { useCart, CartItem } from "@/contexts/cart-context"
 import { useIsMobile } from "@/hooks/use-is-mobile"
+import { useTranslations } from "next-intl"
 
 interface CartDrawerProps {
   trigger?: React.ReactNode
@@ -39,6 +40,7 @@ interface CartDrawerProps {
 }
 
 function CartItemCard({ item }: { item: CartItem }) {
+  const t = useTranslations("cart")
   const { removeItem, updateQuantity, getItemQuantity } = useCart()
   const quantity = getItemQuantity(item.productId)
 
@@ -46,12 +48,12 @@ function CartItemCard({ item }: { item: CartItem }) {
     if (item.dataAmount && item.dataUnit) {
       return `${item.dataAmount} ${item.dataUnit}`
     }
-    return "Data Plan"
+    return t("dataPlan")
   }
 
   const formatValidity = () => {
     if (item.validityDays) {
-      return `${item.validityDays} days`
+      return `${item.validityDays} ${t("days")}`
     }
     return null
   }
@@ -131,6 +133,7 @@ function CartItemCard({ item }: { item: CartItem }) {
 }
 
 function CartBody({ onClose }: { onClose?: () => void }) {
+  const t = useTranslations("cart")
   const router = useRouter()
   const { items, total, itemCount, clearCart } = useCart()
 
@@ -145,12 +148,12 @@ function CartBody({ onClose }: { onClose?: () => void }) {
         <div className="h-20 w-20 rounded-full bg-muted flex items-center justify-center mb-4">
           <Package className="h-10 w-10 text-muted-foreground" />
         </div>
-        <h3 className="text-lg font-semibold mb-1">Your cart is empty</h3>
+        <h3 className="text-lg font-semibold mb-1">{t("empty")}</h3>
         <p className="text-sm text-muted-foreground mb-4">
-          Add some eSIM plans to get started
+          {t("emptyDesc")}
         </p>
         <Button onClick={onClose} asChild>
-          <a href="/products">Browse Plans</a>
+          <a href="/products">{t("browsePlans")}</a>
         </Button>
       </div>
     )
@@ -169,16 +172,16 @@ function CartBody({ onClose }: { onClose?: () => void }) {
       <div className="border-t px-6 py-4 space-y-4 pb-[env(safe-area-inset-bottom)]">
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Subtotal</span>
+            <span className="text-muted-foreground">{t("subtotal")}</span>
             <span>${total.toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-muted-foreground">Tax</span>
+            <span className="text-muted-foreground">{t("tax")}</span>
             <span>$0.00</span>
           </div>
           <Separator />
           <div className="flex justify-between font-semibold">
-            <span>Total</span>
+            <span>{t("total")}</span>
             <span className="text-primary">${total.toFixed(2)}</span>
           </div>
         </div>
@@ -188,7 +191,7 @@ function CartBody({ onClose }: { onClose?: () => void }) {
             className="w-full gradient-accent text-accent-foreground"
             onClick={handleCheckout}
           >
-            Proceed to Checkout
+            {t("proceedToCheckout")}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
           <Button
@@ -196,7 +199,7 @@ function CartBody({ onClose }: { onClose?: () => void }) {
             className="w-full text-muted-foreground"
             onClick={clearCart}
           >
-            Clear Cart
+            {t("clearCart")}
           </Button>
         </div>
       </div>
@@ -205,14 +208,15 @@ function CartBody({ onClose }: { onClose?: () => void }) {
 }
 
 function CartHeader() {
+  const t = useTranslations("cart")
   const { itemCount } = useCart()
   return (
     <div className="flex items-center gap-2">
       <ShoppingCart className="h-5 w-5" />
-      Your Cart
+      {t("yourCart")}
       {itemCount > 0 && (
         <Badge variant="secondary" className="ml-auto">
-          {itemCount} {itemCount === 1 ? "item" : "items"}
+          {itemCount} {itemCount === 1 ? t("item") : t("items")}
         </Badge>
       )}
     </div>

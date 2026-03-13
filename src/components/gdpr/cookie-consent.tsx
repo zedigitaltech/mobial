@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 interface CookiePreferences {
@@ -14,6 +15,7 @@ interface CookiePreferences {
 const STORAGE_KEY = 'cookie-consent';
 
 export function CookieConsent() {
+  const t = useTranslations('cookieConsent');
   const [visible, setVisible] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
   const [analytics, setAnalytics] = useState(false);
@@ -112,18 +114,17 @@ export function CookieConsent() {
         <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[oklch(0.14_0.02_220)] shadow-2xl backdrop-blur-xl">
           <div className="p-5">
             <h2 className="mb-2 text-base font-semibold text-white">
-              We value your privacy
+              {t('title')}
             </h2>
             <p className="mb-4 text-sm leading-relaxed text-white/60">
-              We use cookies to improve your experience and analyze site traffic.
-              Read our{' '}
+              {t('description')}{' '}
               <Link
                 href="/privacy"
                 className="text-[oklch(0.65_0.12_210)] underline underline-offset-2 hover:text-[oklch(0.75_0.12_210)]"
               >
-                privacy policy
+                {t('privacyPolicyLink')}
               </Link>{' '}
-              for details.
+              {t('forDetails')}
             </p>
 
             {/* Preference toggles */}
@@ -132,8 +133,8 @@ export function CookieConsent() {
                 {/* Essential - always on */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-white">Essential</p>
-                    <p className="text-xs text-white/40">Required for the site to function</p>
+                    <p className="text-sm font-medium text-white">{t('essential')}</p>
+                    <p className="text-xs text-white/40">{t('essentialDesc')}</p>
                   </div>
                   <div className="relative h-6 w-11 cursor-not-allowed rounded-full bg-[oklch(0.65_0.12_210)] opacity-60">
                     <div className="absolute right-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm" />
@@ -143,8 +144,8 @@ export function CookieConsent() {
                 {/* Analytics */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-white">Analytics</p>
-                    <p className="text-xs text-white/40">Help us understand site usage</p>
+                    <p className="text-sm font-medium text-white">{t('analytics')}</p>
+                    <p className="text-xs text-white/40">{t('analyticsDesc')}</p>
                   </div>
                   <button
                     type="button"
@@ -166,8 +167,8 @@ export function CookieConsent() {
                 {/* Marketing */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-white">Marketing</p>
-                    <p className="text-xs text-white/40">Personalized promotions and offers</p>
+                    <p className="text-sm font-medium text-white">{t('marketing')}</p>
+                    <p className="text-xs text-white/40">{t('marketingDesc')}</p>
                   </div>
                   <button
                     type="button"
@@ -189,8 +190,8 @@ export function CookieConsent() {
                 {/* Third-party */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-white">Third-party</p>
-                    <p className="text-xs text-white/40">Share data with trusted partners</p>
+                    <p className="text-sm font-medium text-white">{t('thirdParty')}</p>
+                    <p className="text-xs text-white/40">{t('thirdPartyDesc')}</p>
                   </div>
                   <button
                     type="button"
@@ -219,7 +220,7 @@ export function CookieConsent() {
                   onClick={() => setShowPreferences(true)}
                   className="order-3 rounded-lg px-4 py-2 text-sm font-medium text-white/50 transition-colors hover:text-white/80 sm:order-1"
                 >
-                  Manage Preferences
+                  {t('managePreferences')}
                 </button>
               ) : (
                 <button
@@ -227,7 +228,7 @@ export function CookieConsent() {
                   onClick={savePreferences}
                   className="order-3 rounded-lg px-4 py-2 text-sm font-medium text-white/50 transition-colors hover:text-white/80 sm:order-1"
                 >
-                  Save Preferences
+                  {t('savePreferences')}
                 </button>
               )}
               <button
@@ -235,14 +236,14 @@ export function CookieConsent() {
                 onClick={acceptEssential}
                 className="order-2 rounded-lg border border-white/10 bg-white/[0.05] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/[0.1]"
               >
-                Essential Only
+                {t('essentialOnly')}
               </button>
               <button
                 type="button"
                 onClick={acceptAll}
                 className="order-1 rounded-lg bg-[oklch(0.65_0.12_210)] px-4 py-2 text-sm font-semibold text-[oklch(0.12_0.015_220)] transition-colors hover:bg-[oklch(0.72_0.12_210)] sm:order-3"
               >
-                Accept All
+                {t('acceptAll')}
               </button>
             </div>
           </div>
