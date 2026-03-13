@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useTranslations } from "next-intl"
 import posthog from "posthog-js"
 import { useRouter } from "next/navigation"
 import { motion, AnimatePresence } from "framer-motion"
@@ -46,11 +47,12 @@ async function validateAffiliateCode(code: string): Promise<AffiliateValidation>
 }
 
 function CartSummaryItem({ item }: { item: CartItem }) {
+  const t = useTranslations("checkout")
   const formatData = () => {
     if (item.dataAmount && item.dataUnit) {
       return `${item.dataAmount} ${item.dataUnit}`
     }
-    return "Data Plan"
+    return t("dataPlan")
   }
 
   return (
@@ -71,7 +73,7 @@ function CartSummaryItem({ item }: { item: CartItem }) {
           <span>•</span>
           <span>{formatData()}</span>
           <span>•</span>
-          <span>Qty: {item.quantity}</span>
+          <span>{t("qty")} {item.quantity}</span>
         </div>
       </div>
       <div className="text-right">
@@ -82,6 +84,7 @@ function CartSummaryItem({ item }: { item: CartItem }) {
 }
 
 export default function CheckoutPage() {
+  const t = useTranslations("checkout")
   const router = useRouter()
   const { items, total, clearCart } = useCart()
 
@@ -149,12 +152,12 @@ export default function CheckoutPage() {
   // Handle checkout - Create order and redirect to Stripe
   const handleCheckout = async () => {
     if (!email.trim()) {
-      setError("Please enter your email address")
+      setError(t("enterEmail"))
       return
     }
 
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError("Please enter a valid email address")
+      setError(t("validEmail"))
       return
     }
 
@@ -225,7 +228,7 @@ export default function CheckoutPage() {
           <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <Button variant="ghost" size="sm" onClick={() => router.back()}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Continue Shopping
+              {t("continueShopping")}
             </Button>
           </div>
         </div>
@@ -237,9 +240,9 @@ export default function CheckoutPage() {
               animate={{ opacity: 1, y: 0 }}
               className="mb-8"
             >
-              <h1 className="text-3xl font-bold mb-2">Checkout</h1>
+              <h1 className="text-3xl font-bold mb-2">{t("title")}</h1>
               <p className="text-muted-foreground">
-                Complete your purchase and get your eSIM delivered instantly
+                {t("subtitle")}
               </p>
             </motion.div>
 
@@ -253,25 +256,25 @@ export default function CheckoutPage() {
                 {/* Customer Info */}
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">Contact Information</CardTitle>
+                    <CardTitle className="text-lg">{t("contactInfo")}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="email">Email Address *</Label>
+                      <Label htmlFor="email">{t("emailRequired")}</Label>
                       <Input
                         id="email"
                         type="email"
-                        placeholder="your@email.com"
+                        placeholder={t("emailPlaceholder")}
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
                       />
                       <p className="text-xs text-muted-foreground">
-                        Your eSIM QR code will be sent to this email
+                        {t("emailHelp")}
                       </p>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number (optional)</Label>
+                      <Label htmlFor="phone">{t("phone")}</Label>
                       <Input
                         id="phone"
                         type="tel"
@@ -288,13 +291,13 @@ export default function CheckoutPage() {
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
                       <Tag className="h-5 w-5" />
-                      Promo Code <span className="text-sm font-normal text-muted-foreground">(Optional)</span>
+                      {t("promoCode")} <span className="text-sm font-normal text-muted-foreground">{t("promoOptional")}</span>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="flex gap-2">
                       <Input
-                        placeholder="Enter promo code (optional)"
+                        placeholder={t("promoPlaceholder")}
                         value={affiliateCode}
                         onChange={(e) => {
                           setAffiliateCode(e.target.value)
@@ -321,7 +324,7 @@ export default function CheckoutPage() {
                           {validatingCode ? (
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
-                            "Apply"
+                            t("apply")
                           )}
                         </Button>
                       )}
@@ -330,17 +333,17 @@ export default function CheckoutPage() {
                       <div className="mt-3 flex items-center gap-2 text-sm text-primary">
                         <Check className="h-4 w-4" />
                         <span>
-                          Code applied! {affiliateValidation.discount}% discount
+                          {t("codeApplied", { discount: affiliateValidation.discount })}
                         </span>
                       </div>
                     )}
                     {affiliateValidation && !affiliateValidation.valid && (
                       <p className="mt-3 text-sm text-muted-foreground">
-                        Invalid promo code. Please check and try again.
+                        {t("invalidCode")}
                       </p>
                     )}
                     <p className="mt-2 text-xs text-muted-foreground">
-                      Don't have a code? Continue without one.
+                      {t("noCode")}
                     </p>
                   </CardContent>
                 </Card>
@@ -350,15 +353,15 @@ export default function CheckoutPage() {
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
                       <CreditCard className="h-5 w-5" />
-                      Payment
+                      {t("payment")}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="p-8 border-2 border-dashed rounded-lg text-center text-muted-foreground">
                       <Shield className="h-12 w-12 mx-auto mb-3 text-primary" />
-                      <p className="font-medium mb-1">Secure Checkout</p>
+                      <p className="font-medium mb-1">{t("secureCheckout")}</p>
                       <p className="text-sm">
-                        You'll be redirected to Stripe's secure checkout to complete your payment.
+                        {t("redirectStripe")}
                       </p>
                     </div>
                   </CardContent>
@@ -382,36 +385,36 @@ export default function CheckoutPage() {
                   {processing ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Processing...
+                      {t("processing")}
                     </>
                   ) : (
                     <>
                       <ShoppingCart className="h-4 w-4 mr-2" />
-                      Complete Order - ${finalTotal.toFixed(2)}
+                      {t("completeOrder")} - ${finalTotal.toFixed(2)}
                     </>
                   )}
                 </Button>
                 <p className="text-xs text-center text-muted-foreground mt-2">
-                  You&apos;ll receive your eSIM QR code by email within 2 minutes of payment.
+                  {t("receiveQr")}
                 </p>
 
                 {/* Trust Signals */}
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
                     <Shield className="h-4 w-4 text-blue-500 shrink-0" />
-                    <span className="font-medium">Secure payment via Stripe</span>
+                    <span className="font-medium">{t("secureStripe")}</span>
                   </div>
                   <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
                     <Check className="h-4 w-4 text-emerald-500 shrink-0" />
-                    <span className="font-medium">eSIM in ~2 minutes</span>
+                    <span className="font-medium">{t("esimMinutes")}</span>
                   </div>
                   <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
                     <Zap className="h-4 w-4 text-amber-500 shrink-0" />
-                    <span className="font-medium">No account required</span>
+                    <span className="font-medium">{t("noAccountRequired")}</span>
                   </div>
                   <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
                     <CreditCard className="h-4 w-4 text-primary shrink-0" />
-                    <span className="font-medium">Money-back guarantee</span>
+                    <span className="font-medium">{t("moneyBack")}</span>
                   </div>
                 </div>
               </motion.div>
@@ -426,9 +429,9 @@ export default function CheckoutPage() {
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
                       <ShoppingCart className="h-5 w-5" />
-                      Order Summary
+                      {t("orderSummary")}
                       <Badge variant="secondary" className="ml-auto">
-                        {items.length} {items.length === 1 ? "item" : "items"}
+                        {items.length} {items.length === 1 ? t("item") : t("items")}
                       </Badge>
                     </CardTitle>
                   </CardHeader>
@@ -445,22 +448,22 @@ export default function CheckoutPage() {
 
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Subtotal</span>
+                        <span className="text-muted-foreground">{t("subtotal")}</span>
                         <span>${total.toFixed(2)}</span>
                       </div>
                       {discountAmount > 0 && (
                         <div className="flex justify-between text-primary">
-                          <span>Discount</span>
+                          <span>{t("discount")}</span>
                           <span>-${discountAmount.toFixed(2)}</span>
                         </div>
                       )}
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">Tax</span>
+                        <span className="text-muted-foreground">{t("tax")}</span>
                         <span>$0.00</span>
                       </div>
                       <Separator />
                       <div className="flex justify-between font-semibold text-base">
-                        <span>Total</span>
+                        <span>{t("total")}</span>
                         <span>${finalTotal.toFixed(2)}</span>
                       </div>
                     </div>
