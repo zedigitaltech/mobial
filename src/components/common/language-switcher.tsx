@@ -72,7 +72,7 @@ export function LanguageSwitcher({ triggerClassName }: LanguageSwitcherProps = {
           <span className="sr-only">Change language</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="max-h-[320px] overflow-y-auto">
+      <DropdownMenuContent align="end" className="max-h-[320px] overflow-y-auto bg-background/80 backdrop-blur-xl border-white/10">
         {languages.map((lang) => (
           <DropdownMenuItem
             key={lang.code}
