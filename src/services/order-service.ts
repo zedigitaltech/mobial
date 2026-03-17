@@ -3,13 +3,20 @@
  * Functions for order management and processing
  */
 
-import crypto from 'crypto';
-import { db } from '@/lib/db';
-import { logAudit } from '@/lib/audit';
-import { createOrder as mobimatterCreateOrder, completeOrder as mobimatterCompleteOrder } from '@/lib/mobimatter';
-import { encryptEsimField } from '@/lib/esim-encryption';
-import { sendEsimReady } from '@/services/email-service';
-import { Prisma, OrderStatus, PaymentStatus } from '@prisma/client';
+import crypto from "crypto";
+import { db } from "@/lib/db";
+import { logAudit } from "@/lib/audit";
+import {
+  createOrder as mobimatterCreateOrder,
+  completeOrder as mobimatterCompleteOrder,
+  getWalletBalance,
+} from "@/lib/mobimatter";
+import { encryptEsimField } from "@/lib/esim-encryption";
+import { sendEsimReady } from "@/services/email-service";
+import { logger } from "@/lib/logger";
+import { Prisma, OrderStatus, PaymentStatus } from "@prisma/client";
+
+const log = logger.child("order-service");
 
 // Types
 export interface CreateOrderItem {
@@ -49,9 +56,9 @@ export interface OrderFilters {
  * Format: MBL-XXXXXXXX (8 alphanumeric characters)
  */
 export function generateOrderNumber(): string {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
   const bytes = crypto.randomBytes(8);
-  let result = 'MBL-';
+  let result = "MBL-";
   for (let i = 0; i < 8; i++) {
     result += chars.charAt(bytes[i] % chars.length);
   }
@@ -61,7 +68,9 @@ export function generateOrderNumber(): string {
 /**
  * Calculate order totals from items
  */
-export async function calculateOrderTotal(items: CreateOrderItem[]): Promise<OrderTotals> {
+export async function calculateOrderTotal(
+  items: CreateOrderItem[],
+): Promise<OrderTotals> {
   let subtotal = 0;
 
   for (const item of items) {
@@ -84,7 +93,7 @@ export async function calculateOrderTotal(items: CreateOrderItem[]): Promise<Ord
 
   // No tax for digital eSIM products (can be adjusted based on jurisdiction)
   const tax = 0;
-  
+
   // No automatic discounts at order level
   const discount = 0;
 
@@ -166,7 +175,7 @@ export async function createOrder(
   data: CreateOrderData,
   userId?: string,
   ipAddress?: string,
-  userAgent?: string
+  userAgent?: string,
 ): Promise<{
   order: {
     id: string;
@@ -185,9 +194,9 @@ export async function createOrder(
 }> {
   // Validate products
   const validation = await validateProducts(data.items);
-  
+
   if (!validation.valid) {
-    throw new Error(`Validation failed: ${validation.errors.join(', ')}`);
+    throw new Error(`Validation failed: ${validation.errors.join(", ")}`);
   }
 
   // Calculate totals
@@ -196,14 +205,14 @@ export async function createOrder(
   // Generate unique order number
   let orderNumber = generateOrderNumber();
   let attempts = 0;
-  
+
   while (attempts < 10) {
     const existing = await db.order.findUnique({
       where: { orderNumber },
     });
-    
+
     if (!existing) break;
-    
+
     orderNumber = generateOrderNumber();
     attempts++;
   }
@@ -217,8 +226,8 @@ export async function createOrder(
         userId: userId || null,
         email: data.email.toLowerCase(),
         phone: data.phone || null,
-        status: 'PENDING',
-        paymentStatus: 'PENDING',
+        status: "PENDING",
+        paymentStatus: "PENDING",
         subtotal: totals.subtotal,
         discount: totals.discount,
         tax: totals.tax,
@@ -233,10 +242,14 @@ export async function createOrder(
     // Create order items
     const orderItems = await Promise.all(
       data.items.map(async (item) => {
-        const product = validation.products.find((p) => p.id === item.productId);
-        
+        const product = validation.products.find(
+          (p) => p.id === item.productId,
+        );
+
         if (!product) {
-          throw new Error(`Product not found in validation results: ${item.productId}`);
+          throw new Error(
+            `Product not found in validation results: ${item.productId}`,
+          );
         }
 
         return tx.orderItem.create({
@@ -249,7 +262,7 @@ export async function createOrder(
             totalPrice: product.price * item.quantity,
           },
         });
-      })
+      }),
     );
 
     return { ...newOrder, items: orderItems };
@@ -258,8 +271,8 @@ export async function createOrder(
   // Log audit event
   await logAudit({
     userId: userId || undefined,
-    action: 'order_create',
-    entity: 'order',
+    action: "order_create",
+    entity: "order",
     entityId: order.id,
     newValues: {
       orderNumber: order.orderNumber,
@@ -291,11 +304,12 @@ export async function createOrder(
 
 /**
  * Process order with MobiMatter API
- * Called after payment is confirmed
+ * Called after payment is confirmed.
+ * Tracks per-item fulfillment status and supports partial fulfillment.
  */
 export async function processOrderWithMobimatter(
   orderId: string,
-  processedBy?: string
+  processedBy?: string,
 ): Promise<{
   success: boolean;
   order?: {
@@ -308,7 +322,6 @@ export async function processOrderWithMobimatter(
   error?: string;
 }> {
   try {
-    // Get order with items
     const order = await db.order.findUnique({
       where: { id: orderId },
       include: {
@@ -318,6 +331,7 @@ export async function processOrderWithMobimatter(
               select: {
                 mobimatterId: true,
                 name: true,
+                wholesalePrice: true,
               },
             },
           },
@@ -326,20 +340,78 @@ export async function processOrderWithMobimatter(
     });
 
     if (!order) {
-      return { success: false, error: 'Order not found' };
+      return { success: false, error: "Order not found" };
     }
 
-    if (order.status !== 'PENDING' && order.status !== 'PROCESSING') {
-      return { success: false, error: `Cannot process order with status: ${order.status}` };
+    const allowedStatuses: OrderStatus[] = [
+      "PENDING",
+      "PROCESSING",
+      "PARTIALLY_FULFILLED",
+      "FAILED",
+    ];
+    if (!allowedStatuses.includes(order.status)) {
+      return {
+        success: false,
+        error: `Cannot process order with status: ${order.status}`,
+      };
     }
 
-    // Update status to PROCESSING
+    // Only process items that haven't been fulfilled yet
+    const pendingItems = order.items.filter(
+      (item) => item.fulfillmentStatus !== "COMPLETED",
+    );
+
+    if (pendingItems.length === 0) {
+      return {
+        success: true,
+        order: {
+          id: order.id,
+          orderNumber: order.orderNumber,
+          status: order.status,
+        },
+      };
+    }
+
+    // Wallet balance check before fulfillment
+    try {
+      const wallet = await getWalletBalance();
+      const estimatedCost = pendingItems.reduce(
+        (sum, item) => sum + (item.product.wholesalePrice || 0) * item.quantity,
+        0,
+      );
+
+      if (wallet.balance < estimatedCost) {
+        log.error("Insufficient MobiMatter wallet balance", {
+          metadata: {
+            balance: wallet.balance,
+            estimatedCost,
+            orderId,
+            orderNumber: order.orderNumber,
+          },
+        });
+        return {
+          success: false,
+          error: "Insufficient wallet balance for fulfillment",
+        };
+      }
+
+      if (wallet.balance < 50 || wallet.balance < estimatedCost * 2) {
+        log.warn("MobiMatter wallet balance is low", {
+          metadata: { balance: wallet.balance, currency: wallet.currency },
+        });
+      }
+    } catch (walletError) {
+      log.errorWithException(
+        "Failed to check wallet balance, proceeding with fulfillment",
+        walletError,
+      );
+    }
+
     await db.order.update({
       where: { id: orderId },
-      data: { status: 'PROCESSING' },
+      data: { status: "PROCESSING" },
     });
 
-    // Process each item with MobiMatter
     const mobimatterResults: Array<{
       itemId: string;
       orderId?: string;
@@ -352,31 +424,33 @@ export async function processOrderWithMobimatter(
       error?: string;
     }> = [];
 
-    for (const item of order.items) {
+    for (const item of pendingItems) {
       try {
-        // Step 1: Create order (pending, amount authorized from wallet)
         const pendingOrder = await mobimatterCreateOrder({
           productId: item.product.mobimatterId,
-          productCategory: 'esim_realtime',
+          productCategory: "esim_realtime",
           label: order.orderNumber,
         });
 
-        // Step 2: Complete order (fulfills and returns eSIM details)
-        const fulfilledOrder = await mobimatterCompleteOrder(pendingOrder.orderId);
-
-        // Extract eSIM details from the line item
+        const fulfilledOrder = await mobimatterCompleteOrder(
+          pendingOrder.orderId,
+        );
         const lineItem = fulfilledOrder.lineItem;
 
         if (!lineItem) {
-          throw new Error(`Order ${pendingOrder.orderId} completed but no line item returned`);
+          throw new Error(
+            `Order ${pendingOrder.orderId} completed but no line item returned`,
+          );
         }
 
-        // Update order item with eSIM details
         await db.orderItem.update({
           where: { id: item.id },
           data: {
             esimQrCode: encryptEsimField(lineItem.qrCode),
             esimIccid: lineItem.iccid,
+            fulfillmentStatus: "COMPLETED",
+            mobimatterOrderId: fulfilledOrder.orderId,
+            fulfillmentError: null,
           },
         });
 
@@ -391,7 +465,17 @@ export async function processOrderWithMobimatter(
           kycUrl: lineItem.kycUrl,
         });
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
+
+        await db.orderItem.update({
+          where: { id: item.id },
+          data: {
+            fulfillmentStatus: "FAILED",
+            fulfillmentError: errorMessage,
+          },
+        });
+
         mobimatterResults.push({
           itemId: item.id,
           error: errorMessage,
@@ -399,75 +483,88 @@ export async function processOrderWithMobimatter(
       }
     }
 
-    // Check if all items were processed successfully
+    const successItems = mobimatterResults.filter((r) => !r.error);
     const failedItems = mobimatterResults.filter((r) => r.error);
-    
-    if (failedItems.length > 0) {
-      // Update order status to FAILED
-      await db.order.update({
-        where: { id: orderId },
-        data: {
-          status: 'FAILED',
-          mobimatterStatus: 'FAILED',
-        },
-      });
 
-      return {
-        success: false,
-        error: `Failed to process ${failedItems.length} items`,
-      };
+    const totalCompleted =
+      order.items.filter((item) => item.fulfillmentStatus === "COMPLETED")
+        .length + successItems.length;
+    const totalItems = order.items.length;
+
+    let finalStatus: OrderStatus;
+    if (failedItems.length === 0) {
+      const primarySuccess = successItems[0];
+      const isKycPending = primarySuccess?.kycUrl;
+      finalStatus = isKycPending ? "PROCESSING" : "COMPLETED";
+    } else if (totalCompleted > 0) {
+      finalStatus = "PARTIALLY_FULFILLED";
+    } else {
+      finalStatus = "FAILED";
     }
 
-    // Get the first MobiMatter order ID (for tracking)
-    const primaryResult = mobimatterResults[0];
-
-    // Determine final status: if KYC required, stay in PROCESSING
-    const isKycPending = primaryResult?.kycUrl;
-    const finalStatus = isKycPending ? 'PROCESSING' : 'COMPLETED';
-
-    // Prefer LPA string for QR code storage (compact, encodable by external QR services)
-    // Fall back to base64 QR_CODE image from MobiMatter if LPA not available
+    const primaryResult =
+      successItems[0] || mobimatterResults.find((r) => r.orderId);
     const qrCodeValue = primaryResult?.lpa || primaryResult?.qrCode;
 
-    // Update order with MobiMatter details
     const updatedOrder = await db.order.update({
       where: { id: orderId },
       data: {
         status: finalStatus,
-        mobimatterOrderId: primaryResult?.orderId,
-        mobimatterStatus: isKycPending ? 'PROCESSING' : 'COMPLETED',
-        esimQrCode: encryptEsimField(qrCodeValue),
-        esimActivationCode: encryptEsimField(primaryResult?.activationCode),
-        esimSmdpAddress: encryptEsimField(primaryResult?.smdpAddress),
-        completedAt: isKycPending ? undefined : new Date(),
+        mobimatterOrderId: primaryResult?.orderId || order.mobimatterOrderId,
+        mobimatterStatus:
+          finalStatus === "COMPLETED" ? "COMPLETED" : finalStatus,
+        esimQrCode: qrCodeValue
+          ? encryptEsimField(qrCodeValue)
+          : order.esimQrCode,
+        esimActivationCode: primaryResult?.activationCode
+          ? encryptEsimField(primaryResult.activationCode)
+          : order.esimActivationCode,
+        esimSmdpAddress: primaryResult?.smdpAddress
+          ? encryptEsimField(primaryResult.smdpAddress)
+          : order.esimSmdpAddress,
+        completedAt: finalStatus === "COMPLETED" ? new Date() : undefined,
       },
     });
 
-    // Log audit event
     await logAudit({
       userId: processedBy,
-      action: 'order_complete',
-      entity: 'order',
+      action: "order_complete",
+      entity: "order",
       entityId: orderId,
       newValues: {
         orderNumber: order.orderNumber,
         mobimatterOrderId: primaryResult?.orderId,
-        itemsProcessed: mobimatterResults.length,
+        itemsProcessed: pendingItems.length,
+        itemsSucceeded: successItems.length,
+        itemsFailed: failedItems.length,
+        finalStatus,
       },
     });
 
-    // Fire-and-forget eSIM ready notification
-    if (finalStatus === 'COMPLETED' && qrCodeValue) {
-      const qrUrl = qrCodeValue.startsWith('http')
+    if (failedItems.length > 0) {
+      log.error("Partial fulfillment failure", {
+        metadata: {
+          orderId,
+          orderNumber: order.orderNumber,
+          succeeded: successItems.length,
+          failed: failedItems.length,
+          total: totalItems,
+          errors: failedItems.map((f) => f.error),
+        },
+      });
+    }
+
+    if (finalStatus === "COMPLETED" && qrCodeValue) {
+      const qrUrl = qrCodeValue.startsWith("http")
         ? qrCodeValue
-        : `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/qr/${order.orderNumber}`;
+        : `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/qr/${order.orderNumber}`;
       sendEsimReady(order.email, order.orderNumber, qrUrl).catch((err) =>
-        console.error('[OrderService] Failed to send eSIM ready email:', err)
+        log.errorWithException("Failed to send eSIM ready email", err),
       );
     }
 
     return {
-      success: true,
+      success: failedItems.length === 0,
       order: {
         id: updatedOrder.id,
         orderNumber: updatedOrder.orderNumber,
@@ -475,12 +572,17 @@ export async function processOrderWithMobimatter(
         mobimatterOrderId: updatedOrder.mobimatterOrderId || undefined,
         esimQrCode: updatedOrder.esimQrCode || undefined,
       },
+      error:
+        failedItems.length > 0
+          ? `${failedItems.length}/${totalItems} items failed fulfillment`
+          : undefined,
     };
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-
-    // Log the error
-    console.error('Error processing order with MobiMatter:', error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    log.errorWithException("Error processing order with MobiMatter", error, {
+      metadata: { orderId },
+    });
 
     return {
       success: false,
@@ -553,14 +655,14 @@ export async function getOrderById(orderId: string) {
  */
 export async function getUserOrders(
   userId: string,
-  pagination: PaginationParams = {}
+  pagination: PaginationParams = {},
 ) {
   const { limit = 20, offset = 0 } = pagination;
 
   const [orders, total] = await Promise.all([
     db.order.findMany({
       where: { userId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       take: limit,
       skip: offset,
       include: {
@@ -594,7 +696,7 @@ export async function getUserOrders(
  */
 export async function getAllOrders(
   filters: OrderFilters = {},
-  pagination: PaginationParams = {}
+  pagination: PaginationParams = {},
 ) {
   const { limit = 20, offset = 0 } = pagination;
   const where: Prisma.OrderWhereInput = {};
@@ -618,7 +720,7 @@ export async function getAllOrders(
   const [orders, total] = await Promise.all([
     db.order.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       take: limit,
       skip: offset,
       include: {
@@ -657,19 +759,16 @@ export async function getAllOrders(
 /**
  * Mark order as completed
  */
-export async function completeOrder(
-  orderId: string,
-  completedBy?: string
-) {
+export async function completeOrder(orderId: string, completedBy?: string) {
   const order = await db.order.findUnique({
     where: { id: orderId },
   });
 
   if (!order) {
-    throw new Error('Order not found');
+    throw new Error("Order not found");
   }
 
-  if (order.status !== 'PROCESSING' && order.status !== 'PENDING') {
+  if (order.status !== "PROCESSING" && order.status !== "PENDING") {
     throw new Error(`Cannot complete order with status: ${order.status}`);
   }
 
@@ -677,7 +776,7 @@ export async function completeOrder(
   const updatedOrder = await db.order.update({
     where: { id: orderId },
     data: {
-      status: 'COMPLETED',
+      status: "COMPLETED",
       completedAt: new Date(),
     },
   });
@@ -685,12 +784,12 @@ export async function completeOrder(
   // Log audit event
   await logAudit({
     userId: completedBy,
-    action: 'order_complete',
-    entity: 'order',
+    action: "order_complete",
+    entity: "order",
     entityId: orderId,
     newValues: {
       orderNumber: order.orderNumber,
-      status: 'COMPLETED',
+      status: "COMPLETED",
     },
   });
 
@@ -703,37 +802,37 @@ export async function completeOrder(
 export async function cancelOrder(
   orderId: string,
   reason: string,
-  cancelledBy?: string
+  cancelledBy?: string,
 ) {
   const order = await db.order.findUnique({
     where: { id: orderId },
   });
 
   if (!order) {
-    throw new Error('Order not found');
+    throw new Error("Order not found");
   }
 
-  if (order.status === 'COMPLETED') {
-    throw new Error('Cannot cancel a completed order');
+  if (order.status === "COMPLETED") {
+    throw new Error("Cannot cancel a completed order");
   }
 
-  if (order.status === 'CANCELLED') {
-    throw new Error('Order is already cancelled');
+  if (order.status === "CANCELLED") {
+    throw new Error("Order is already cancelled");
   }
 
   // Update order status
   const updatedOrder = await db.order.update({
     where: { id: orderId },
     data: {
-      status: 'CANCELLED',
+      status: "CANCELLED",
     },
   });
 
   // Log audit event
   await logAudit({
     userId: cancelledBy,
-    action: 'order_cancel',
-    entity: 'order',
+    action: "order_cancel",
+    entity: "order",
     entityId: orderId,
     newValues: {
       orderNumber: order.orderNumber,
@@ -747,13 +846,23 @@ export async function cancelOrder(
 /**
  * Check if user owns the order
  */
-export async function userOwnsOrder(userId: string, orderId: string): Promise<boolean> {
+export async function userOwnsOrder(
+  userId: string,
+  orderId: string,
+): Promise<boolean> {
   const order = await db.order.findFirst({
     where: {
       id: orderId,
       OR: [
         { userId },
-        { email: (await db.user.findUnique({ where: { id: userId }, select: { email: true } }))?.email },
+        {
+          email: (
+            await db.user.findUnique({
+              where: { id: userId },
+              select: { email: true },
+            })
+          )?.email,
+        },
       ],
     },
   });
@@ -767,15 +876,16 @@ export async function userOwnsOrder(userId: string, orderId: string): Promise<bo
 export async function getOrderStats(userId?: string) {
   const where: Prisma.OrderWhereInput = userId ? { userId } : {};
 
-  const [totalOrders, pendingOrders, completedOrders, totalRevenue] = await Promise.all([
-    db.order.count({ where }),
-    db.order.count({ where: { ...where, status: 'PENDING' } }),
-    db.order.count({ where: { ...where, status: 'COMPLETED' } }),
-    db.order.aggregate({
-      where: { ...where, status: 'COMPLETED' },
-      _sum: { total: true },
-    }),
-  ]);
+  const [totalOrders, pendingOrders, completedOrders, totalRevenue] =
+    await Promise.all([
+      db.order.count({ where }),
+      db.order.count({ where: { ...where, status: "PENDING" } }),
+      db.order.count({ where: { ...where, status: "COMPLETED" } }),
+      db.order.aggregate({
+        where: { ...where, status: "COMPLETED" },
+        _sum: { total: true },
+      }),
+    ]);
 
   return {
     totalOrders,

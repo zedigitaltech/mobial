@@ -255,6 +255,7 @@ enum OrderStatus {
   PENDING
   PROCESSING
   COMPLETED
+  PARTIALLY_FULFILLED
   CANCELLED
   REFUNDED
   FAILED
@@ -285,7 +286,12 @@ model OrderItem {
   // eSIM Details (after activation)
   esimIccid             String?
   esimQrCode            String?
-  
+
+  // Per-item fulfillment tracking
+  fulfillmentStatus     String   @default("PENDING") // PENDING, COMPLETED, FAILED
+  mobimatterOrderId     String?
+  fulfillmentError      String?
+
   createdAt             DateTime @default(now())
   
   @@index([orderId])
