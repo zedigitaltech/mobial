@@ -1,6 +1,6 @@
-import { NextRequest } from 'next/server';
-import { z } from 'zod';
-import { db } from '@/lib/db';
+import { NextRequest } from "next/server";
+import { z } from "zod";
+import { db } from "@/lib/db";
 import {
   getAuthUser,
   errorResponse,
@@ -8,9 +8,13 @@ import {
   parseJsonBody,
   getClientIP,
   getUserAgent,
-} from '@/lib/auth-helpers';
-import { checkRateLimit, createRateLimitHeaders } from '@/lib/rate-limit';
-import { logAuditWithContext } from '@/lib/audit';
+} from "@/lib/auth-helpers";
+import { checkRateLimit, createRateLimitHeaders } from "@/lib/rate-limit";
+import { hash } from "@/lib/encryption";
+import { logAuditWithContext } from "@/lib/audit";
+import { logger } from "@/lib/logger";
+
+const log = logger.child("gdpr-consent");
 
 const consentSchema = z.object({
   essential: z.boolean(),
@@ -23,29 +27,29 @@ export async function POST(request: NextRequest) {
   try {
     const clientIP = getClientIP(request);
 
-    const rateLimitResult = await checkRateLimit(clientIP, 'api:write');
+    const rateLimitResult = await checkRateLimit(clientIP, "api:write");
     if (!rateLimitResult.success) {
       const headers = createRateLimitHeaders(rateLimitResult);
       return new Response(
-        JSON.stringify({ success: false, error: 'Too many requests' }),
+        JSON.stringify({ success: false, error: "Too many requests" }),
         {
           status: 429,
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
             ...Object.fromEntries(headers.entries()),
           },
-        }
+        },
       );
     }
 
     const body = await parseJsonBody(request);
     if (!body) {
-      return errorResponse('Invalid request body', 400);
+      return errorResponse("Invalid request body", 400);
     }
 
     const validation = consentSchema.safeParse(body);
     if (!validation.success) {
-      return errorResponse('Invalid consent data', 400);
+      return errorResponse("Invalid consent data", 400);
     }
 
     const { analytics, marketing, thirdParty } = validation.data;
@@ -54,6 +58,7 @@ export async function POST(request: NextRequest) {
     const userAgent = getUserAgent(request);
 
     if (user) {
+      // Authenticated user — link consent to their account
       await db.gDPRConsent.create({
         data: {
           userId: user.id,
@@ -67,15 +72,43 @@ export async function POST(request: NextRequest) {
 
       await logAuditWithContext({
         userId: user.id,
-        action: 'gdpr_consent',
-        entity: 'gdpr_consent',
+        action: "gdpr_consent",
+        entity: "gdpr_consent",
         newValues: { analytics, marketing, thirdParty },
+      });
+    } else {
+      // Guest user — store consent with hashed IP as identifier
+      // GDPR requires demonstrable consent records even for anonymous users
+      const guestIdentifier = hash(`guest:${ipAddress}:${userAgent || ""}`);
+
+      await db.systemConfig.upsert({
+        where: { key: `gdpr_guest_${guestIdentifier}` },
+        create: {
+          key: `gdpr_guest_${guestIdentifier}`,
+          value: JSON.stringify({
+            analytics,
+            marketing,
+            thirdParty,
+            ipHash: hash(ipAddress),
+            consentedAt: new Date().toISOString(),
+          }),
+          description: "Guest GDPR consent record",
+        },
+        update: {
+          value: JSON.stringify({
+            analytics,
+            marketing,
+            thirdParty,
+            ipHash: hash(ipAddress),
+            consentedAt: new Date().toISOString(),
+          }),
+        },
       });
     }
 
-    return successResponse(undefined, 'Consent recorded');
+    return successResponse(undefined, "Consent recorded");
   } catch (error) {
-    console.error('GDPR consent error:', error);
-    return errorResponse('Failed to record consent', 500);
+    log.errorWithException("GDPR consent error", error);
+    return errorResponse("Failed to record consent", 500);
   }
 }

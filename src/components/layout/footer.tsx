@@ -1,49 +1,43 @@
-import Link from "next/link"
-import Image from "next/image"
-import {
-  Globe,
-  Mail,
-  Shield,
-  Lock,
-  Twitter,
-  Facebook
-} from "lucide-react"
-import { Separator } from "@/components/ui/separator"
-import { getTranslations } from "next-intl/server"
+import Link from "next/link";
+import Image from "next/image";
+import { Globe, Mail, Shield, Lock, Twitter, Facebook } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { getTranslations } from "next-intl/server";
+import { CookieSettingsButton } from "@/components/gdpr/cookie-settings-button";
 
 const socialLinks = [
   { name: "Twitter", icon: Twitter, href: "https://x.com/mobial_esim" },
   { name: "Facebook", icon: Facebook, href: "https://facebook.com/mobial" },
-]
+];
 
 export async function Footer() {
-  const t = await getTranslations('footer')
+  const t = await getTranslations("footer");
 
   const footerLinks = {
     product: [
-      { name: t('esimProducts'), href: "/products" },
-      { name: t('checkUsage'), href: "/check-usage" },
-      { name: t('topUpEsim'), href: "/topup" },
-      { name: t('compatibleDevices'), href: "/compatible-devices" },
+      { name: t("esimProducts"), href: "/products" },
+      { name: t("checkUsage"), href: "/check-usage" },
+      { name: t("topUpEsim"), href: "/topup" },
+      { name: t("compatibleDevices"), href: "/compatible-devices" },
     ],
     support: [
-      { name: t('faq'), href: "/faq" },
-      { name: t('troubleshooting'), href: "/troubleshooting" },
-      { name: t('contact'), href: "/contact" },
-      { name: t('installationGuide'), href: "/guides/installation" },
+      { name: t("faq"), href: "/faq" },
+      { name: t("troubleshooting"), href: "/troubleshooting" },
+      { name: t("contact"), href: "/contact" },
+      { name: t("installationGuide"), href: "/guides/installation" },
     ],
     company: [
-      { name: t('aboutUs'), href: "/about" },
-      { name: t('blog'), href: "/blog" },
-      { name: t('referralProgram'), href: "/referrals" },
+      { name: t("aboutUs"), href: "/about" },
+      { name: t("blog"), href: "/blog" },
+      { name: t("referralProgram"), href: "/referrals" },
     ],
     legal: [
-      { name: t('privacyPolicy'), href: "/privacy" },
-      { name: t('termsOfService'), href: "/terms" },
-      { name: t('refundPolicy'), href: "/refund-policy" },
-      { name: t('cookiePolicy'), href: "/cookies" },
+      { name: t("privacyPolicy"), href: "/privacy" },
+      { name: t("termsOfService"), href: "/terms" },
+      { name: t("refundPolicy"), href: "/refund-policy" },
+      { name: t("cookiePolicy"), href: "/cookies" },
     ],
-  }
+  };
 
   return (
     <footer className="bg-muted/30 border-t">
@@ -53,24 +47,28 @@ export async function Footer() {
           {/* Brand Section */}
           <div className="lg:col-span-1">
             <Link href="/" className="flex items-center space-x-2 mb-4">
-              <Image src="/logo.png" alt="MobiaL" width={120} height={40} className="h-10 w-auto" />
+              <Image
+                src="/logo.png"
+                alt="MobiaL"
+                width={120}
+                height={40}
+                className="h-10 w-auto"
+              />
             </Link>
-            <p className="text-sm text-muted-foreground mb-4">
-              {t('tagline')}
-            </p>
+            <p className="text-sm text-muted-foreground mb-4">{t("tagline")}</p>
             <div className="flex items-center space-x-2 text-sm text-muted-foreground">
               <Shield className="h-4 w-4 text-primary" />
-              <span>{t('gdprCompliant')}</span>
+              <span>{t("gdprCompliant")}</span>
             </div>
             <div className="flex items-center space-x-2 text-sm text-muted-foreground mt-2">
               <Lock className="h-4 w-4 text-primary" />
-              <span>{t('securePayments')}</span>
+              <span>{t("securePayments")}</span>
             </div>
           </div>
 
           {/* Product Links */}
           <div>
-            <h3 className="font-semibold mb-4">{t('products')}</h3>
+            <h3 className="font-semibold mb-4">{t("products")}</h3>
             <ul className="space-y-2">
               {footerLinks.product.map((link) => (
                 <li key={link.href}>
@@ -87,7 +85,7 @@ export async function Footer() {
 
           {/* Support Links */}
           <div>
-            <h3 className="font-semibold mb-4">{t('support')}</h3>
+            <h3 className="font-semibold mb-4">{t("support")}</h3>
             <ul className="space-y-2">
               {footerLinks.support.map((link) => (
                 <li key={link.href}>
@@ -104,7 +102,7 @@ export async function Footer() {
 
           {/* Company Links */}
           <div>
-            <h3 className="font-semibold mb-4">{t('company')}</h3>
+            <h3 className="font-semibold mb-4">{t("company")}</h3>
             <ul className="space-y-2">
               {footerLinks.company.map((link) => (
                 <li key={link.href}>
@@ -121,36 +119,54 @@ export async function Footer() {
 
           {/* Destinations */}
           <div>
-            <h3 className="font-semibold mb-4">{t('destinations')}</h3>
+            <h3 className="font-semibold mb-4">{t("destinations")}</h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/esim/region/europe" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  {t('esimForEurope')}
+                <Link
+                  href="/esim/region/europe"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  {t("esimForEurope")}
                 </Link>
               </li>
               <li>
-                <Link href="/esim/region/asia" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  {t('esimForAsia')}
+                <Link
+                  href="/esim/region/asia"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  {t("esimForAsia")}
                 </Link>
               </li>
               <li>
-                <Link href="/esim/region/americas" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  {t('esimForAmericas')}
+                <Link
+                  href="/esim/region/americas"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  {t("esimForAmericas")}
                 </Link>
               </li>
               <li>
-                <Link href="/esim/region/middle-east" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  {t('esimForMiddleEast')}
+                <Link
+                  href="/esim/region/middle-east"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  {t("esimForMiddleEast")}
                 </Link>
               </li>
               <li>
-                <Link href="/esim/region/oceania" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  {t('esimForOceania')}
+                <Link
+                  href="/esim/region/oceania"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  {t("esimForOceania")}
                 </Link>
               </li>
               <li>
-                <Link href="/esim/region/africa" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  {t('esimForAfrica')}
+                <Link
+                  href="/esim/region/africa"
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  {t("esimForAfrica")}
                 </Link>
               </li>
             </ul>
@@ -158,7 +174,7 @@ export async function Footer() {
 
           {/* Legal & Social */}
           <div>
-            <h3 className="font-semibold mb-4">{t('legal')}</h3>
+            <h3 className="font-semibold mb-4">{t("legal")}</h3>
             <ul className="space-y-2 mb-6">
               {footerLinks.legal.map((link) => (
                 <li key={link.href}>
@@ -170,10 +186,13 @@ export async function Footer() {
                   </Link>
                 </li>
               ))}
+              <li>
+                <CookieSettingsButton />
+              </li>
             </ul>
 
             {/* Social Links */}
-            <h3 className="font-semibold mb-3">{t('followUs')}</h3>
+            <h3 className="font-semibold mb-3">{t("followUs")}</h3>
             <div className="flex space-x-3">
               {socialLinks.map((social) => (
                 <Link
@@ -194,17 +213,20 @@ export async function Footer() {
         {/* Bottom Footer */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground text-center sm:text-left">
-            {t('copyright', { year: new Date().getFullYear() })}
+            {t("copyright", { year: new Date().getFullYear() })}
           </p>
           <div className="flex items-center space-x-4 text-sm text-muted-foreground">
             <div className="flex items-center space-x-1">
               <Globe className="h-4 w-4" />
-              <span>{t('worldwide')}</span>
+              <span>{t("worldwide")}</span>
             </div>
             <span className="hidden sm:inline">&bull;</span>
             <div className="flex items-center space-x-1">
               <Mail className="h-4 w-4" />
-              <a href="mailto:support@mobialo.eu" className="hover:text-primary transition-colors">
+              <a
+                href="mailto:support@mobialo.eu"
+                className="hover:text-primary transition-colors"
+              >
                 support@mobialo.eu
               </a>
             </div>
@@ -212,5 +234,5 @@ export async function Footer() {
         </div>
       </div>
     </footer>
-  )
+  );
 }

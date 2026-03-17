@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { useTranslations } from 'next-intl';
-import Link from 'next/link';
+import { useState, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
+import Link from "next/link";
 
 interface CookiePreferences {
   essential: true;
@@ -12,10 +12,10 @@ interface CookiePreferences {
   timestamp: string;
 }
 
-const STORAGE_KEY = 'cookie-consent';
+const STORAGE_KEY = "cookie-consent";
 
 export function CookieConsent() {
-  const t = useTranslations('cookieConsent');
+  const t = useTranslations("cookieConsent");
   const [visible, setVisible] = useState(false);
   const [showPreferences, setShowPreferences] = useState(false);
   const [analytics, setAnalytics] = useState(false);
@@ -29,6 +29,26 @@ export function CookieConsent() {
       const timer = setTimeout(() => setVisible(true), 500);
       return () => clearTimeout(timer);
     }
+
+    // Load existing preferences when re-opening
+    try {
+      const prefs = JSON.parse(stored) as CookiePreferences;
+      setAnalytics(prefs.analytics);
+      setMarketing(prefs.marketing);
+      setThirdParty(prefs.thirdParty);
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  // Listen for custom event to re-open consent dialog (consent withdrawal)
+  useEffect(() => {
+    const handleOpen = () => {
+      setShowPreferences(true);
+      setVisible(true);
+    };
+    window.addEventListener("open-cookie-settings", handleOpen);
+    return () => window.removeEventListener("open-cookie-settings", handleOpen);
   }, []);
 
   const dismiss = useCallback(() => {
@@ -39,24 +59,27 @@ export function CookieConsent() {
     }, 300);
   }, []);
 
-  const saveConsent = useCallback(async (prefs: CookiePreferences) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
-    dismiss();
-    try {
-      await fetch('/api/gdpr/consent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          essential: prefs.essential,
-          analytics: prefs.analytics,
-          marketing: prefs.marketing,
-          thirdParty: prefs.thirdParty,
-        }),
-      });
-    } catch {
-      // Consent stored locally even if server-side fails
-    }
-  }, [dismiss]);
+  const saveConsent = useCallback(
+    async (prefs: CookiePreferences) => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
+      dismiss();
+      try {
+        await fetch("/api/gdpr/consent", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            essential: prefs.essential,
+            analytics: prefs.analytics,
+            marketing: prefs.marketing,
+            thirdParty: prefs.thirdParty,
+          }),
+        });
+      } catch {
+        // Consent stored locally even if server-side fails
+      }
+    },
+    [dismiss],
+  );
 
   const acceptAll = useCallback(() => {
     saveConsent({
@@ -95,7 +118,7 @@ export function CookieConsent() {
       {/* Backdrop */}
       <div
         className={`fixed inset-0 z-[9998] bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
-          closing ? 'opacity-0' : 'opacity-100'
+          closing ? "opacity-0" : "opacity-100"
         }`}
         onClick={acceptEssential}
         aria-hidden="true"
@@ -106,25 +129,23 @@ export function CookieConsent() {
         role="dialog"
         aria-label="Cookie consent"
         className={`fixed bottom-0 left-0 right-0 z-[9999] flex justify-center p-4 transition-all duration-300 ${
-          closing
-            ? 'translate-y-full opacity-0'
-            : 'translate-y-0 opacity-100'
+          closing ? "translate-y-full opacity-0" : "translate-y-0 opacity-100"
         }`}
       >
         <div className="w-full max-w-lg rounded-2xl border border-white/10 bg-[oklch(0.14_0.02_220)] shadow-2xl backdrop-blur-xl">
           <div className="p-5">
             <h2 className="mb-2 text-base font-semibold text-white">
-              {t('title')}
+              {t("title")}
             </h2>
             <p className="mb-4 text-sm leading-relaxed text-white/60">
-              {t('description')}{' '}
+              {t("description")}{" "}
               <Link
                 href="/privacy"
                 className="text-[oklch(0.65_0.12_210)] underline underline-offset-2 hover:text-[oklch(0.75_0.12_210)]"
               >
-                {t('privacyPolicyLink')}
-              </Link>{' '}
-              {t('forDetails')}
+                {t("privacyPolicyLink")}
+              </Link>{" "}
+              {t("forDetails")}
             </p>
 
             {/* Preference toggles */}
@@ -133,8 +154,12 @@ export function CookieConsent() {
                 {/* Essential - always on */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-white">{t('essential')}</p>
-                    <p className="text-xs text-white/40">{t('essentialDesc')}</p>
+                    <p className="text-sm font-medium text-white">
+                      {t("essential")}
+                    </p>
+                    <p className="text-xs text-white/40">
+                      {t("essentialDesc")}
+                    </p>
                   </div>
                   <div className="relative h-6 w-11 cursor-not-allowed rounded-full bg-[oklch(0.65_0.12_210)] opacity-60">
                     <div className="absolute right-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm" />
@@ -144,8 +169,12 @@ export function CookieConsent() {
                 {/* Analytics */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-white">{t('analytics')}</p>
-                    <p className="text-xs text-white/40">{t('analyticsDesc')}</p>
+                    <p className="text-sm font-medium text-white">
+                      {t("analytics")}
+                    </p>
+                    <p className="text-xs text-white/40">
+                      {t("analyticsDesc")}
+                    </p>
                   </div>
                   <button
                     type="button"
@@ -153,12 +182,12 @@ export function CookieConsent() {
                     aria-checked={analytics}
                     onClick={() => setAnalytics(!analytics)}
                     className={`relative h-6 w-11 rounded-full transition-colors duration-200 ${
-                      analytics ? 'bg-[oklch(0.65_0.12_210)]' : 'bg-white/15'
+                      analytics ? "bg-[oklch(0.65_0.12_210)]" : "bg-white/15"
                     }`}
                   >
                     <div
                       className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
-                        analytics ? 'translate-x-[22px]' : 'translate-x-0.5'
+                        analytics ? "translate-x-[22px]" : "translate-x-0.5"
                       }`}
                     />
                   </button>
@@ -167,8 +196,12 @@ export function CookieConsent() {
                 {/* Marketing */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-white">{t('marketing')}</p>
-                    <p className="text-xs text-white/40">{t('marketingDesc')}</p>
+                    <p className="text-sm font-medium text-white">
+                      {t("marketing")}
+                    </p>
+                    <p className="text-xs text-white/40">
+                      {t("marketingDesc")}
+                    </p>
                   </div>
                   <button
                     type="button"
@@ -176,12 +209,12 @@ export function CookieConsent() {
                     aria-checked={marketing}
                     onClick={() => setMarketing(!marketing)}
                     className={`relative h-6 w-11 rounded-full transition-colors duration-200 ${
-                      marketing ? 'bg-[oklch(0.65_0.12_210)]' : 'bg-white/15'
+                      marketing ? "bg-[oklch(0.65_0.12_210)]" : "bg-white/15"
                     }`}
                   >
                     <div
                       className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
-                        marketing ? 'translate-x-[22px]' : 'translate-x-0.5'
+                        marketing ? "translate-x-[22px]" : "translate-x-0.5"
                       }`}
                     />
                   </button>
@@ -190,8 +223,12 @@ export function CookieConsent() {
                 {/* Third-party */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-white">{t('thirdParty')}</p>
-                    <p className="text-xs text-white/40">{t('thirdPartyDesc')}</p>
+                    <p className="text-sm font-medium text-white">
+                      {t("thirdParty")}
+                    </p>
+                    <p className="text-xs text-white/40">
+                      {t("thirdPartyDesc")}
+                    </p>
                   </div>
                   <button
                     type="button"
@@ -199,12 +236,12 @@ export function CookieConsent() {
                     aria-checked={thirdParty}
                     onClick={() => setThirdParty(!thirdParty)}
                     className={`relative h-6 w-11 rounded-full transition-colors duration-200 ${
-                      thirdParty ? 'bg-[oklch(0.65_0.12_210)]' : 'bg-white/15'
+                      thirdParty ? "bg-[oklch(0.65_0.12_210)]" : "bg-white/15"
                     }`}
                   >
                     <div
                       className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
-                        thirdParty ? 'translate-x-[22px]' : 'translate-x-0.5'
+                        thirdParty ? "translate-x-[22px]" : "translate-x-0.5"
                       }`}
                     />
                   </button>
@@ -220,7 +257,7 @@ export function CookieConsent() {
                   onClick={() => setShowPreferences(true)}
                   className="order-3 rounded-lg px-4 py-2 text-sm font-medium text-white/50 transition-colors hover:text-white/80 sm:order-1"
                 >
-                  {t('managePreferences')}
+                  {t("managePreferences")}
                 </button>
               ) : (
                 <button
@@ -228,7 +265,7 @@ export function CookieConsent() {
                   onClick={savePreferences}
                   className="order-3 rounded-lg px-4 py-2 text-sm font-medium text-white/50 transition-colors hover:text-white/80 sm:order-1"
                 >
-                  {t('savePreferences')}
+                  {t("savePreferences")}
                 </button>
               )}
               <button
@@ -236,14 +273,14 @@ export function CookieConsent() {
                 onClick={acceptEssential}
                 className="order-2 rounded-lg border border-white/10 bg-white/[0.05] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-white/[0.1]"
               >
-                {t('essentialOnly')}
+                {t("essentialOnly")}
               </button>
               <button
                 type="button"
                 onClick={acceptAll}
                 className="order-1 rounded-lg bg-[oklch(0.65_0.12_210)] px-4 py-2 text-sm font-semibold text-[oklch(0.12_0.015_220)] transition-colors hover:bg-[oklch(0.72_0.12_210)] sm:order-3"
               >
-                {t('acceptAll')}
+                {t("acceptAll")}
               </button>
             </div>
           </div>
