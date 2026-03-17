@@ -9,7 +9,7 @@
  * Wallet System: Prepaid wallet, orders auto-deduct at wholesalePrice
  */
 
-const MOBIMATTER_BASE_URL = 'https://api.mobimatter.com/mobimatter';
+const MOBIMATTER_BASE_URL = "https://api.mobimatter.com/mobimatter";
 
 // ==================== CONFIGURATION ====================
 
@@ -23,7 +23,9 @@ function getConfig(): MobiMatterConfig {
   const apiKey = process.env.MOBIMATTER_API_KEY;
 
   if (!merchantId || !apiKey) {
-    throw new Error('MobiMatter credentials not configured. Set MOBIMATTER_MERCHANT_ID and MOBIMATTER_API_KEY.');
+    throw new Error(
+      "MobiMatter credentials not configured. Set MOBIMATTER_MERCHANT_ID and MOBIMATTER_API_KEY.",
+    );
   }
 
   return { merchantId, apiKey };
@@ -104,14 +106,14 @@ interface RefundEligibility {
 interface StructuredESIMInfo {
   ussdCode: string | null;
   esim: {
-    status: 'Installed' | 'Available' | null;
+    status: "Installed" | "Available" | null;
     installationDate: string | null;
     location: {
       country: string;
       network: string;
       updatedAt: string;
     } | null;
-    kycStatus: 'IN_PROGRESS' | 'REJECTED' | 'APPROVED' | null;
+    kycStatus: "IN_PROGRESS" | "REJECTED" | "APPROVED" | null;
     iccid: string;
     wallet: {
       balanceHKD: number;
@@ -204,7 +206,7 @@ export interface UsageInfo {
 }
 
 export interface StructuredUsageInfo {
-  esimStatus: 'Installed' | 'Available' | null;
+  esimStatus: "Installed" | "Available" | null;
   installationDate: string | null;
   location: { country: string; network: string; updatedAt: string } | null;
   kycStatus: string | null;
@@ -223,45 +225,66 @@ export interface StructuredUsageInfo {
 
 // ==================== HTTP CLIENT ====================
 
+const DEFAULT_TIMEOUT_MS = 15_000;
+
 async function makeRequest<T>(
   endpoint: string,
   options: {
-    method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+    method?: "GET" | "POST" | "PUT" | "DELETE";
     body?: unknown;
-  } = {}
+    timeoutMs?: number;
+  } = {},
 ): Promise<T> {
   const config = getConfig();
+  const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   const headers: HeadersInit = {
-    'merchantId': config.merchantId,
-    'api-key': config.apiKey,
-    'Content-Type': 'application/json',
+    merchantId: config.merchantId,
+    "api-key": config.apiKey,
+    "Content-Type": "application/json",
   };
 
-  const response = await fetch(`${MOBIMATTER_BASE_URL}${endpoint}`, {
-    method: options.method || 'GET',
-    headers,
-    body: options.body ? JSON.stringify(options.body) : undefined,
-  });
+  try {
+    const response = await fetch(`${MOBIMATTER_BASE_URL}${endpoint}`, {
+      method: options.method || "GET",
+      headers,
+      body: options.body ? JSON.stringify(options.body) : undefined,
+      signal: controller.signal,
+    });
 
-  if (!response.ok) {
-    let errorMessage = `HTTP ${response.status}`;
-    try {
-      const errorData = await response.json();
-      errorMessage = errorData.message || errorData.error || errorMessage;
-    } catch {
-      // response body wasn't JSON
+    if (!response.ok) {
+      let errorMessage = `HTTP ${response.status}`;
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.message || errorData.error || errorMessage;
+      } catch {
+        // response body wasn't JSON
+      }
+      throw new Error(`MobiMatter API error: ${errorMessage}`);
     }
-    throw new Error(`MobiMatter API error: ${errorMessage}`);
+
+    const data = (await response.json()) as MobiMatterResponse<T>;
+
+    if (data.statusCode && data.statusCode >= 400) {
+      throw new Error(
+        `MobiMatter API error: ${data.statusCode} - ${data.message || "Unknown error"}`,
+      );
+    }
+
+    return data.result;
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new Error(
+        `MobiMatter API timeout: ${endpoint} did not respond within ${timeoutMs}ms`,
+      );
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
   }
-
-  const data = await response.json() as MobiMatterResponse<T>;
-
-  if (data.statusCode && data.statusCode >= 400) {
-    throw new Error(`MobiMatter API error: ${data.statusCode} - ${data.message || 'Unknown error'}`);
-  }
-
-  return data.result;
 }
 
 // ==================== MERCHANT ====================
@@ -273,10 +296,12 @@ export async function getWalletBalance(): Promise<{
   balance: number;
   currency: string;
 }> {
-  const result = await makeRequest<{ balance: number; currency?: string }>('/api/v2/merchant/balance');
+  const result = await makeRequest<{ balance: number; currency?: string }>(
+    "/api/v2/merchant/balance",
+  );
   return {
     balance: result.balance,
-    currency: result.currency || 'USD',
+    currency: result.currency || "USD",
   };
 }
 
@@ -290,17 +315,17 @@ export async function fetchProducts(options?: {
   country?: string;
   region?: string;
   provider?: string;
-  category?: 'esim_realtime' | 'esim_addon' | 'esim_replacement';
+  category?: "esim_realtime" | "esim_addon" | "esim_replacement";
 }): Promise<Product[]> {
   const params = new URLSearchParams();
 
-  if (options?.country) params.append('country', options.country);
-  if (options?.region) params.append('region', options.region);
-  if (options?.provider) params.append('provider', options.provider);
-  if (options?.category) params.append('category', options.category);
+  if (options?.country) params.append("country", options.country);
+  if (options?.region) params.append("region", options.region);
+  if (options?.provider) params.append("provider", options.provider);
+  if (options?.category) params.append("category", options.category);
 
   const queryString = params.toString();
-  const endpoint = `/api/v2/products${queryString ? `?${queryString}` : ''}`;
+  const endpoint = `/api/v2/products${queryString ? `?${queryString}` : ""}`;
 
   const result = await makeRequest<MobiMatterRawProduct[]>(endpoint);
   return (result || []).map(transformProduct);
@@ -310,7 +335,9 @@ export async function fetchProducts(options?: {
  * GET /api/v2/products/{productId}
  */
 export async function getProduct(productId: string): Promise<Product> {
-  const result = await makeRequest<MobiMatterRawProduct>(`/api/v2/products/${productId}`);
+  const result = await makeRequest<MobiMatterRawProduct>(
+    `/api/v2/products/${productId}`,
+  );
   return transformProduct(result);
 }
 
@@ -335,16 +362,16 @@ export async function getProductNetworks(productId: string): Promise<unknown> {
 function transformProduct(product: MobiMatterRawProduct): Product {
   // Trim keys — API sometimes has trailing spaces (e.g., "PLAN_DETAILS ")
   const details = Object.fromEntries(
-    (product.productDetails || []).map(d => [d.name.trim(), d.value])
+    (product.productDetails || []).map((d) => [d.name.trim(), d.value]),
   );
 
   // Data amount — use PLAN_DATA_UNIT to determine the unit
   let dataAmount: number | null = null;
-  const dataUnit = details.PLAN_DATA_UNIT || 'GB';
+  const dataUnit = details.PLAN_DATA_UNIT || "GB";
   const dataLimitStr = details.PLAN_DATA_LIMIT;
   if (dataLimitStr) {
     const raw = parseInt(dataLimitStr);
-    if (dataUnit === 'MB') {
+    if (dataUnit === "MB") {
       dataAmount = raw / 1000; // Convert MB to GB
     } else {
       dataAmount = raw; // Already in GB
@@ -356,10 +383,13 @@ function transformProduct(product: MobiMatterRawProduct): Product {
   const validityStr = details.PLAN_VALIDITY;
   if (validityStr) {
     const hours = parseInt(validityStr);
-    validityDays = hours >= 24 ? Math.floor(hours / 24) : (hours > 0 ? 1 : null);
+    validityDays = hours >= 24 ? Math.floor(hours / 24) : hours > 0 ? 1 : null;
   }
 
-  const name = details.PLAN_TITLE || product.productFamilyName || `${product.providerName} ${product.countries?.[0] || ''}`;
+  const name =
+    details.PLAN_TITLE ||
+    product.productFamilyName ||
+    `${product.providerName} ${product.countries?.[0] || ""}`;
 
   // Parse PLAN_DETAILS JSON — contains heading, description, items[]
   let description: string | null = null;
@@ -368,7 +398,7 @@ function transformProduct(product: MobiMatterRawProduct): Product {
     const planDetailsStr = details.PLAN_DETAILS;
     if (planDetailsStr) {
       const trimmed = planDetailsStr.trim();
-      if (trimmed.startsWith('{')) {
+      if (trimmed.startsWith("{")) {
         const planDetails = JSON.parse(trimmed);
         description = planDetails.description || planDetails.heading || null;
         if (Array.isArray(planDetails.items)) {
@@ -392,47 +422,48 @@ function transformProduct(product: MobiMatterRawProduct): Product {
     // ignore
   }
 
-  const isUnlimited = details.UNLIMITED === '1' || (dataAmount !== null && dataAmount >= 999);
+  const isUnlimited =
+    details.UNLIMITED === "1" || (dataAmount !== null && dataAmount >= 999);
 
   return {
     id: product.productId,
     name,
-    provider: product.providerName || 'Unknown',
+    provider: product.providerName || "Unknown",
     providerId: product.providerId,
     providerLogo: product.providerLogo || null,
     description,
     countries: product.countries || [],
     regions: product.regions || [],
     dataAmount,
-    dataUnit: dataUnit || 'GB',
+    dataUnit: dataUnit || "GB",
     validityDays,
     price: product.retailPrice || 0,
     wholesalePrice: product.wholesalePrice || 0,
-    currency: product.currencyCode || 'USD',
+    currency: product.currencyCode || "USD",
     features: planItems,
     isUnlimited,
-    supportsHotspot: details.HOTSPOT === '1',
-    supportsCalls: details.HAS_CALLS === '1',
-    supportsSms: details.HAS_SMS === '1',
+    supportsHotspot: details.HOTSPOT === "1",
+    supportsCalls: details.HAS_CALLS === "1",
+    supportsSms: details.HAS_SMS === "1",
     networkType: details.NETWORKS_SHORT || null,
     activationPolicy: details.ACTIVATION_POLICY || null,
     ipRouting: details.IP_BREAKOUT || null,
     speedInfo: details.SPEED || null,
     speedLong: details.SPEED_LONG || null,
-    topUpAvailable: details.TOPUP === '1',
+    topUpAvailable: details.TOPUP === "1",
     usageTracking: details.USAGE_TRACKING || null,
-    is5G: details.FIVEG === '1',
+    is5G: details.FIVEG === "1",
     tags,
-    externallyShown: details.EXTERNALLY_SHOWN !== '0',
+    externallyShown: details.EXTERNALLY_SHOWN !== "0",
     additionalDetails: details.ADDITIONAL_DETAILS || null,
     phoneNumberPrefix: details.PHONE_NUMBER_PREFIX || null,
     rank: product.rank || 0,
     penalizedRank: product.penalizedRank || 0,
-    productCategory: product.productCategory || 'esim_realtime',
+    productCategory: product.productCategory || "esim_realtime",
     productFamilyId: product.productFamilyId || 0,
-    productFamilyName: product.productFamilyName || '',
+    productFamilyName: product.productFamilyName || "",
     networkListId: product.networkListId || 0,
-    updated: product.updated || '',
+    updated: product.updated || "",
   };
 }
 
@@ -448,7 +479,7 @@ function transformProduct(product: MobiMatterRawProduct): Product {
  */
 export async function createOrder(params: {
   productId: string;
-  productCategory: 'esim_realtime' | 'esim_addon' | 'esim_replacement';
+  productCategory: "esim_realtime" | "esim_addon" | "esim_replacement";
   label?: string;
   addOnIdentifier?: string;
   addOnOrderIdentifier?: string;
@@ -460,10 +491,11 @@ export async function createOrder(params: {
 
   if (params.label) body.label = params.label;
   if (params.addOnIdentifier) body.addOnIdentifier = params.addOnIdentifier;
-  if (params.addOnOrderIdentifier) body.addOnOrderIdentifier = params.addOnOrderIdentifier;
+  if (params.addOnOrderIdentifier)
+    body.addOnOrderIdentifier = params.addOnOrderIdentifier;
 
-  return makeRequest<{ orderId: string }>('/api/v2/order', {
-    method: 'POST',
+  return makeRequest<{ orderId: string }>("/api/v2/order", {
+    method: "POST",
     body,
   });
 }
@@ -474,8 +506,8 @@ export async function createOrder(params: {
  * KYC-required products return orderState: "Processing" with KYC_URL.
  */
 export async function completeOrder(orderId: string): Promise<OrderResponse> {
-  const raw = await makeRequest<MobiMatterRawOrder>('/api/v2/order/complete', {
-    method: 'PUT',
+  const raw = await makeRequest<MobiMatterRawOrder>("/api/v2/order/complete", {
+    method: "PUT",
     body: { orderId },
   });
 
@@ -494,7 +526,9 @@ export async function getOrderInfo(orderId: string): Promise<OrderResponse> {
  * GET /api/v2/order?iccid={iccid}
  */
 export async function getOrderByIccid(iccid: string): Promise<OrderResponse> {
-  const raw = await makeRequest<MobiMatterRawOrder>(`/api/v2/order?iccid=${encodeURIComponent(iccid)}`);
+  const raw = await makeRequest<MobiMatterRawOrder>(
+    `/api/v2/order?iccid=${encodeURIComponent(iccid)}`,
+  );
   return transformOrderResponse(raw);
 }
 
@@ -503,8 +537,8 @@ export async function getOrderByIccid(iccid: string): Promise<OrderResponse> {
  * Only works if order is in Created state. Funds return to wallet.
  */
 export async function cancelMobimatterOrder(orderId: string): Promise<void> {
-  await makeRequest('/api/v2/order/cancel', {
-    method: 'PUT',
+  await makeRequest("/api/v2/order/cancel", {
+    method: "PUT",
     body: { orderId },
   });
 }
@@ -512,8 +546,12 @@ export async function cancelMobimatterOrder(orderId: string): Promise<void> {
 /**
  * GET /api/v2/order/{orderId}/refund/eligibility
  */
-export async function checkRefundEligibility(orderId: string): Promise<RefundEligibility> {
-  return makeRequest<RefundEligibility>(`/api/v2/order/${orderId}/refund/eligibility`);
+export async function checkRefundEligibility(
+  orderId: string,
+): Promise<RefundEligibility> {
+  return makeRequest<RefundEligibility>(
+    `/api/v2/order/${orderId}/refund/eligibility`,
+  );
 }
 
 /**
@@ -522,8 +560,8 @@ export async function checkRefundEligibility(orderId: string): Promise<RefundEli
  * Returns 202 on success, 400 if ineligible.
  */
 export async function refundOrder(orderId: string): Promise<void> {
-  await makeRequest('/api/v2/order/refund', {
-    method: 'PUT',
+  await makeRequest("/api/v2/order/refund", {
+    method: "PUT",
     body: { orderId },
   });
 }
@@ -544,7 +582,7 @@ function transformOrderResponse(raw: MobiMatterRawOrder): OrderResponse {
   if (raw.orderLineItem) {
     const li = raw.orderLineItem;
     const detailsMap = Object.fromEntries(
-      (li.lineItemDetails || []).map(d => [d.name, d.value])
+      (li.lineItemDetails || []).map((d) => [d.name, d.value]),
     );
 
     result.lineItem = {
@@ -579,10 +617,10 @@ function transformOrderResponse(raw: MobiMatterRawOrder): OrderResponse {
 export async function notifyUser(
   orderId: string,
   customerName: string,
-  customerEmail: string
+  customerEmail: string,
 ): Promise<void> {
-  await makeRequest('/api/v2/email', {
-    method: 'POST',
+  await makeRequest("/api/v2/email", {
+    method: "POST",
     body: {
       orderId,
       customer: {
@@ -603,7 +641,7 @@ export async function checkOrderUsage(orderId: string): Promise<UsageInfo> {
   const result = await makeRequest<string>(`/api/v2/provider/usage/${orderId}`);
   return {
     orderId,
-    rawUsage: typeof result === 'string' ? result : JSON.stringify(result),
+    rawUsage: typeof result === "string" ? result : JSON.stringify(result),
   };
 }
 
@@ -612,16 +650,20 @@ export async function checkOrderUsage(orderId: string): Promise<UsageInfo> {
  * Returns structured eSIM usage with packages, status, location.
  * Restricted — not all providers support all fields.
  */
-export async function getStructuredUsage(orderId: string): Promise<StructuredUsageInfo> {
-  const raw = await makeRequest<StructuredESIMInfo>(`/api/v2/provider/info/${orderId}`);
+export async function getStructuredUsage(
+  orderId: string,
+): Promise<StructuredUsageInfo> {
+  const raw = await makeRequest<StructuredESIMInfo>(
+    `/api/v2/provider/info/${orderId}`,
+  );
 
   return {
     esimStatus: raw.esim?.status || null,
     installationDate: raw.esim?.installationDate || null,
     location: raw.esim?.location || null,
     kycStatus: raw.esim?.kycStatus || null,
-    iccid: raw.esim?.iccid || '',
-    packages: (raw.packages || []).map(pkg => ({
+    iccid: raw.esim?.iccid || "",
+    packages: (raw.packages || []).map((pkg) => ({
       name: pkg.name,
       associatedProductId: pkg.associatedProductId,
       activationDate: pkg.activationDate,
@@ -638,9 +680,12 @@ export async function getStructuredUsage(orderId: string): Promise<StructuredUsa
  * POST /api/v2/provider/sms/{orderId}
  * Sends SMS to the eSIM.
  */
-export async function sendSmsToEsim(orderId: string, message: string): Promise<void> {
+export async function sendSmsToEsim(
+  orderId: string,
+  message: string,
+): Promise<void> {
   await makeRequest(`/api/v2/provider/sms/${orderId}`, {
-    method: 'POST',
+    method: "POST",
     body: { message },
   });
 }
@@ -659,7 +704,7 @@ export async function topupOrder(params: {
   // Step 1: Create order with addOnIdentifier
   const pendingOrder = await createOrder({
     productId: params.topupProductId,
-    productCategory: 'esim_addon',
+    productCategory: "esim_addon",
     addOnIdentifier: params.originalOrderId,
     label: params.label,
   });
@@ -686,7 +731,7 @@ export async function requestReplacement(params: {
   // Step 1: Create replacement order
   const pendingOrder = await createOrder({
     productId: params.replacementProductId,
-    productCategory: 'esim_replacement',
+    productCategory: "esim_replacement",
     addOnOrderIdentifier: params.originalOrderId,
     label: params.label,
   });
@@ -696,14 +741,16 @@ export async function requestReplacement(params: {
 
   // Step 3: Poll until Completed
   let attempts = 0;
-  while (order.orderState === 'Processing' && attempts < maxPollAttempts) {
-    await new Promise(resolve => setTimeout(resolve, 5000));
+  while (order.orderState === "Processing" && attempts < maxPollAttempts) {
+    await new Promise((resolve) => setTimeout(resolve, 5000));
     order = await getOrderInfo(pendingOrder.orderId);
     attempts++;
   }
 
-  if (order.orderState !== 'Completed') {
-    throw new Error(`Replacement order ${pendingOrder.orderId} did not complete. State: ${order.orderState}`);
+  if (order.orderState !== "Completed") {
+    throw new Error(
+      `Replacement order ${pendingOrder.orderId} did not complete. State: ${order.orderState}`,
+    );
   }
 
   return order;
@@ -718,7 +765,7 @@ export async function purchaseEsim(params: {
 }): Promise<OrderResponse> {
   const pendingOrder = await createOrder({
     productId: params.productId,
-    productCategory: 'esim_realtime',
+    productCategory: "esim_realtime",
     label: params.label,
   });
 
@@ -733,18 +780,21 @@ export async function testConnection(): Promise<{
   walletBalance?: { balance: number; currency: string };
 }> {
   try {
-    const products = await fetchProducts({ country: 'US' });
+    const products = await fetchProducts({ country: "US" });
     const balance = await getWalletBalance();
 
     return {
       success: true,
-      message: products.length > 0 ? 'API connection successful' : 'API connected but no products found',
+      message:
+        products.length > 0
+          ? "API connection successful"
+          : "API connected but no products found",
       walletBalance: balance,
     };
   } catch (error) {
     return {
       success: false,
-      message: error instanceof Error ? error.message : 'Unknown error',
+      message: error instanceof Error ? error.message : "Unknown error",
     };
   }
 }
