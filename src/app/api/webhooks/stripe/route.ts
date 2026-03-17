@@ -6,7 +6,10 @@ import { processOrderWithMobimatter } from "@/services/order-service";
 import { topupOrder } from "@/lib/mobimatter";
 import type { OrderResponse } from "@/lib/mobimatter";
 import { logAudit } from "@/lib/audit";
-import { sendOrderConfirmation } from "@/services/email-service";
+import {
+  sendOrderConfirmation,
+  sendOrderFailed,
+} from "@/services/email-service";
 import { encryptEsimField } from "@/lib/esim-encryption";
 
 export async function POST(request: NextRequest) {
@@ -164,6 +167,16 @@ export async function POST(request: NextRequest) {
               `Fulfillment failed for order ${orderId}:`,
               fulfillment.error,
             );
+            // Notify customer about the issue
+            const failedOrder = await db.order.findUnique({
+              where: { id: orderId },
+              select: { email: true, orderNumber: true },
+            });
+            if (failedOrder) {
+              sendOrderFailed(failedOrder.email, failedOrder.orderNumber).catch(
+                () => {},
+              );
+            }
           }
 
           // Send order confirmation email

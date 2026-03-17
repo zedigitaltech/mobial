@@ -1,5 +1,5 @@
-import type { ProductWithDetails } from "@/services/product-service"
-import { getCountryByCode } from "@/lib/countries"
+import type { ProductWithDetails } from "@/services/product-service";
+import { getCountryByCode } from "@/lib/countries";
 
 /**
  * JSON-LD structured data components for SEO.
@@ -17,7 +17,7 @@ export function JsonLd({ data }: { data: Record<string, unknown> }) {
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
     />
-  )
+  );
 }
 
 // Organization schema — homepage
@@ -38,13 +38,10 @@ export function OrganizationJsonLd({ baseUrl }: { baseUrl: string }) {
           contactType: "customer service",
           availableLanguage: ["English"],
         },
-        sameAs: [
-          "https://x.com/mobial_esim",
-          "https://facebook.com/mobial",
-        ],
+        sameAs: ["https://x.com/mobial_esim", "https://facebook.com/mobial"],
       }}
     />
-  )
+  );
 }
 
 // WebSite schema with search action — homepage
@@ -66,22 +63,24 @@ export function WebSiteJsonLd({ baseUrl }: { baseUrl: string }) {
         },
       }}
     />
-  )
+  );
 }
 
 // Product schema — product detail pages
 export function ProductJsonLd({
   product,
   baseUrl,
+  reviewStats,
 }: {
-  product: ProductWithDetails
-  baseUrl: string
+  product: ProductWithDetails;
+  baseUrl: string;
+  reviewStats?: { averageRating: number; reviewCount: number };
 }) {
   const dataDescription = product.isUnlimited
     ? "Unlimited data"
     : product.dataAmount
-    ? `${product.dataAmount} ${product.dataUnit || "GB"}`
-    : "Data plan"
+      ? `${product.dataAmount} ${product.dataUnit || "GB"}`
+      : "Data plan";
 
   return (
     <JsonLd
@@ -108,6 +107,16 @@ export function ProductJsonLd({
             name: "MobiaL",
           },
         },
+        ...(reviewStats &&
+          reviewStats.reviewCount > 0 && {
+            aggregateRating: {
+              "@type": "AggregateRating",
+              ratingValue: reviewStats.averageRating.toFixed(1),
+              reviewCount: reviewStats.reviewCount,
+              bestRating: 5,
+              worstRating: 1,
+            },
+          }),
         ...(product.countries.length > 0 && {
           areaServed: product.countries.map((code) => ({
             "@type": "Country",
@@ -116,14 +125,14 @@ export function ProductJsonLd({
         }),
       }}
     />
-  )
+  );
 }
 
 // FAQ schema — FAQ page
 export function FAQPageJsonLd({
   questions,
 }: {
-  questions: Array<{ q: string; a: string }>
+  questions: Array<{ q: string; a: string }>;
 }) {
   return (
     <JsonLd
@@ -140,7 +149,7 @@ export function FAQPageJsonLd({
         })),
       }}
     />
-  )
+  );
 }
 
 // Article schema — blog posts
@@ -152,12 +161,12 @@ export function ArticleJsonLd({
   url,
   baseUrl,
 }: {
-  title: string
-  description: string
-  author: string
-  publishedAt: string
-  url: string
-  baseUrl: string
+  title: string;
+  description: string;
+  author: string;
+  publishedAt: string;
+  url: string;
+  baseUrl: string;
 }) {
   return (
     <JsonLd
@@ -185,7 +194,7 @@ export function ArticleJsonLd({
         },
       }}
     />
-  )
+  );
 }
 
 // Breadcrumb schema — all pages
@@ -193,8 +202,8 @@ export function BreadcrumbJsonLd({
   items,
   baseUrl,
 }: {
-  items: Array<{ name: string; url?: string }>
-  baseUrl: string
+  items: Array<{ name: string; url?: string }>;
+  baseUrl: string;
 }) {
   return (
     <JsonLd
@@ -209,5 +218,5 @@ export function BreadcrumbJsonLd({
         })),
       }}
     />
-  )
+  );
 }
