@@ -1,21 +1,21 @@
-"use client"
+"use client";
 
-import { useEffect } from "react"
-import { motion } from "framer-motion"
-import { AlertTriangle, RefreshCw, Home } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
+import { useEffect } from "react";
+import { motion } from "framer-motion";
+import { AlertTriangle, RefreshCw, Home } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function Error({
   error,
   reset,
 }: {
-  error: Error & { digest?: string }
-  reset: () => void
+  error: Error & { digest?: string };
+  reset: () => void;
 }) {
   useEffect(() => {
-    console.error("Application error:", error)
-  }, [error])
+    console.error("Application error:", error);
+  }, [error]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
@@ -44,9 +44,12 @@ export default function Error({
           transition={{ duration: 0.5, delay: 0.2 }}
           className="space-y-4"
         >
-          <h1 className="text-3xl md:text-4xl font-black tracking-tight">Something went wrong</h1>
+          <h1 className="text-3xl md:text-4xl font-black tracking-tight">
+            Something went wrong
+          </h1>
           <p className="text-muted-foreground font-medium max-w-md mx-auto">
-            {error.message || "An unexpected error occurred. Please try again."}
+            An unexpected error occurred. Please try again or contact support if
+            the issue persists.
           </p>
         </motion.div>
 
@@ -78,5 +81,5 @@ export default function Error({
         </motion.div>
       </motion.div>
     </div>
-  )
+  );
 }
