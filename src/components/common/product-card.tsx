@@ -240,7 +240,7 @@ export function ProductCard({
               Total Price
             </p>
             <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-black text-white">
+              <span className="text-2xl font-black text-foreground">
                 {formatPrice(product.price)}
               </span>
               <span className="text-[10px] font-mono text-muted-foreground">
