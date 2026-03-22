@@ -8,7 +8,6 @@ import useEmblaCarousel from "embla-carousel-react";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import {
   ArrowLeft,
-  ShoppingCart,
   Check,
   Clock,
   Globe,
@@ -25,7 +24,6 @@ import {
   RefreshCw,
 } from "lucide-react";
 import DOMPurify from "isomorphic-dompurify";
-import { CartDrawer } from "@/components/store/cart-drawer";
 import { ProductCard } from "@/components/common/product-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -165,7 +163,7 @@ export function ProductDetailClient({
                 Back to Products
               </Link>
             </Button>
-            <CartDrawer />
+            {/* Cart drawer removed — direct checkout flow */}
           </div>
         </div>
       </div>

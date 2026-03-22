@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useSearchParams } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { motion } from "framer-motion"
 import {
   CheckCircle,
@@ -11,11 +12,13 @@ import {
   QrCode,
   Clock,
   ArrowRight,
+  Mail,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { useCart } from "@/contexts/cart-context"
+import { useCurrency } from "@/contexts/currency-context"
 import Link from "next/link"
 
 interface OrderData {
@@ -47,14 +50,21 @@ interface OrderData {
   } | null
 }
 
+const PROCESSING_TIMEOUT_MS = 30_000
+
 export default function CheckoutSuccessPage() {
   const searchParams = useSearchParams()
   const sessionId = searchParams.get("session_id")
+  const t = useTranslations("checkoutSuccess")
+  const tCommon = useTranslations("common")
   const { clearCart } = useCart()
+  const { formatPrice } = useCurrency()
 
   const [order, setOrder] = useState<OrderData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [timedOut, setTimedOut] = useState(false)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     clearCart()
@@ -63,7 +73,6 @@ export default function CheckoutSuccessPage() {
   useEffect(() => {
     const fetchOrder = async () => {
       try {
-        // Retrieve order reference stored before Stripe redirect
         const pendingRaw = sessionStorage.getItem("mobial_pending_order")
         if (!pendingRaw && !sessionId) {
           throw new Error("No order reference found")
@@ -83,7 +92,6 @@ export default function CheckoutSuccessPage() {
           throw new Error("Unable to locate your order. Please check your email for confirmation details.")
         }
 
-        // Fetch the full order details by order number, including email for guest verification
         const emailParam = orderEmail ? `?email=${encodeURIComponent(orderEmail)}` : ""
         const orderRes = await fetch(`/api/orders/${orderIdentifier}${emailParam}`)
         const orderData = await orderRes.json()
@@ -103,12 +111,23 @@ export default function CheckoutSuccessPage() {
     fetchOrder()
   }, [sessionId])
 
+  // Timeout for processing state — show fallback message after 30s
+  useEffect(() => {
+    const isProcessing = order && (order.status === "PROCESSING" || order.status === "PENDING")
+    if (isProcessing && !timedOut) {
+      timeoutRef.current = setTimeout(() => setTimedOut(true), PROCESSING_TIMEOUT_MS)
+    }
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    }
+  }, [order, timedOut])
+
   if (loading) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center space-y-4">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
         <p className="text-sm font-black uppercase tracking-widest text-muted-foreground">
-          Confirming your payment...
+          {t("confirmingPayment")}
         </p>
       </div>
     )
@@ -125,13 +144,13 @@ export default function CheckoutSuccessPage() {
           <Card>
             <CardContent className="pt-8 text-center space-y-4">
               <AlertCircle className="h-12 w-12 mx-auto text-destructive" />
-              <h2 className="text-xl font-bold">Unable to load order</h2>
+              <h2 className="text-xl font-bold">{t("unableToLoad")}</h2>
               <p className="text-muted-foreground">
-                {error || "Order not found. If you completed a payment, please check your email for confirmation."}
+                {error || t("orderNotFoundError")}
               </p>
               <div className="flex gap-4 justify-center pt-4">
                 <Link href="/products">
-                  <Button variant="outline">Continue Shopping</Button>
+                  <Button variant="outline">{t("continueShopping")}</Button>
                 </Link>
               </div>
             </CardContent>
@@ -160,13 +179,9 @@ export default function CheckoutSuccessPage() {
               >
                 <CheckCircle className="h-10 w-10 text-emerald-500" />
               </motion.div>
-              <h1 className="text-3xl font-bold mb-2">Payment Successful</h1>
+              <h1 className="text-3xl font-bold mb-2">{t("paymentSuccessful")}</h1>
               <p className="text-muted-foreground">
-                Thank you for your purchase. Your order{" "}
-                <span className="font-mono font-semibold text-foreground">
-                  {order.orderNumber}
-                </span>{" "}
-                has been confirmed.
+                {t("orderConfirmed", { orderNumber: order.orderNumber })}
               </p>
             </motion.div>
 
@@ -183,7 +198,7 @@ export default function CheckoutSuccessPage() {
                   <CardHeader>
                     <CardTitle className="text-lg flex items-center gap-2">
                       <Wifi className="h-5 w-5" />
-                      eSIM Status
+                      {t("esimStatus")}
                       <Badge
                         variant={isCompleted ? "default" : "secondary"}
                         className="ml-auto"
@@ -193,7 +208,7 @@ export default function CheckoutSuccessPage() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {isProcessing && (
+                    {isProcessing && !timedOut && (
                       <div className="text-center py-8 space-y-4">
                         <motion.div
                           animate={{ rotate: 360 }}
@@ -202,13 +217,29 @@ export default function CheckoutSuccessPage() {
                           <Clock className="h-12 w-12 mx-auto text-primary" />
                         </motion.div>
                         <div>
-                          <p className="font-medium mb-1">Your eSIM is being prepared</p>
+                          <p className="font-medium mb-1">{t("esimPreparing")}</p>
                           <p className="text-sm text-muted-foreground">
-                            This usually takes just a few moments. You'll receive an email at{" "}
-                            <span className="font-medium text-foreground">{order.email}</span>{" "}
-                            once your eSIM is ready.
+                            {t("esimPreparingDesc", { email: order.email })}
                           </p>
                         </div>
+                      </div>
+                    )}
+
+                    {isProcessing && timedOut && (
+                      <div className="text-center py-8 space-y-4">
+                        <Mail className="h-12 w-12 mx-auto text-primary" />
+                        <div>
+                          <p className="font-medium mb-1">{t("esimPreparing")}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {t("esimTimeout", { email: order.email })}
+                          </p>
+                        </div>
+                        <a href="mailto:support@mobialo.eu">
+                          <Button variant="outline" size="sm">
+                            <Mail className="h-4 w-4 mr-2" />
+                            {t("contactSupport")}
+                          </Button>
+                        </a>
                       </div>
                     )}
 
@@ -228,16 +259,16 @@ export default function CheckoutSuccessPage() {
                               </div>
                             )}
                           </div>
-                          <p className="font-medium text-sm">Scan this QR code to install your eSIM</p>
+                          <p className="font-medium text-sm">{t("scanQrCode")}</p>
                           <p className="text-xs text-muted-foreground mt-1">
-                            Go to Settings &gt; Cellular &gt; Add eSIM &gt; Scan QR Code
+                            {t("scanInstructions")}
                           </p>
                         </div>
 
                         {order.esim.activationCode && (
                           <div className="p-4 rounded-lg bg-muted/50 space-y-2">
                             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                              Activation Code (Manual Entry)
+                              {t("activationCodeLabel")}
                             </p>
                             <code className="text-sm break-all">{order.esim.activationCode}</code>
                           </div>
@@ -248,9 +279,9 @@ export default function CheckoutSuccessPage() {
                     {isCompleted && !order.esim && (
                       <div className="text-center py-8 space-y-2">
                         <CheckCircle className="h-12 w-12 mx-auto text-emerald-500" />
-                        <p className="font-medium">Order complete</p>
+                        <p className="font-medium">{t("orderComplete")}</p>
                         <p className="text-sm text-muted-foreground">
-                          Check your email for eSIM delivery details.
+                          {t("checkEmail")}
                         </p>
                       </div>
                     )}
@@ -261,13 +292,13 @@ export default function CheckoutSuccessPage() {
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Link href={`/order/${order.orderNumber}`} className="flex-1">
                     <Button className="w-full gradient-accent text-accent-foreground" size="lg">
-                      View Order Details
+                      {t("viewOrderDetails")}
                       <ArrowRight className="h-4 w-4 ml-2" />
                     </Button>
                   </Link>
                   <Link href="/products" className="flex-1">
                     <Button variant="outline" className="w-full" size="lg">
-                      Continue Shopping
+                      {t("continueShopping")}
                     </Button>
                   </Link>
                 </div>
@@ -282,7 +313,7 @@ export default function CheckoutSuccessPage() {
               >
                 <Card>
                   <CardHeader>
-                    <CardTitle className="text-lg">Order Summary</CardTitle>
+                    <CardTitle className="text-lg">{t("orderSummary")}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-3">
@@ -297,26 +328,26 @@ export default function CheckoutSuccessPage() {
                               {item.product?.provider && `${item.product.provider} - `}
                               {item.product?.dataAmount && item.product?.dataUnit
                                 ? `${item.product.dataAmount} ${item.product.dataUnit}`
-                                : "Data Plan"}
+                                : t("dataPlan")}
                               {item.quantity > 1 && ` x${item.quantity}`}
                             </p>
                           </div>
-                          <p className="text-sm font-medium">${item.totalPrice.toFixed(2)}</p>
+                          <p className="text-sm font-medium">{formatPrice(item.totalPrice)}</p>
                         </div>
                       ))}
                     </div>
 
                     <div className="border-t pt-3">
                       <div className="flex justify-between font-semibold">
-                        <span>Total Paid</span>
-                        <span>${order.total.toFixed(2)}</span>
+                        <span>{t("totalPaid")}</span>
+                        <span>{formatPrice(order.total)}</span>
                       </div>
                     </div>
 
                     <div className="text-xs text-muted-foreground space-y-1 pt-2">
-                      <p>Order: {order.orderNumber}</p>
-                      <p>Email: {order.email}</p>
-                      <p>Date: {new Date(order.createdAt).toLocaleDateString()}</p>
+                      <p>{t("orderLabel")}: {order.orderNumber}</p>
+                      <p>{t("emailLabel")}: {order.email}</p>
+                      <p>{t("dateLabel")}: {new Date(order.createdAt).toLocaleDateString()}</p>
                     </div>
                   </CardContent>
                 </Card>
