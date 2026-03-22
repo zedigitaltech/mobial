@@ -26,6 +26,10 @@ export async function GET(request: NextRequest) {
     const maxPrice = searchParams.get("maxPrice");
     const category = searchParams.get("category");
     const productFamilyId = searchParams.get("productFamilyId");
+    const is5G = searchParams.get("is5G");
+    const supportsCalls = searchParams.get("supportsCalls");
+    const supportsHotspot = searchParams.get("supportsHotspot");
+    const isUnlimited = searchParams.get("isUnlimited");
     const sortBy = searchParams.get("sortBy") || "price_asc";
     const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 50);
     const offset = parseInt(searchParams.get("offset") || "0");
@@ -67,6 +71,18 @@ export async function GET(request: NextRequest) {
         gte: minPrice ? parseFloat(minPrice) : undefined,
         lte: maxPrice ? parseFloat(maxPrice) : undefined,
       };
+    }
+    if (is5G === "true") {
+      where.is5G = true;
+    }
+    if (supportsCalls === "true") {
+      where.supportsCalls = true;
+    }
+    if (supportsHotspot === "true") {
+      where.supportsHotspot = true;
+    }
+    if (isUnlimited === "true") {
+      where.isUnlimited = true;
     }
 
     // Build Order Clause
