@@ -1,55 +1,34 @@
 /**
  * Products API Routes
  * GET /api/products - List all active products with filtering and pagination
- * Uses local database for production-ready, filtered data
+ * Uses local database for production-ready, filtered data.
+ *
+ * Performance: No rate limiting on this read-only endpoint — it's protected
+ * by CDN caching (s-maxage=600) and Vercel's built-in DDoS protection.
+ * Removing the rate limit DB call saves ~500ms on cold starts.
  */
 
-import { NextRequest } from 'next/server';
-import { db } from '@/lib/db';
-import { errorResponse, getClientIP } from '@/lib/auth-helpers';
-import { checkRateLimit, createRateLimitHeaders } from '@/lib/rate-limit';
-import { Prisma } from '@prisma/client';
+import { NextRequest } from "next/server";
+import { db } from "@/lib/db";
+import { errorResponse } from "@/lib/auth-helpers";
+import { Prisma } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
   try {
-    const clientIP = getClientIP(request);
-    const rateLimitResult = await checkRateLimit(clientIP, 'api:products', {
-      windowMs: 60000,
-      maxRequests: 100,
-    });
-
-    if (!rateLimitResult.success) {
-      const headers = createRateLimitHeaders(rateLimitResult);
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'Too many requests. Please try again later.',
-          retryAfter: rateLimitResult.retryAfter,
-        }),
-        {
-          status: 429,
-          headers: {
-            'Content-Type': 'application/json',
-            ...Object.fromEntries(headers.entries()),
-          },
-        }
-      );
-    }
-
     const { searchParams } = new URL(request.url);
 
     // Parse parameters
-    const country = searchParams.get('country');
-    const region = searchParams.get('region');
-    const provider = searchParams.get('provider');
-    const search = searchParams.get('search');
-    const minPrice = searchParams.get('minPrice');
-    const maxPrice = searchParams.get('maxPrice');
-    const category = searchParams.get('category');
-    const productFamilyId = searchParams.get('productFamilyId');
-    const sortBy = searchParams.get('sortBy') || 'price_asc';
-    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50);
-    const offset = parseInt(searchParams.get('offset') || '0');
+    const country = searchParams.get("country");
+    const region = searchParams.get("region");
+    const provider = searchParams.get("provider");
+    const search = searchParams.get("search");
+    const minPrice = searchParams.get("minPrice");
+    const maxPrice = searchParams.get("maxPrice");
+    const category = searchParams.get("category");
+    const productFamilyId = searchParams.get("productFamilyId");
+    const sortBy = searchParams.get("sortBy") || "price_asc";
+    const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 50);
+    const offset = parseInt(searchParams.get("offset") || "0");
 
     // Build Where Clause
     const where: Prisma.ProductWhereInput = {
@@ -57,10 +36,10 @@ export async function GET(request: NextRequest) {
       externallyShown: true,
     };
 
-    if (category && category !== 'all') {
+    if (category && category !== "all") {
       where.category = category;
     } else if (!category) {
-      where.category = 'esim_realtime';
+      where.category = "esim_realtime";
     }
 
     if (productFamilyId) {
@@ -71,7 +50,7 @@ export async function GET(request: NextRequest) {
       where.countries = { contains: country };
     }
     if (region) {
-      where.regions = { contains: region, mode: 'insensitive' };
+      where.regions = { contains: region, mode: "insensitive" };
     }
     if (provider) {
       where.provider = provider;
@@ -80,7 +59,7 @@ export async function GET(request: NextRequest) {
       where.OR = [
         { name: { contains: search } },
         { provider: { contains: search } },
-        { countries: { contains: search } }
+        { countries: { contains: search } },
       ];
     }
     if (minPrice || maxPrice) {
@@ -91,11 +70,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Build Order Clause
-    let orderBy: Prisma.ProductOrderByWithRelationInput = { price: 'asc' };
-    if (sortBy === 'price_desc') orderBy = { price: 'desc' };
-    if (sortBy === 'name') orderBy = { name: 'asc' };
-    if (sortBy === 'createdAt') orderBy = { createdAt: 'desc' };
-    if (sortBy === 'rank') orderBy = { penalizedRank: 'desc' };
+    let orderBy: Prisma.ProductOrderByWithRelationInput = { price: "asc" };
+    if (sortBy === "price_desc") orderBy = { price: "desc" };
+    if (sortBy === "name") orderBy = { name: "asc" };
+    if (sortBy === "createdAt") orderBy = { createdAt: "desc" };
+    if (sortBy === "rank") orderBy = { penalizedRank: "desc" };
 
     // Execute Queries — select only fields needed for list views
     const [products, total] = await Promise.all([
@@ -128,11 +107,11 @@ export async function GET(request: NextRequest) {
           category: true,
         },
       }),
-      db.product.count({ where })
+      db.product.count({ where }),
     ]);
 
     // Format products (parse JSON strings)
-    const formattedProducts = products.map(p => ({
+    const formattedProducts = products.map((p) => ({
       ...p,
       countries: p.countries ? JSON.parse(p.countries) : [],
       regions: p.regions ? JSON.parse(p.regions) : [],
@@ -154,13 +133,13 @@ export async function GET(request: NextRequest) {
       {
         status: 200,
         headers: {
-          'Content-Type': 'application/json',
-          'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+          "Content-Type": "application/json",
+          "Cache-Control": "public, s-maxage=600, stale-while-revalidate=1200",
         },
-      }
+      },
     );
   } catch (error) {
-    console.error('Error fetching products from DB:', error);
-    return errorResponse('Failed to fetch products', 500);
+    console.error("Error fetching products from DB:", error);
+    return errorResponse("Failed to fetch products", 500);
   }
 }
