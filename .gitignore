@@ -56,3 +56,5 @@ dev.db
 
 # Skills directory
 /skills/
+# Sentry Config File
+.env.sentry-build-plugin
