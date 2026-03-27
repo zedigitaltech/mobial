@@ -22,6 +22,7 @@ import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { useAuth } from "@/components/providers/auth-provider"
 import { toast } from "sonner"
+import { usePostHog } from "posthog-js/react"
 
 interface ReferralStats {
   code: string | null
@@ -32,6 +33,7 @@ interface ReferralStats {
 
 export default function ReferralsPage() {
   const { user, isLoading: authLoading, isAuthenticated, openAuthModal } = useAuth()
+  const posthog = usePostHog()
   const [stats, setStats] = useState<ReferralStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [generating, setGenerating] = useState(false)
@@ -94,6 +96,10 @@ export default function ReferralsPage() {
       await navigator.clipboard.writeText(text)
       setCopied(true)
       toast.success("Copied to clipboard!")
+      posthog?.capture("referral_link_copied", {
+        content_type: text === stats?.code ? "code" : "link",
+        referral_code: stats?.code,
+      })
       setTimeout(() => setCopied(false), 2000)
     } catch {
       toast.error("Failed to copy")

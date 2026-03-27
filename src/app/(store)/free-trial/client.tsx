@@ -16,6 +16,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 import Link from "next/link"
+import { usePostHog } from "posthog-js/react"
 
 const DESTINATIONS = [
   { country: "TR", name: "Turkey", flag: "\u{1F1F9}\u{1F1F7}", label: "Popular" },
@@ -33,6 +34,7 @@ export function FreeTrialForm() {
   const [selectedDestination, setSelectedDestination] = useState<string | null>(null)
   const [email, setEmail] = useState("")
   const [submitting, setSubmitting] = useState(false)
+  const posthog = usePostHog()
 
   const handleClaim = async () => {
     if (!selectedDestination || !email) return
@@ -55,6 +57,9 @@ export function FreeTrialForm() {
       if (data.success) {
         setStep("success")
         toast.success("Free trial claimed!")
+        posthog?.capture("free_trial_claimed", {
+          destination: selectedDestination,
+        })
       } else {
         toast.error(data.error || "Failed to claim trial")
       }

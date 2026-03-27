@@ -1,12 +1,20 @@
 "use client"
 
+import { useEffect } from "react"
 import { motion } from "framer-motion"
 import { XCircle, ShoppingCart, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import Link from "next/link"
+import { usePostHog } from "posthog-js/react"
 
 export default function CheckoutCancelPage() {
+  const posthog = usePostHog();
+
+  useEffect(() => {
+    posthog?.capture("checkout_cancelled");
+  }, []);
+
   return (
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <motion.div

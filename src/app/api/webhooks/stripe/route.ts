@@ -11,6 +11,7 @@ import {
   sendOrderFailed,
 } from "@/services/email-service";
 import { encryptEsimField } from "@/lib/esim-encryption";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -208,6 +209,34 @@ export async function POST(request: NextRequest) {
               fulfillment: fulfillment.success,
             },
           });
+
+          if (order) {
+            const posthog = getPostHogClient();
+            if (posthog) {
+              const userId = order.userId ?? orderId;
+              posthog.capture({
+                distinctId: userId,
+                event: "payment_succeeded",
+                properties: {
+                  order_id: order.id,
+                  order_number: order.orderNumber,
+                  total: order.total,
+                  currency: order.currency,
+                  items_count: order.items.length,
+                },
+              });
+              if (fulfillment.success) {
+                posthog.capture({
+                  distinctId: userId,
+                  event: "esim_fulfilled",
+                  properties: {
+                    order_id: order.id,
+                    order_number: order.orderNumber,
+                  },
+                });
+              }
+            }
+          }
         }
 
         break;
@@ -260,6 +289,18 @@ export async function POST(request: NextRequest) {
               status: "FAILED",
             },
           });
+
+          const posthog = getPostHogClient();
+          if (posthog) {
+            posthog.capture({
+              distinctId: orderId,
+              event: "payment_failed",
+              properties: {
+                order_id: orderId,
+                failure_reason: paymentIntent.last_payment_error?.message,
+              },
+            });
+          }
         }
         break;
       }

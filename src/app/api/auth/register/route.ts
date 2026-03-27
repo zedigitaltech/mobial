@@ -17,6 +17,7 @@ import {
   getClientIP,
   getUserAgent
 } from '@/lib/auth-helpers';
+import { getPostHogClient } from '@/lib/posthog-server';
 
 // Validation schema
 const registerSchema = z.object({
@@ -111,6 +112,14 @@ export async function POST(request: NextRequest) {
     sendWelcome(user.email, user.name ?? '').catch((err) =>
       console.error('[Register] Failed to send welcome email:', err)
     );
+
+    // Track signup in PostHog
+    const distinctId = request.headers.get('X-POSTHOG-DISTINCT-ID') ?? user.id;
+    const posthog = getPostHogClient();
+    if (posthog) {
+      posthog.identify({ distinctId: user.id, properties: { email: user.email, name: user.name } });
+      posthog.capture({ distinctId, event: 'user_signed_up', properties: { user_id: user.id, email: user.email, name: user.name } });
+    }
 
     // Log audit event
     await logAuditWithContext({

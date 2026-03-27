@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { cn } from "@/lib/utils"
+import { usePostHog } from "posthog-js/react"
 
 interface UsageData {
   orderId: string
@@ -90,6 +91,7 @@ export default function CheckUsagePage() {
   const [usage, setUsage] = useState<UsageData | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const posthog = usePostHog()
 
   async function handleLookup() {
     if (!inputValue.trim()) return
@@ -113,6 +115,13 @@ export default function CheckUsagePage() {
       }
 
       setUsage(data.data)
+      posthog?.capture("usage_checked", {
+        lookup_type: lookupType,
+        iccid: data.data.iccid,
+        status: data.data.status,
+        percentage: data.data.percentage,
+        remaining_days: data.data.remainingDays,
+      })
     } catch {
       setError(t("networkError"))
     } finally {

@@ -32,6 +32,7 @@ import { Separator } from "@/components/ui/separator";
 import { useCart } from "@/contexts/cart-context";
 import { useCurrency } from "@/contexts/currency-context";
 import { ProductWithDetails } from "@/services/product-service";
+import { usePostHog } from "posthog-js/react";
 
 interface ProductDetailClientProps {
   product: ProductWithDetails;
@@ -47,6 +48,7 @@ export function ProductDetailClient({
   const router = useRouter();
   const { addItem, isInCart } = useCart();
   const { formatPrice } = useCurrency();
+  const posthog = usePostHog();
   const [addingToCart, setAddingToCart] = useState(false);
 
   const discount = product.originalPrice
@@ -58,6 +60,20 @@ export function ProductDetailClient({
   const inCart = isInCart(product.id);
   const ctaRef = useRef<HTMLButtonElement>(null);
   const [showStickyBar, setShowStickyBar] = useState(false);
+
+  useEffect(() => {
+    posthog?.capture("product_viewed", {
+      product_id: product.id,
+      product_name: product.name,
+      provider: product.provider,
+      price: product.price,
+      countries_count: product.countries.length,
+      data_amount: product.dataAmount,
+      data_unit: product.dataUnit,
+      validity_days: product.validityDays,
+      is_unlimited: product.isUnlimited,
+    });
+  }, []);
 
   useEffect(() => {
     const el = ctaRef.current;
@@ -72,6 +88,14 @@ export function ProductDetailClient({
   }, []);
 
   const handleBuyNow = async () => {
+    posthog?.capture("buy_now_clicked", {
+      product_id: product.id,
+      product_name: product.name,
+      provider: product.provider,
+      price: product.price,
+      already_in_cart: inCart,
+    });
+
     if (inCart) {
       router.push("/checkout");
       return;

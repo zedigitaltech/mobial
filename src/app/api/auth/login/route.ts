@@ -18,6 +18,7 @@ import {
   getClientIP,
   getUserAgent,
 } from "@/lib/auth-helpers";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 // Validation schema
 const loginSchema = z.object({
@@ -222,6 +223,14 @@ export async function POST(request: NextRequest) {
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
       },
     });
+
+    // Track login in PostHog
+    const distinctId = request.headers.get('X-POSTHOG-DISTINCT-ID') ?? user.id;
+    const posthog = getPostHogClient();
+    if (posthog) {
+      posthog.identify({ distinctId: user.id, properties: { email: user.email, name: user.name } });
+      posthog.capture({ distinctId, event: 'user_logged_in', properties: { user_id: user.id, email: user.email } });
+    }
 
     // Log audit event
     await logAuditWithContext({

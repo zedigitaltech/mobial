@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge"
 import { useCart } from "@/contexts/cart-context"
 import { useCurrency } from "@/contexts/currency-context"
 import Link from "next/link"
+import { usePostHog } from "posthog-js/react"
 
 interface OrderData {
   id: string
@@ -59,6 +60,7 @@ export default function CheckoutSuccessPage() {
   const tCommon = useTranslations("common")
   const { clearCart } = useCart()
   const { formatPrice } = useCurrency()
+  const posthog = usePostHog()
 
   const [order, setOrder] = useState<OrderData | null>(null)
   const [loading, setLoading] = useState(true)
@@ -100,7 +102,16 @@ export default function CheckoutSuccessPage() {
           throw new Error(orderData.message || "Failed to load order details")
         }
 
-        setOrder(orderData.data.order)
+        const fetchedOrder = orderData.data.order
+        setOrder(fetchedOrder)
+        if (fetchedOrder.status === "COMPLETED") {
+          posthog?.capture("order_completed", {
+            order_number: fetchedOrder.orderNumber,
+            total: fetchedOrder.total,
+            currency: fetchedOrder.currency,
+            items_count: fetchedOrder.items.length,
+          })
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Something went wrong")
       } finally {
