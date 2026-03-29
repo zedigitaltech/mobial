@@ -18,15 +18,15 @@ export async function middleware(request: NextRequest) {
 
   const cspHeader = `
     default-src 'self';
-    script-src 'self' 'nonce-${nonce}' https://js.stripe.com https://client.crisp.chat;
+    script-src 'self' 'nonce-${nonce}' https://js.stripe.com https://client.crisp.chat https://accounts.google.com;
     style-src 'self' 'unsafe-inline' https://client.crisp.chat;
     img-src 'self' blob: data: https://api.mobimatter.com https://mobimatterstorage.blob.core.windows.net https://client.crisp.chat https://image.crisp.chat;
     font-src 'self' data: https://client.crisp.chat;
     object-src 'none';
     base-uri 'self';
     form-action 'self';
-    connect-src 'self' https://api.stripe.com https://checkout.stripe.com https://*.posthog.com https://client.crisp.chat wss://client.relay.crisp.chat;
-    frame-src https://checkout.stripe.com https://js.stripe.com https://game.crisp.chat;
+    connect-src 'self' https://api.stripe.com https://checkout.stripe.com https://*.posthog.com https://client.crisp.chat wss://client.relay.crisp.chat https://accounts.google.com;
+    frame-src https://checkout.stripe.com https://js.stripe.com https://game.crisp.chat https://accounts.google.com;
     frame-ancestors 'none';
     block-all-mixed-content;
     upgrade-insecure-requests;
