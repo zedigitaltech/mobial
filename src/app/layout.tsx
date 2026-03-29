@@ -1,36 +1,36 @@
-import type { Metadata, Viewport } from "next"
-import { headers } from "next/headers"
-import { Inter, JetBrains_Mono } from "next/font/google"
-import "./globals.css"
-import { NextIntlClientProvider } from "next-intl"
-import { getLocale, getMessages } from "next-intl/server"
-import { ThemeProvider } from "@/components/providers/theme-provider"
-import { AuthProvider } from "@/components/providers/auth-provider"
-import { ReactQueryProvider } from "@/components/providers/react-query-provider"
-import { Toaster } from "@/components/ui/sonner"
-import { CartProvider } from "@/contexts/cart-context"
-import { CurrencyProvider } from "@/contexts/currency-context"
-import { CompareProvider } from "@/contexts/compare-context"
-import { CompareBar, CompareDrawer } from "@/components/store/compare-drawer"
-import { ChatWidget } from "@/components/common/chat-widget"
-import { NotificationPrompt } from "@/components/common/notification-prompt"
-import { InstallPrompt } from "@/components/common/install-prompt"
-import { MonitoringProvider } from "@/components/providers/monitoring-provider"
-import { PostHogProvider } from "@/components/providers/posthog-provider"
-import { CookieConsent } from "@/components/gdpr/cookie-consent"
-import Script from "next/script"
+import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
+import { Inter, JetBrains_Mono } from "next/font/google";
+import "./globals.css";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
+import { ThemeProvider } from "@/components/providers/theme-provider";
+import { AuthProvider } from "@/components/providers/auth-provider";
+import { ReactQueryProvider } from "@/components/providers/react-query-provider";
+import { Toaster } from "@/components/ui/sonner";
+import { CartProvider } from "@/contexts/cart-context";
+import { CurrencyProvider } from "@/contexts/currency-context";
+import { CompareProvider } from "@/contexts/compare-context";
+import { CompareBar, CompareDrawer } from "@/components/store/compare-drawer";
+import { ChatWidget } from "@/components/common/chat-widget";
+import { NotificationPrompt } from "@/components/common/notification-prompt";
+import { InstallPrompt } from "@/components/common/install-prompt";
+import { MonitoringProvider } from "@/components/providers/monitoring-provider";
+import { PostHogProvider } from "@/components/providers/posthog-provider";
+import { CookieConsent } from "@/components/gdpr/cookie-consent";
+import Script from "next/script";
 
 const inter = Inter({
   subsets: ["latin", "latin-ext", "cyrillic", "greek"],
   variable: "--font-inter",
   display: "swap",
-})
+});
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin", "latin-ext", "cyrillic", "greek"],
   variable: "--font-jetbrains",
   display: "swap",
-})
+});
 
 export const viewport: Viewport = {
   themeColor: "#0a0a0a",
@@ -38,30 +38,40 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   viewportFit: "cover",
-}
+};
 
 export const metadata: Metadata = {
   title: {
     default: "MobiaL | Global eSIM Connectivity",
-    template: "%s | MobiaL"
+    template: "%s | MobiaL",
   },
-  description: "Instant high-speed data in 150+ countries. No roaming fees, no physical SIMs. The premium choice for digital nomads.",
-  keywords: ["eSIM", "travel data", "roaming", "digital nomad", "mobile data", "international sim"],
+  description:
+    "Instant high-speed data in 150+ countries. No roaming fees, no physical SIMs. The premium choice for digital nomads.",
+  keywords: [
+    "eSIM",
+    "travel data",
+    "roaming",
+    "digital nomad",
+    "mobile data",
+    "international sim",
+  ],
   authors: [{ name: "MobiaL Team" }],
   creator: "MobiaL",
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_BASE_URL || "https://mobialo.eu",
+  ),
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://mobialo.eu",
+    url: "/",
     siteName: "MobiaL",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "MobiaL Premium eSIM"
-      }
+        alt: "MobiaL Premium eSIM",
+      },
     ],
   },
   twitter: {
@@ -79,61 +89,70 @@ export const metadata: Metadata = {
     follow: true,
   },
   alternates: {
-    canonical: "https://mobialo.eu",
+    canonical: "/",
     languages: {
-      "x-default": "https://mobialo.eu",
+      "x-default": "/",
     },
   },
-}
+};
 
 export default async function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
-  const locale = await getLocale()
-  const messages = await getMessages()
-  const nonce = (await headers()).get("x-nonce") ?? undefined
+  const locale = await getLocale();
+  const messages = await getMessages();
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   return (
     <html lang={locale} suppressHydrationWarning className="dark">
       <head>
-        <Script src="https://accounts.google.com/gsi/client" strategy="lazyOnload" />
+        <Script
+          src="https://accounts.google.com/gsi/client"
+          strategy="lazyOnload"
+        />
       </head>
-      <body className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}>
+      <body
+        className={`${inter.variable} ${jetbrainsMono.variable} font-sans antialiased`}
+      >
         <NextIntlClientProvider locale={locale} messages={messages}>
           <ReactQueryProvider>
             <AuthProvider>
               <PostHogProvider>
-              <ThemeProvider
-                attribute="class"
-                defaultTheme="dark"
-                enableSystem={false}
-                disableTransitionOnChange
-                nonce={nonce}
-              >
-                <CurrencyProvider>
-                  <CartProvider>
-                    <CompareProvider>
-                      <MonitoringProvider>
-                        {children}
-                        <CompareBar />
-                        <CompareDrawer />
-                        <ChatWidget />
-                        <NotificationPrompt />
-                        <InstallPrompt />
-                        <Toaster position="top-center" expand={true} richColors />
-                        <CookieConsent />
-                      </MonitoringProvider>
-                    </CompareProvider>
-                  </CartProvider>
-                </CurrencyProvider>
-              </ThemeProvider>
-            </PostHogProvider>
+                <ThemeProvider
+                  attribute="class"
+                  defaultTheme="dark"
+                  enableSystem={false}
+                  disableTransitionOnChange
+                  nonce={nonce}
+                >
+                  <CurrencyProvider>
+                    <CartProvider>
+                      <CompareProvider>
+                        <MonitoringProvider>
+                          {children}
+                          <CompareBar />
+                          <CompareDrawer />
+                          <ChatWidget />
+                          <NotificationPrompt />
+                          <InstallPrompt />
+                          <Toaster
+                            position="top-center"
+                            expand={true}
+                            richColors
+                          />
+                          <CookieConsent />
+                        </MonitoringProvider>
+                      </CompareProvider>
+                    </CartProvider>
+                  </CurrencyProvider>
+                </ThemeProvider>
+              </PostHogProvider>
             </AuthProvider>
           </ReactQueryProvider>
         </NextIntlClientProvider>
       </body>
     </html>
-  )
+  );
 }
