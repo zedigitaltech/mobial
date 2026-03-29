@@ -7,8 +7,7 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useAuth } from "./auth-provider";
 
 const POSTHOG_KEY = process.env.NEXT_PUBLIC_POSTHOG_KEY;
-const POSTHOG_HOST =
-  process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://eu.i.posthog.com";
+const POSTHOG_HOST = "/ingest";
 
 function PostHogPageView() {
   const pathname = usePathname();
