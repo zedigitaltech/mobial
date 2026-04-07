@@ -325,26 +325,16 @@ export default async function HomePage() {
 
               <div className="flex-1 relative">
                 <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full" />
-                <div className="relative bg-card border-[12px] border-muted rounded-[3rem] p-4 shadow-2xl max-w-[320px] mx-auto overflow-hidden">
-                  <div className="bg-muted h-6 w-32 mx-auto rounded-full mb-8" />
-                  <div className="space-y-6">
-                    <div className="h-40 rounded-2xl bg-gradient-to-br from-primary to-blue-600 p-6 flex flex-col justify-between text-white">
-                      <Wifi className="h-8 w-8" />
-                      <div>
-                        <p className="text-xs opacity-80 uppercase font-bold tracking-widest">Global Connect</p>
-                        <p className="text-xl font-black">Active eSIM</p>
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                      <div className="h-4 rounded-full bg-muted w-full" />
-                      <div className="h-4 rounded-full bg-muted w-3/4" />
-                      <div className="h-4 rounded-full bg-muted w-1/2" />
-                    </div>
-                    <div className="p-4 rounded-2xl border bg-muted/50 text-center space-y-2">
-                      <Smartphone className="h-10 w-10 mx-auto text-primary" />
-                      <p className="font-bold">Device Compatible</p>
-                    </div>
-                  </div>
+                <div className="relative bg-card border-[12px] border-muted rounded-[3rem] p-1 shadow-2xl max-w-[320px] mx-auto overflow-hidden">
+                  <div className="bg-muted h-6 w-32 mx-auto rounded-full mt-2 mb-2" />
+                  <Image
+                    src="/app-screenshot.png"
+                    alt="Mobial eSIM App - Browse eSIM plans for 150+ countries"
+                    width={296}
+                    height={580}
+                    className="rounded-[1.5rem] w-full"
+                    priority
+                  />
                 </div>
               </div>
             </div>
