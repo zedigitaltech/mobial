@@ -284,7 +284,29 @@ function parseProductJsonFields(product: {
 }
 
 /**
+ * Generate a unique slug in-memory using a pre-fetched Set of existing slugs.
+ * Mutates the Set by adding the reserved slug (safe because the Set is local to the sync batch).
+ */
+function generateSlugInMemory(name: string, slugSet: Set<string>): string {
+  const baseSlug = generateSlug(name);
+  let slug = baseSlug;
+  let counter = 1;
+
+  while (slugSet.has(slug)) {
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+
+  slugSet.add(slug);
+  return slug;
+}
+
+/**
  * Sync products from MobiMatter API to database
+ *
+ * Optimized to eliminate N+1 queries: pre-fetches all existing products and slugs
+ * in 2 bulk queries, then uses in-memory lookups during the loop.
+ * Total queries: ~1502 (2 bulk selects + 1 write per product) instead of ~4500.
  */
 export async function syncProductsFromMobimatter(): Promise<SyncResult> {
   const result: SyncResult = {
@@ -302,6 +324,49 @@ export async function syncProductsFromMobimatter(): Promise<SyncResult> {
 
     result.totalProcessed = mobimatterProducts.length;
 
+    // Pre-fetch ALL existing products in one query (eliminates per-product findUnique)
+    const existingProducts = await db.product.findMany({
+      select: {
+        id: true,
+        mobimatterId: true,
+        slug: true,
+        isActive: true,
+        description: true,
+        providerLogo: true,
+        category: true,
+        countries: true,
+        regions: true,
+        dataAmount: true,
+        dataUnit: true,
+        validityDays: true,
+        currency: true,
+        features: true,
+        networkType: true,
+        activationPolicy: true,
+        ipRouting: true,
+        speedInfo: true,
+        speedLong: true,
+        topUpAvailable: true,
+        is5G: true,
+        tags: true,
+        additionalDetails: true,
+        phoneNumberPrefix: true,
+        rank: true,
+        penalizedRank: true,
+        productFamilyId: true,
+        networkListId: true,
+      },
+    });
+
+    const existingMap = new Map(
+      existingProducts.map(p => [p.mobimatterId, p])
+    );
+
+    // Pre-fetch ALL existing slugs in one query (eliminates per-product findFirst in generateUniqueSlug)
+    const existingSlugs = new Set(
+      existingProducts.map(p => p.slug).filter(Boolean)
+    );
+
     for (const rawProduct of mobimatterProducts) {
       try {
         // Skip junk products (deactivate if they already exist)
@@ -310,9 +375,7 @@ export async function syncProductsFromMobimatter(): Promise<SyncResult> {
           || rawProduct.productCategory === 'esim_replacement';
 
         if (isJunk) {
-          const existingJunk = await db.product.findUnique({
-            where: { mobimatterId: rawProduct.id },
-          });
+          const existingJunk = existingMap.get(rawProduct.id);
           if (existingJunk && existingJunk.isActive) {
             await db.product.update({
               where: { id: existingJunk.id },
@@ -323,17 +386,15 @@ export async function syncProductsFromMobimatter(): Promise<SyncResult> {
           continue;
         }
 
-        // Check if product already exists
-        const existing = await db.product.findUnique({
-          where: { mobimatterId: rawProduct.id },
-        });
+        // Check if product already exists (in-memory lookup instead of DB query)
+        const existing = existingMap.get(rawProduct.id);
 
         const markedUpPrice = Math.round(rawProduct.price * (1 + MARKUP_PERCENTAGE) * 100) / 100;
 
         if (existing) {
           // Update existing product
           // Keep existing slug to preserve URLs — only generate slug for new products
-          const slug = existing.slug || await generateUniqueSlug(rawProduct.name, existing.id);
+          const slug = existing.slug || generateSlugInMemory(rawProduct.name, existingSlugs);
 
           await db.product.update({
             where: { id: existing.id },
@@ -382,16 +443,16 @@ export async function syncProductsFromMobimatter(): Promise<SyncResult> {
           result.updated++;
         } else {
           // Create new product
-          const slug = await generateUniqueSlug(rawProduct.name);
+          const slug = generateSlugInMemory(rawProduct.name, existingSlugs);
           const productData = transformMobimatterProduct(rawProduct);
-          
+
           await db.product.create({
             data: {
               ...productData,
               slug,
             },
           });
-          
+
           result.created++;
         }
       } catch (error) {
