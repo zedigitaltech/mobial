@@ -25,7 +25,8 @@ export async function middleware(request: NextRequest) {
     object-src 'none';
     base-uri 'self';
     form-action 'self';
-    connect-src 'self' https://api.stripe.com https://checkout.stripe.com https://*.posthog.com https://client.crisp.chat wss://client.relay.crisp.chat https://accounts.google.com;
+    connect-src 'self' https://api.stripe.com https://checkout.stripe.com https://*.posthog.com https://client.crisp.chat wss://client.relay.crisp.chat https://accounts.google.com https://mobimatterstorage.blob.core.windows.net;
+    worker-src 'self' blob:;
     frame-src https://checkout.stripe.com https://js.stripe.com https://game.crisp.chat https://accounts.google.com;
     frame-ancestors 'none';
     block-all-mixed-content;
