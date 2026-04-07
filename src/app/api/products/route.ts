@@ -12,6 +12,7 @@ import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { errorResponse } from "@/lib/auth-helpers";
 import { Prisma } from "@prisma/client";
+import { countries } from "@/lib/countries";
 
 export async function GET(request: NextRequest) {
   try {
@@ -51,7 +52,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (country) {
-      where.countries = { contains: country };
+      where.countries = { contains: country, mode: "insensitive" };
     }
     if (region) {
       where.regions = { contains: region, mode: "insensitive" };
@@ -60,10 +61,20 @@ export async function GET(request: NextRequest) {
       where.provider = provider;
     }
     if (search) {
+      // Resolve country names (e.g. "germany") to ISO codes (e.g. "DE")
+      const searchLower = search.toLowerCase();
+      const matchedCountry = Object.entries(countries).find(
+        ([slug, data]) =>
+          slug.includes(searchLower) ||
+          data.name.toLowerCase().includes(searchLower) ||
+          data.code.toLowerCase() === searchLower,
+      );
+      const countryCode = matchedCountry?.[1].code;
+
       where.OR = [
-        { name: { contains: search } },
-        { provider: { contains: search } },
-        { countries: { contains: search } },
+        { name: { contains: search, mode: "insensitive" } },
+        { provider: { contains: search, mode: "insensitive" } },
+        ...(countryCode ? [{ countries: { contains: countryCode } }] : []),
       ];
     }
     if (minPrice || maxPrice) {

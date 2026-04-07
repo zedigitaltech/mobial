@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
@@ -85,6 +85,7 @@ export default function ProductsPage() {
   );
   const [search, setSearch] = useState(searchParams.get("search") || "");
   const [debouncedSearch, setDebouncedSearch] = useState(search);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>(null);
   const [show5GOnly, setShow5GOnly] = useState(false);
   const [showUnlimitedOnly, setShowUnlimitedOnly] = useState(false);
   const [showCallsOnly, setShowCallsOnly] = useState(false);
@@ -133,6 +134,10 @@ export default function ProductsPage() {
         if (usageType === "light" && gb <= 5 && gb > 0) {
           score += 30;
           if (!reason) reason = "Perfect for casual use";
+        }
+        if (usageType === "balanced" && gb > 5 && gb <= 20) {
+          score += 35;
+          if (!reason) reason = "Balanced for everyday use";
         }
         if (usageType === "heavy" && (gb >= 20 || p.isUnlimited)) {
           score += 40;
@@ -224,8 +229,10 @@ export default function ProductsPage() {
               className="w-full h-11 bg-muted/50 border-0 rounded-xl pl-10 text-sm font-medium outline-none focus:ring-2 ring-primary/20 transition-all"
               value={search}
               onChange={(e) => {
-                setSearch(e.target.value);
-                setTimeout(() => setDebouncedSearch(e.target.value), 300);
+                const val = e.target.value;
+                setSearch(val);
+                if (debounceRef.current) clearTimeout(debounceRef.current);
+                debounceRef.current = setTimeout(() => setDebouncedSearch(val), 300);
               }}
             />
           </div>

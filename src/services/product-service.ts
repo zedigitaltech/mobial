@@ -638,9 +638,9 @@ export async function searchProducts(
   const where: Prisma.ProductWhereInput = {
     isActive: true,
     OR: [
-      { name: { contains: query } },
-      { description: { contains: query } },
-      { provider: { contains: query } },
+      { name: { contains: query, mode: "insensitive" } },
+      { description: { contains: query, mode: "insensitive" } },
+      { provider: { contains: query, mode: "insensitive" } },
     ],
   };
 
