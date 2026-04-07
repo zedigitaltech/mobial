@@ -188,8 +188,8 @@ function transformMobimatterProduct(raw: {
     provider: raw.provider,
     providerLogo: raw.providerLogo || null,
     category: raw.productCategory || null,
-    countries: raw.countries ? JSON.stringify(raw.countries) : null,
-    regions: raw.regions ? JSON.stringify(raw.regions) : null,
+    countries: raw.countries ?? Prisma.JsonNull,
+    regions: raw.regions ?? Prisma.JsonNull,
     dataAmount: raw.dataAmount || null,
     dataUnit: raw.dataUnit || null,
     validityDays: raw.validityDays || null,
@@ -197,7 +197,7 @@ function transformMobimatterProduct(raw: {
     currency: raw.currency || 'USD',
     originalPrice: raw.price,
     wholesalePrice: raw.wholesalePrice || null,
-    features: raw.features ? JSON.stringify(raw.features) : null,
+    features: raw.features ?? Prisma.JsonNull,
     isUnlimited: raw.isUnlimited,
     supportsHotspot: raw.supportsHotspot,
     supportsCalls: raw.supportsCalls,
@@ -210,7 +210,7 @@ function transformMobimatterProduct(raw: {
     topUpAvailable: raw.topUpAvailable || false,
     usageTracking: raw.usageTracking === 'Realtime, in-app' || raw.usageTracking === 'Dial short code',
     is5G: raw.is5G || false,
-    tags: raw.tags ? JSON.stringify(raw.tags) : null,
+    tags: raw.tags ?? Prisma.JsonNull,
     externallyShown: raw.externallyShown !== false,
     additionalDetails: raw.additionalDetails || null,
     phoneNumberPrefix: raw.phoneNumberPrefix || null,
@@ -226,7 +226,9 @@ function transformMobimatterProduct(raw: {
 }
 
 /**
- * Parse JSON fields in product for API response
+ * Normalize JSON fields in product for API response.
+ * Prisma returns Json columns as already-parsed values; we cast to the
+ * expected array types used throughout the application.
  */
 function parseProductJsonFields(product: {
   id: string;
@@ -236,15 +238,15 @@ function parseProductJsonFields(product: {
   provider: string;
   providerLogo: string | null;
   category: string | null;
-  countries: string | null;
-  regions: string | null;
+  countries: Prisma.JsonValue | null;
+  regions: Prisma.JsonValue | null;
   dataAmount: number | null;
   dataUnit: string | null;
   validityDays: number | null;
   price: number;
   currency: string;
   originalPrice: number | null;
-  features: string | null;
+  features: Prisma.JsonValue | null;
   isUnlimited: boolean;
   supportsHotspot: boolean;
   supportsCalls: boolean;
@@ -254,7 +256,7 @@ function parseProductJsonFields(product: {
   slug: string;
   metaTitle: string | null;
   metaDescription: string | null;
-  networks: string | null;
+  networks: Prisma.JsonValue | null;
   activationPolicy: string | null;
   topUpAvailable: boolean;
   networkType: string | null;
@@ -265,7 +267,7 @@ function parseProductJsonFields(product: {
   penalizedRank: number | null;
   productFamilyId: number | null;
   networkListId: number | null;
-  tags: string | null;
+  tags: Prisma.JsonValue | null;
   externallyShown: boolean;
   additionalDetails: string | null;
   phoneNumberPrefix: string | null;
@@ -277,9 +279,11 @@ function parseProductJsonFields(product: {
 }): ProductWithDetails {
   return {
     ...product,
-    countries: product.countries ? JSON.parse(product.countries) : [],
-    regions: product.regions ? JSON.parse(product.regions) : [],
-    features: product.features ? JSON.parse(product.features) : [],
+    countries: (product.countries as string[]) || [],
+    regions: (product.regions as string[]) || [],
+    features: (product.features as string[]) || [],
+    networks: product.networks as string | null,
+    tags: product.tags as string | null,
   };
 }
 
@@ -404,8 +408,8 @@ export async function syncProductsFromMobimatter(): Promise<SyncResult> {
               provider: rawProduct.provider,
               providerLogo: rawProduct.providerLogo || existing.providerLogo,
               category: rawProduct.productCategory || existing.category,
-              countries: rawProduct.countries ? JSON.stringify(rawProduct.countries) : existing.countries,
-              regions: rawProduct.regions ? JSON.stringify(rawProduct.regions) : existing.regions,
+              countries: rawProduct.countries ?? existing.countries,
+              regions: rawProduct.regions ?? existing.regions,
               dataAmount: rawProduct.dataAmount ?? existing.dataAmount,
               dataUnit: rawProduct.dataUnit ?? existing.dataUnit,
               validityDays: rawProduct.validityDays ?? existing.validityDays,
@@ -413,7 +417,7 @@ export async function syncProductsFromMobimatter(): Promise<SyncResult> {
               originalPrice: rawProduct.price,
               wholesalePrice: rawProduct.wholesalePrice || null,
               currency: rawProduct.currency || existing.currency,
-              features: rawProduct.features ? JSON.stringify(rawProduct.features) : existing.features,
+              features: rawProduct.features ?? existing.features,
               isUnlimited: rawProduct.isUnlimited,
               supportsHotspot: rawProduct.supportsHotspot,
               supportsCalls: rawProduct.supportsCalls,
@@ -426,7 +430,7 @@ export async function syncProductsFromMobimatter(): Promise<SyncResult> {
               topUpAvailable: rawProduct.topUpAvailable ?? existing.topUpAvailable,
               usageTracking: rawProduct.usageTracking === 'Realtime, in-app' || rawProduct.usageTracking === 'Dial short code',
               is5G: rawProduct.is5G ?? existing.is5G,
-              tags: rawProduct.tags ? JSON.stringify(rawProduct.tags) : existing.tags,
+              tags: rawProduct.tags ?? existing.tags,
               externallyShown: rawProduct.externallyShown !== false,
               additionalDetails: rawProduct.additionalDetails || existing.additionalDetails,
               phoneNumberPrefix: rawProduct.phoneNumberPrefix || existing.phoneNumberPrefix,
@@ -539,10 +543,10 @@ export async function getProducts(filters: ProductFilters = {}): Promise<Paginat
     ...(minPrice !== undefined && { price: { gte: minPrice } }),
     ...(maxPrice !== undefined && { price: { lte: maxPrice } }),
     ...(country && {
-      countries: { contains: `"${country}"` },
+      countries: { array_contains: [country] },
     }),
     ...(region && {
-      regions: { contains: `"${region}"` },
+      regions: { array_contains: [region] },
     }),
   };
 
@@ -602,7 +606,7 @@ export async function getAvailableCountries(): Promise<CountryInfo[]> {
       const products = await db.product.findMany({
         where: {
           isActive: true,
-          countries: { not: null },
+          countries: { not: Prisma.JsonNull },
         },
         select: {
           countries: true,
@@ -612,14 +616,10 @@ export async function getAvailableCountries(): Promise<CountryInfo[]> {
       const countryCount = new Map<string, number>();
 
       for (const product of products) {
-        if (product.countries) {
-          try {
-            const countries = JSON.parse(product.countries) as string[];
-            for (const country of countries) {
-              countryCount.set(country, (countryCount.get(country) || 0) + 1);
-            }
-          } catch {
-            // Skip invalid JSON
+        const countryCodes = product.countries as string[] | null;
+        if (Array.isArray(countryCodes)) {
+          for (const country of countryCodes) {
+            countryCount.set(country, (countryCount.get(country) || 0) + 1);
           }
         }
       }

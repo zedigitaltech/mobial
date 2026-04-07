@@ -162,12 +162,10 @@ export function ProductDetailClient({
   const HIDDEN_TAGS = ["special offer", "best deal", "best price", "cheapest", "discount", "sale", "promo"];
   const parsedTags: { item: string; color?: string }[] = (() => {
     if (!product.tags) return [];
-    try {
-      const tags = JSON.parse(product.tags) as { item: string; color?: string }[];
-      return tags.filter((t) => !HIDDEN_TAGS.includes(t.item.toLowerCase()));
-    } catch {
-      return [];
-    }
+    const raw = Array.isArray(product.tags)
+      ? product.tags as { item: string; color?: string }[]
+      : (() => { try { return JSON.parse(product.tags as string) as { item: string; color?: string }[]; } catch { return []; } })();
+    return raw.filter((t) => !HIDDEN_TAGS.includes(t.item.toLowerCase()));
   })();
 
   const getTagClasses = (color?: string) => {
@@ -565,38 +563,37 @@ export function ProductDetailClient({
             {/* Network Info */}
             {product.networks &&
               (() => {
-                try {
-                  const networkList: string[] = JSON.parse(product.networks);
-                  if (networkList.length === 0) return null;
-                  return (
-                    <Card>
-                      <CardContent className="p-6">
-                        <h3 className="font-semibold flex items-center gap-2 mb-4">
-                          <Wifi className="h-5 w-5 text-primary" />
-                          Local Networks
-                        </h3>
-                        <div className="flex flex-wrap gap-2">
-                          {networkList.slice(0, 8).map((network) => (
-                            <Badge
-                              key={network}
-                              variant="secondary"
-                              className="text-xs"
-                            >
-                              {network}
-                            </Badge>
-                          ))}
-                          {networkList.length > 8 && (
-                            <Badge variant="secondary" className="text-xs">
-                              +{networkList.length - 8} more
-                            </Badge>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                } catch {
-                  return null;
-                }
+                const networkList: string[] = (() => {
+                  if (Array.isArray(product.networks)) return product.networks as string[];
+                  try { return JSON.parse(product.networks as string); } catch { return []; }
+                })();
+                if (networkList.length === 0) return null;
+                return (
+                  <Card>
+                    <CardContent className="p-6">
+                      <h3 className="font-semibold flex items-center gap-2 mb-4">
+                        <Wifi className="h-5 w-5 text-primary" />
+                        Local Networks
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {networkList.slice(0, 8).map((network) => (
+                          <Badge
+                            key={network}
+                            variant="secondary"
+                            className="text-xs"
+                          >
+                            {network}
+                          </Badge>
+                        ))}
+                        {networkList.length > 8 && (
+                          <Badge variant="secondary" className="text-xs">
+                            +{networkList.length - 8} more
+                          </Badge>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
               })()}
           </motion.div>
         </div>
@@ -621,7 +618,7 @@ export function ProductDetailClient({
                     dataAmount: relatedProduct.dataAmount,
                     dataUnit: relatedProduct.dataUnit,
                     validityDays: relatedProduct.validityDays,
-                    countries: JSON.stringify(relatedProduct.countries),
+                    countries: relatedProduct.countries,
                     price: relatedProduct.price,
                     originalPrice: relatedProduct.originalPrice,
                     isUnlimited: relatedProduct.isUnlimited,
@@ -661,7 +658,7 @@ export function ProductDetailClient({
                     dataAmount: relatedProduct.dataAmount,
                     dataUnit: relatedProduct.dataUnit,
                     validityDays: relatedProduct.validityDays,
-                    countries: JSON.stringify(relatedProduct.countries),
+                    countries: relatedProduct.countries,
                     price: relatedProduct.price,
                     originalPrice: relatedProduct.originalPrice,
                     isUnlimited: relatedProduct.isUnlimited,

@@ -69,7 +69,8 @@ model User {
   
   // Notifications
   notifications     Notification[]
-  
+  pushTokens        PushToken[]
+
   @@index([email])
   @@index([role])
   @@index([status])
@@ -120,7 +121,7 @@ model Product {
   category              String?  // data, voice, combo
 
   // Carrier Truth Layer
-  networks              String?  // JSON array of local carriers and their tech (5G/4G)
+  networks              Json?    // JSON array of local carriers and their tech (5G/4G)
   bestFitReason         String?  // AI-generated or rule-based fit reason
   
   // Advanced MobiMatter Meta
@@ -140,7 +141,7 @@ model Product {
   networkListId         Int?     // Network list identifier for carrier lookups
 
   // Quality & Visibility
-  tags                  String?  // JSON array of {item, color?} quality badges
+  tags                  Json?    // JSON array of {item, color?} quality badges
   externallyShown       Boolean  @default(true)  // Whether to display to customers
   additionalDetails     String?  // HTML additional info from MobiMatter
   phoneNumberPrefix     String?  // Phone number included with plan (e.g. "+382")
@@ -148,8 +149,8 @@ model Product {
   speedLong             String?  // Detailed speed description
 
   // Coverage
-  countries             String?  // JSON array of country codes
-  regions               String?  // JSON array of regions
+  countries             Json?    // JSON array of country codes
+  regions               Json?    // JSON array of regions
   
   // Data/Validity
   dataAmount            Float?   // In GB
@@ -163,7 +164,7 @@ model Product {
   wholesalePrice        Float?   // MobiMatter wholesale cost
   
   // Features
-  features              String?  // JSON array of features
+  features              Json?    // JSON array of features
   isUnlimited           Boolean  @default(false)
   supportsHotspot       Boolean  @default(true)
   supportsCalls         Boolean  @default(false)
@@ -507,6 +508,18 @@ model Notification {
   @@index([userId])
   @@index([isRead])
   @@index([createdAt])
+}
+
+model PushToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  platform  String   // "ios" | "android"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
 }
 
 // ==================== REVIEWS ====================

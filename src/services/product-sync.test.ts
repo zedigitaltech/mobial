@@ -114,7 +114,7 @@ describe("Product Sync Integrity", () => {
       const dbProduct = dbMap.get(mm.id)
       if (!dbProduct || !dbProduct.countries) continue
 
-      const dbCountries = JSON.parse(dbProduct.countries) as string[]
+      const dbCountries = dbProduct.countries as string[]
       expect(dbCountries).toEqual(mm.countries)
     }
   }, 30000)

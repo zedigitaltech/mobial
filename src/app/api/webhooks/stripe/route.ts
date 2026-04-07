@@ -12,6 +12,7 @@ import {
 } from "@/services/email-service";
 import { encryptEsimField } from "@/lib/esim-encryption";
 import { getPostHogClient } from "@/lib/posthog-server";
+import { sendPushNotification } from "@/lib/push-notifications";
 import { logger } from "@/lib/logger";
 
 const log = logger.child("webhook:stripe");
@@ -138,6 +139,15 @@ export async function POST(request: NextRequest) {
                 })),
                 order.total,
               );
+
+              if (order.userId) {
+                sendPushNotification(
+                  order.userId,
+                  "Top-Up Complete!",
+                  `Your ${order.items[0]?.productName ?? "eSIM"} top-up is active.`,
+                  { orderNumber: order.orderNumber },
+                ).catch(() => {});
+              }
             }
 
             await logAudit({
@@ -205,6 +215,15 @@ export async function POST(request: NextRequest) {
               })),
               order.total,
             );
+
+            if (order.userId) {
+              sendPushNotification(
+                order.userId,
+                "eSIM Ready!",
+                `Your ${order.items[0]?.productName ?? "eSIM"} is ready to activate.`,
+                { orderNumber: order.orderNumber },
+              ).catch(() => {});
+            }
           }
 
           await logAudit({
