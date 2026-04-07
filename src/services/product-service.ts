@@ -332,7 +332,8 @@ export async function syncProductsFromMobimatter(): Promise<SyncResult> {
 
         if (existing) {
           // Update existing product
-          const slug = await generateUniqueSlug(rawProduct.name, existing.id);
+          // Keep existing slug to preserve URLs — only generate slug for new products
+          const slug = existing.slug || await generateUniqueSlug(rawProduct.name, existing.id);
 
           await db.product.update({
             where: { id: existing.id },

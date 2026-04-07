@@ -1,4 +1,9 @@
 /**
+ * @deprecated Prefer successResponse/errorResponse from '@/lib/auth-helpers' for consistency.
+ * This file exists for backward compatibility with monitoring routes.
+ */
+
+/**
  * Standardized API Response Helper
  * Ensures consistent response format across all API routes
  */

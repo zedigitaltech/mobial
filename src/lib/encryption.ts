@@ -14,9 +14,9 @@ const SALT_LENGTH = 64;
 function getEncryptionKey(): Buffer {
   const key = process.env.ENCRYPTION_KEY;
   if (!key) {
-    if (process.env.NODE_ENV === "production") {
+    if (process.env.NODE_ENV !== "development") {
       throw new Error(
-        "ENCRYPTION_KEY environment variable is required in production",
+        "ENCRYPTION_KEY environment variable is required in non-development environments",
       );
     }
     // In development, use a default key (should be set in production)
