@@ -209,7 +209,8 @@ async function handleEsimActivated(payload: MobiMatterWebhookPayload) {
   }
 
   // Fire-and-forget activation notification
-  const destination = orderItem.product?.countries?.[0] || 'your destination';
+  const countriesList = orderItem.product?.countries as string[] | null;
+  const destination = countriesList?.[0] || 'your destination';
   sendActivationDetected(
     orderItem.order.email,
     orderItem.order.orderNumber,

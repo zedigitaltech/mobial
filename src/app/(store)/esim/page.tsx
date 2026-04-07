@@ -52,20 +52,16 @@ async function getCountriesWithPricing(): Promise<
 
   const countryMap = new Map<string, { minPrice: number; count: number }>()
   for (const p of products) {
-    if (!p.countries) continue
-    try {
-      const codes: string[] = JSON.parse(p.countries)
-      for (const code of codes) {
-        const existing = countryMap.get(code)
-        if (!existing) {
-          countryMap.set(code, { minPrice: p.price, count: 1 })
-        } else {
-          existing.count++
-          if (p.price < existing.minPrice) existing.minPrice = p.price
-        }
+    const codes = p.countries as string[] | null;
+    if (!Array.isArray(codes)) continue;
+    for (const code of codes) {
+      const existing = countryMap.get(code)
+      if (!existing) {
+        countryMap.set(code, { minPrice: p.price, count: 1 })
+      } else {
+        existing.count++
+        if (p.price < existing.minPrice) existing.minPrice = p.price
       }
-    } catch {
-      // Skip invalid JSON
     }
   }
 

@@ -108,7 +108,7 @@ describe('GET /api/products', () => {
     expect(db.product.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          countries: { contains: 'US' },
+          countries: { array_contains: ['US'] },
         }),
       })
     )
@@ -124,7 +124,7 @@ describe('GET /api/products', () => {
     expect(db.product.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          regions: { contains: 'Europe' },
+          regions: { array_contains: ['Europe'] },
         }),
       })
     )

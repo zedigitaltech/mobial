@@ -86,19 +86,14 @@ async function getRegionProducts(countryCodes: string[]) {
     })
 
     const matched = allProducts.filter(p => {
-      if (!p.countries) return false
-      try {
-        const codes: string[] = JSON.parse(p.countries)
-        return codes.some(code => regionCodeSet.has(code))
-      } catch {
-        return false
-      }
+      const codes = p.countries as string[] | null;
+      return Array.isArray(codes) && codes.some(code => regionCodeSet.has(code));
     })
 
     return matched.slice(0, 20).map(p => ({
       ...p,
-      countries: p.countries ? JSON.parse(p.countries) : [],
-      regions: p.regions ? JSON.parse(p.regions) : [],
+      countries: (p.countries as string[]) || [],
+      regions: (p.regions as string[]) || [],
       networks: p.networks ?? undefined,
       providerLogo: p.providerLogo ?? undefined,
       speedInfo: p.speedInfo ?? undefined,

@@ -56,7 +56,7 @@ export async function claimTrial(params: {
   const product = await db.product.findFirst({
     where: {
       isActive: true,
-      countries: { contains: params.destination },
+      countries: { array_contains: [params.destination] },
       dataAmount: { gte: 0.5 },
     },
     orderBy: { price: "asc" },

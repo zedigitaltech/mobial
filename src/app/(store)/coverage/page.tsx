@@ -23,28 +23,20 @@ export const dynamic = "force-dynamic"
 
 export default async function CoveragePage() {
   // Get unique countries from active products with plan counts
-  const countryData = await db.product.groupBy({
-    by: ["countries"],
+  const countryData = await db.product.findMany({
     where: { isActive: true },
-    _count: { id: true },
+    select: { countries: true },
   })
 
-  // Parse the JSON country arrays and aggregate
+  // Aggregate country codes from the parsed Json arrays
   const countryPlanCounts = new Map<string, number>()
   const countryNetworkTypes = new Map<string, string>()
 
   for (const row of countryData) {
-    if (!row.countries) continue
-    try {
-      const codes: string[] = JSON.parse(row.countries)
-      for (const code of codes) {
-        countryPlanCounts.set(
-          code,
-          (countryPlanCounts.get(code) || 0) + row._count.id
-        )
-      }
-    } catch {
-      // Skip invalid JSON
+    const codes = row.countries as string[] | null;
+    if (!Array.isArray(codes)) continue;
+    for (const code of codes) {
+      countryPlanCounts.set(code, (countryPlanCounts.get(code) || 0) + 1);
     }
   }
 
@@ -56,20 +48,16 @@ export default async function CoveragePage() {
   })
 
   for (const product of sampleProducts) {
-    if (!product.countries) continue
-    try {
-      const codes: string[] = JSON.parse(product.countries)
-      for (const code of codes) {
-        // Prefer 5G if any product offers it
-        const existing = countryNetworkTypes.get(code)
-        if (product.is5G || product.networkType?.includes("5G")) {
-          countryNetworkTypes.set(code, "5G")
-        } else if (!existing) {
-          countryNetworkTypes.set(code, product.networkType || "4G/LTE")
-        }
+    const codes = product.countries as string[] | null;
+    if (!Array.isArray(codes)) continue;
+    for (const code of codes) {
+      // Prefer 5G if any product offers it
+      const existing = countryNetworkTypes.get(code)
+      if (product.is5G || product.networkType?.includes("5G")) {
+        countryNetworkTypes.set(code, "5G")
+      } else if (!existing) {
+        countryNetworkTypes.set(code, product.networkType || "4G/LTE")
       }
-    } catch {
-      // Skip invalid JSON
     }
   }
 
