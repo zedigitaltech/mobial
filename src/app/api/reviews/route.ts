@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const ip = request.headers.get("x-forwarded-for") || "unknown";
-    const rateCheck = await checkRateLimit(ip, "review_submit");
+    const rateCheck = await checkRateLimit(ip, "review:submit");
     const allowed = rateCheck.success;
     if (!allowed) {
       return errorResponse(

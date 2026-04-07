@@ -99,9 +99,14 @@ export function ProductCard({
 }: ProductCardProps) {
   const { formatPrice } = useCurrency();
   const { toggleItem, isInCompare, isFull } = useCompare();
-  const networks: Network[] = product.networks
-    ? JSON.parse(product.networks)
-    : [];
+  const networks: Network[] = (() => {
+    if (!product.networks) return [];
+    try {
+      return JSON.parse(product.networks);
+    } catch {
+      return [];
+    }
+  })();
   const inCompare = isInCompare(product.id);
   const has5G =
     product.is5G || networks.some((n) => n.generation?.includes("5G"));

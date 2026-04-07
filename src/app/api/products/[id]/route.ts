@@ -31,8 +31,11 @@ export async function GET(
       return errorResponse('Product not found', 404);
     }
 
+    // Strip wholesale pricing fields from public response
+    const { originalPrice: _op, ...publicProduct } = product;
+
     return new Response(
-      JSON.stringify({ success: true, data: { product } }),
+      JSON.stringify({ success: true, data: { product: publicProduct } }),
       {
         status: 200,
         headers: {

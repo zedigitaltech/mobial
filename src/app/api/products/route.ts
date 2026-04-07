@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
           slug: true,
           provider: true,
           price: true,
-          originalPrice: true,
+          originalPrice: false,
           dataAmount: true,
           dataUnit: true,
           isUnlimited: true,

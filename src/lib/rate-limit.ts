@@ -35,6 +35,9 @@ const DEFAULT_CONFIGS: Record<string, RateLimitConfig> = {
   
   // Orders
   'order:create': { windowMs: 60 * 1000, maxRequests: 5 }, // 5 per minute
+
+  // Reviews
+  'review:submit': { windowMs: 60 * 60 * 1000, maxRequests: 5 }, // 5 per hour
 };
 
 // In-memory cache for rate limiting (for development)

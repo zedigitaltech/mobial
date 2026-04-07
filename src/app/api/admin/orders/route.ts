@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     const search = url.searchParams.get('search') as string | null;
     const startDate = url.searchParams.get('startDate') as string | null;
     const endDate = url.searchParams.get('endDate') as string | null;
-    const limit = parseInt(url.searchParams.get('limit') || '20', 10);
+    const limit = Math.min(parseInt(url.searchParams.get('limit') || '20', 10), 200);
     const offset = parseInt(url.searchParams.get('offset') || '0', 10);
 
     // Validate status

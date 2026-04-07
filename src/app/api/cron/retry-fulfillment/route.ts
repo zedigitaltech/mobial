@@ -1,9 +1,10 @@
 import { NextRequest } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { db } from "@/lib/db";
+import { stripe } from "@/lib/stripe";
 import { processOrderWithMobimatter } from "@/services/order-service";
 import { logAudit } from "@/lib/audit";
-import { sendAdminAlert } from "@/services/email-service";
+import { sendAdminAlert, sendOrderFailed } from "@/services/email-service";
 
 const MAX_RETRIES = 5;
 
@@ -120,6 +121,62 @@ export async function GET(request: NextRequest) {
     const succeeded = results.filter((r) => r.success).length;
     const failed = results.filter((r) => !r.success).length;
 
+    // Auto-refund orders that exhausted all retries
+    const exhaustedOrders = await db.order.findMany({
+      where: {
+        status: { in: ["FAILED", "PARTIALLY_FULFILLED"] },
+        paymentStatus: "PAID",
+        retryCount: { gte: MAX_RETRIES },
+        paymentReference: { not: null },
+      },
+      select: { id: true, orderNumber: true, paymentReference: true, email: true, total: true },
+      take: 5,
+    });
+
+    let refunded = 0;
+    for (const order of exhaustedOrders) {
+      try {
+        // Find the Stripe payment intent from the checkout session
+        const session = await stripe.checkout.sessions.retrieve(order.paymentReference!);
+        if (session.payment_intent && typeof session.payment_intent === "string") {
+          await stripe.refunds.create({ payment_intent: session.payment_intent });
+
+          await db.order.update({
+            where: { id: order.id },
+            data: { status: "REFUNDED", paymentStatus: "REFUNDED" },
+          });
+
+          if (order.email) {
+            sendOrderFailed(order.email, order.orderNumber).catch(() => {});
+          }
+
+          await logAudit({
+            action: "order_refund",
+            entity: "order",
+            entityId: order.id,
+            newValues: {
+              source: "auto_refund_cron",
+              orderNumber: order.orderNumber,
+              reason: "max_retries_exhausted",
+            },
+          });
+
+          refunded++;
+        }
+      } catch (err) {
+        console.error(`[Retry Cron] Auto-refund failed for ${order.orderNumber}:`, err);
+        sendAdminAlert({
+          type: "refund_failure",
+          subject: `Auto-refund failed for order ${order.orderNumber}`,
+          details: {
+            orderId: order.id,
+            orderNumber: order.orderNumber,
+            error: err instanceof Error ? err.message : "Unknown error",
+          },
+        }).catch(() => {});
+      }
+    }
+
     await logAudit({
       action: "security_alert",
       entity: "order",
@@ -128,6 +185,7 @@ export async function GET(request: NextRequest) {
         attempted: results.length,
         succeeded,
         failed,
+        refunded,
       },
     });
 
@@ -136,6 +194,7 @@ export async function GET(request: NextRequest) {
       retried: results.length,
       succeeded,
       failed,
+      refunded,
       details: results,
     });
   } catch (error) {

@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useReducer, useEffect, ReactNode } from "react"
+import { createContext, useContext, useReducer, useEffect, useState, ReactNode } from "react"
 import posthog from "posthog-js"
 
 // Types
@@ -31,6 +31,7 @@ type CartAction =
   | { type: "LOAD_CART"; payload: CartItem[] }
 
 interface CartContextType extends CartState {
+  isHydrated: boolean
   addItem: (item: Omit<CartItem, "quantity">) => void
   removeItem: (productId: string) => void
   updateQuantity: (productId: string, quantity: number) => void
@@ -121,6 +122,7 @@ function cartReducer(state: CartState, action: CartAction): CartState {
 // Provider
 export function CartProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(cartReducer, initialState)
+  const [isHydrated, setIsHydrated] = useState(false)
 
   // Load cart from localStorage on mount
   useEffect(() => {
@@ -132,6 +134,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
     } catch (error) {
       console.error("Failed to load cart from localStorage:", error)
+    } finally {
+      setIsHydrated(true)
     }
   }, [])
 
@@ -180,6 +184,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     <CartContext.Provider
       value={{
         ...state,
+        isHydrated,
         addItem,
         removeItem,
         updateQuantity,

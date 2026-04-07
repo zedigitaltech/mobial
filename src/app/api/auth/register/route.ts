@@ -136,7 +136,7 @@ export async function POST(request: NextRequest) {
     );
 
     // Track signup in PostHog
-    const distinctId = request.headers.get('X-POSTHOG-DISTINCT-ID') ?? user.id;
+    const distinctId = user.id;
     const posthog = getPostHogClient();
     if (posthog) {
       posthog.identify({ distinctId: user.id, properties: { email: user.email, name: user.name } });

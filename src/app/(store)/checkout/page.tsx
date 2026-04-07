@@ -26,6 +26,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useCart, CartItem } from "@/contexts/cart-context";
+import { useCurrency } from "@/contexts/currency-context";
 
 // Types
 interface AffiliateValidation {
@@ -52,6 +53,7 @@ async function validateAffiliateCode(
 
 function CartSummaryItem({ item }: { item: CartItem }) {
   const t = useTranslations("checkout");
+  const { formatPrice } = useCurrency();
   const formatData = () => {
     if (item.dataAmount && item.dataUnit) {
       return `${item.dataAmount} ${item.dataUnit}`;
@@ -84,9 +86,8 @@ function CartSummaryItem({ item }: { item: CartItem }) {
       </div>
       <div className="text-right">
         <p className="text-sm font-medium">
-          ${(item.price * item.quantity).toFixed(2)}
+          {formatPrice(item.price * item.quantity)}
         </p>
-        {/* Note: Cart prices remain in USD as Stripe handles currency */}
       </div>
     </motion.div>
   );
@@ -95,7 +96,8 @@ function CartSummaryItem({ item }: { item: CartItem }) {
 export default function CheckoutPage() {
   const t = useTranslations("checkout");
   const router = useRouter();
-  const { items, total, clearCart } = useCart();
+  const { items, total, clearCart, isHydrated } = useCart();
+  const { formatPrice } = useCurrency();
 
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -106,8 +108,9 @@ export default function CheckoutPage() {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Redirect if cart is empty
+  // Redirect if cart is empty (only after localStorage has been read)
   useEffect(() => {
+    if (!isHydrated) return;
     if (items.length === 0) {
       router.push("/products");
     } else {
@@ -116,7 +119,7 @@ export default function CheckoutPage() {
         total,
       });
     }
-  }, [items.length, router, total]);
+  }, [isHydrated, items.length, router, total]);
 
   // Save abandoned cart when email is provided
   useEffect(() => {
@@ -243,8 +246,8 @@ export default function CheckoutPage() {
     }
   };
 
-  if (items.length === 0) {
-    return null; // Will redirect
+  if (!isHydrated || items.length === 0) {
+    return null; // Will redirect once hydrated
   }
 
   return (
@@ -416,7 +419,7 @@ export default function CheckoutPage() {
                 ) : (
                   <>
                     <ShoppingCart className="h-4 w-4 mr-2" />
-                    {t("completeOrder")} - ${finalTotal.toFixed(2)}
+                    {t("completeOrder")} - {formatPrice(finalTotal)}
                   </>
                 )}
               </Button>
@@ -478,22 +481,22 @@ export default function CheckoutPage() {
                       <span className="text-muted-foreground">
                         {t("subtotal")}
                       </span>
-                      <span>${total.toFixed(2)}</span>
+                      <span>{formatPrice(total)}</span>
                     </div>
                     {discountAmount > 0 && (
                       <div className="flex justify-between text-primary">
                         <span>{t("discount")}</span>
-                        <span>-${discountAmount.toFixed(2)}</span>
+                        <span>-{formatPrice(discountAmount)}</span>
                       </div>
                     )}
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">{t("tax")}</span>
-                      <span>$0.00</span>
+                      <span>{formatPrice(0)}</span>
                     </div>
                     <Separator />
                     <div className="flex justify-between font-semibold text-base">
                       <span>{t("total")}</span>
-                      <span>${finalTotal.toFixed(2)}</span>
+                      <span>{formatPrice(finalTotal)}</span>
                     </div>
                   </div>
                 </CardContent>
