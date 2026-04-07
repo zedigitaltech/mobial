@@ -29,7 +29,6 @@ export async function middleware(request: NextRequest) {
     worker-src 'self' blob:;
     frame-src https://checkout.stripe.com https://js.stripe.com https://game.crisp.chat https://accounts.google.com;
     frame-ancestors 'none';
-    block-all-mixed-content;
     upgrade-insecure-requests;
   `
     .replace(/\s{2,}/g, " ")
@@ -59,7 +58,7 @@ export async function middleware(request: NextRequest) {
     "Strict-Transport-Security",
     "max-age=31536000; includeSubDomains; preload",
   );
-  response.headers.set("X-XSS-Protection", "1; mode=block");
+  // X-XSS-Protection removed — deprecated and causes issues in older browsers. CSP provides better protection.
 
   // Admin route protection
   const isProtectedPath =
