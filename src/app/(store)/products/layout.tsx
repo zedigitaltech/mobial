@@ -1,13 +1,13 @@
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "eSIM Data Plans - Browse All Destinations",
+  title: "eSIM Plans - Browse 800+ Data Plans for 150+ Countries | Mobial",
   description:
-    "Compare eSIM data plans for 150+ countries. Filter by destination, data amount, price, and validity. Instant delivery, no roaming fees.",
+    "Compare and buy instant eSIM data plans for travel. Plans starting from $1.99. 5G support, unlimited data, voice calls. No SIM swaps, no roaming fees.",
   openGraph: {
-    title: "Browse eSIM Plans | MobiaL",
+    title: "eSIM Plans - Browse 800+ Data Plans for 150+ Countries | Mobial",
     description:
-      "Find the perfect eSIM for your trip. Compare plans from multiple providers with instant activation.",
+      "Compare and buy instant eSIM data plans for travel. Plans starting from $1.99. 5G support, unlimited data, voice calls. No SIM swaps, no roaming fees.",
   },
 }
 

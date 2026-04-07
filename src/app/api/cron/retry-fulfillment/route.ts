@@ -5,6 +5,9 @@ import { stripe } from "@/lib/stripe";
 import { processOrderWithMobimatter } from "@/services/order-service";
 import { logAudit } from "@/lib/audit";
 import { sendAdminAlert, sendOrderFailed } from "@/services/email-service";
+import { logger } from "@/lib/logger";
+
+const log = logger.child("cron:retry-fulfillment");
 
 const MAX_RETRIES = 5;
 
@@ -105,7 +108,7 @@ export async function GET(request: NextRequest) {
               maxRetries: MAX_RETRIES,
             },
           }).catch((err) =>
-            console.error("[Retry Cron] Failed to send admin alert:", err),
+            log.errorWithException("Failed to send admin alert", err),
           );
         }
       } catch (error) {
@@ -164,7 +167,7 @@ export async function GET(request: NextRequest) {
           refunded++;
         }
       } catch (err) {
-        console.error(`[Retry Cron] Auto-refund failed for ${order.orderNumber}:`, err);
+        log.errorWithException(`Auto-refund failed for ${order.orderNumber}`, err);
         sendAdminAlert({
           type: "refund_failure",
           subject: `Auto-refund failed for order ${order.orderNumber}`,
@@ -198,7 +201,7 @@ export async function GET(request: NextRequest) {
       details: results,
     });
   } catch (error) {
-    console.error("[Retry Fulfillment Cron] Error:", error);
+    log.errorWithException("Retry fulfillment cron failed", error);
     return Response.json(
       { success: false, error: "Retry cron failed" },
       { status: 500 },

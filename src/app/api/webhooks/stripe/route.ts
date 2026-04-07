@@ -12,6 +12,9 @@ import {
 } from "@/services/email-service";
 import { encryptEsimField } from "@/lib/esim-encryption";
 import { getPostHogClient } from "@/lib/posthog-server";
+import { logger } from "@/lib/logger";
+
+const log = logger.child("webhook:stripe");
 
 export async function POST(request: NextRequest) {
   const body = await request.text();
@@ -30,7 +33,7 @@ export async function POST(request: NextRequest) {
       process.env.STRIPE_WEBHOOK_SECRET!,
     );
   } catch (err) {
-    console.error("Webhook signature verification failed:", err);
+    log.errorWithException("Webhook signature verification failed", err);
     return new NextResponse("Webhook processing failed", { status: 400 });
   }
 
@@ -45,7 +48,7 @@ export async function POST(request: NextRequest) {
           session.metadata?.parentMobimatterOrderId;
 
         if (!orderId) {
-          console.error("No orderId found in session metadata");
+          log.error("No orderId found in session metadata");
           break;
         }
 
@@ -55,9 +58,9 @@ export async function POST(request: NextRequest) {
           select: { id: true },
         });
         if (alreadyProcessed) {
-          console.warn(
-            `[Stripe Webhook] Duplicate event for session ${session.id}, skipping`,
-          );
+          log.warn("Duplicate event, skipping", {
+            metadata: { sessionId: session.id },
+          });
           break;
         }
 
@@ -67,9 +70,9 @@ export async function POST(request: NextRequest) {
           select: { status: true },
         });
         if (!currentOrder || (currentOrder.status !== "PENDING" && currentOrder.status !== "PROCESSING")) {
-          console.warn(
-            `[Stripe Webhook] Order ${orderId} has status ${currentOrder?.status}, skipping payment update`,
-          );
+          log.warn("Order not in processable status, skipping payment update", {
+            metadata: { orderId, status: currentOrder?.status },
+          });
           break;
         }
 
@@ -148,10 +151,9 @@ export async function POST(request: NextRequest) {
               },
             });
           } catch (error) {
-            console.error(
-              `Top-up fulfillment failed for order ${orderId}:`,
-              error,
-            );
+            log.errorWithException("Top-up fulfillment failed", error, {
+              metadata: { orderId },
+            });
 
             await db.order.update({
               where: { id: orderId },
@@ -181,16 +183,14 @@ export async function POST(request: NextRequest) {
           });
 
           if (!fulfillment.success) {
-            console.error(
-              `Fulfillment failed for order ${orderId}:`,
-              fulfillment.error,
-            );
+            log.error("Fulfillment failed", {
+              metadata: { orderId, error: fulfillment.error },
+            });
             if (order) {
               sendOrderFailed(order.email, order.orderNumber).catch((err) => {
-                console.error(
-                  `Failed to send failure email for order ${orderId}:`,
-                  err,
-                );
+                log.errorWithException("Failed to send failure email", err, {
+                  metadata: { orderId },
+                });
               });
             }
           } else if (order) {
@@ -317,7 +317,7 @@ export async function POST(request: NextRequest) {
       status: 200,
     });
   } catch (error) {
-    console.error("Webhook handler error:", error);
+    log.errorWithException("Webhook handler error", error);
     return new NextResponse("Internal Server Error", { status: 500 });
   }
 }

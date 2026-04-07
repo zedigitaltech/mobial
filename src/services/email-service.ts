@@ -1,5 +1,8 @@
 import { sendEmail } from "@/lib/email";
 import { escapeHtml } from "@/lib/sanitize";
+import { logger } from "@/lib/logger";
+
+const log = logger.child("email-service");
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
@@ -138,7 +141,7 @@ export async function sendOrderConfirmation(
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Failed to send order confirmation";
-    console.error("[EmailService] sendOrderConfirmation error:", message);
+    log.error("sendOrderConfirmation failed", { metadata: { error: message } });
     return { success: false, error: message };
   }
 }
@@ -177,7 +180,7 @@ export async function sendPasswordReset(
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Failed to send password reset";
-    console.error("[EmailService] sendPasswordReset error:", message);
+    log.error("sendPasswordReset failed", { metadata: { error: message } });
     return { success: false, error: message };
   }
 }
@@ -216,7 +219,7 @@ export async function sendEmailVerification(
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Failed to send email verification";
-    console.error("[EmailService] sendEmailVerification error:", message);
+    log.error("sendEmailVerification failed", { metadata: { error: message } });
     return { success: false, error: message };
   }
 }
@@ -283,7 +286,7 @@ export async function sendCartRecovery(
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Failed to send cart recovery email";
-    console.error("[EmailService] sendCartRecovery error:", message);
+    log.error("sendCartRecovery failed", { metadata: { error: message } });
     return { success: false, error: message };
   }
 }
@@ -318,7 +321,7 @@ export async function sendWelcome(
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Failed to send welcome email";
-    console.error("[EmailService] sendWelcome error:", message);
+    log.error("sendWelcome failed", { metadata: { error: message } });
     return { success: false, error: message };
   }
 }
@@ -361,7 +364,7 @@ export async function sendEsimReady(
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Failed to send eSIM ready email";
-    console.error("[EmailService] sendEsimReady error:", message);
+    log.error("sendEsimReady failed", { metadata: { error: message } });
     return { success: false, error: message };
   }
 }
@@ -412,7 +415,7 @@ export async function sendActivationDetected(
       err instanceof Error
         ? err.message
         : "Failed to send activation detected email";
-    console.error("[EmailService] sendActivationDetected error:", message);
+    log.error("sendActivationDetected failed", { metadata: { error: message } });
     return { success: false, error: message };
   }
 }
@@ -478,7 +481,7 @@ export async function sendInstallationReminder(
       err instanceof Error
         ? err.message
         : "Failed to send installation reminder";
-    console.error("[EmailService] sendInstallationReminder error:", message);
+    log.error("sendInstallationReminder failed", { metadata: { error: message } });
     return { success: false, error: message };
   }
 }
@@ -517,7 +520,7 @@ export async function sendFeedbackRequest(
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Failed to send feedback request";
-    console.error("[EmailService] sendFeedbackRequest error:", message);
+    log.error("sendFeedbackRequest failed", { metadata: { error: message } });
     return { success: false, error: message };
   }
 }
