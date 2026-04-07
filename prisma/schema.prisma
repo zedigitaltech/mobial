@@ -245,9 +245,13 @@ model Order {
   // Relations
   items                 OrderItem[]
   
+  @@unique([paymentReference])
   @@index([orderNumber])
   @@index([userId])
   @@index([status])
+  @@index([email])
+  @@index([paymentStatus])
+  @@index([mobimatterOrderId])
   @@index([createdAt])
 }
 

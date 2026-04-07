@@ -61,6 +61,18 @@ export async function POST(request: NextRequest) {
           break;
         }
 
+        // Guard: only process PENDING orders — don't resurrect cancelled orders
+        const currentOrder = await db.order.findUnique({
+          where: { id: orderId },
+          select: { status: true },
+        });
+        if (!currentOrder || (currentOrder.status !== "PENDING" && currentOrder.status !== "PROCESSING")) {
+          console.warn(
+            `[Stripe Webhook] Order ${orderId} has status ${currentOrder?.status}, skipping payment update`,
+          );
+          break;
+        }
+
         // 1. Update Payment Status
         await db.order.update({
           where: { id: orderId },
