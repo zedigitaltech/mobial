@@ -9,7 +9,11 @@ export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user, isLoading, openAuthModal } = useAuth()
-  const callbackUrl = searchParams.get("callbackUrl") || "/"
+  const rawCallback = searchParams.get("callbackUrl") || "/"
+  const callbackUrl =
+    rawCallback.startsWith("/") && !rawCallback.startsWith("//")
+      ? rawCallback
+      : "/"
 
   useEffect(() => {
     if (isLoading) return

@@ -131,7 +131,7 @@ export async function POST(request: NextRequest) {
     await db.session.create({
       data: {
         userId: user.id,
-        token: tokens.accessToken,
+        token: tokens.refreshToken,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         ipAddress: ip,
         userAgent: request.headers.get('user-agent') || undefined,

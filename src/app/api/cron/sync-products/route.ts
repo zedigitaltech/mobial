@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { timingSafeEqual } from 'crypto';
 import { syncProductsFromMobimatter } from '@/services/product-service';
 import { logAudit } from '@/lib/audit';
 import { db } from '@/lib/db';
@@ -19,7 +20,12 @@ export async function GET(request: NextRequest) {
   const authHeader = request.headers.get('authorization');
   const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
 
-  if (token !== cronSecret) {
+  const isValid =
+    token &&
+    cronSecret &&
+    token.length === cronSecret.length &&
+    timingSafeEqual(Buffer.from(token), Buffer.from(cronSecret));
+  if (!isValid) {
     return Response.json(
       { success: false, error: 'Unauthorized' },
       { status: 401 }

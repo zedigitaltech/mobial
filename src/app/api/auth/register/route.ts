@@ -17,6 +17,7 @@ import {
   getClientIP,
   getUserAgent
 } from '@/lib/auth-helpers';
+import { checkRateLimit, createRateLimitHeaders } from '@/lib/rate-limit';
 import { getPostHogClient } from '@/lib/posthog-server';
 
 // Validation schema
@@ -29,6 +30,27 @@ const registerSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    // Check rate limit
+    const clientIP = getClientIP(request);
+    const rateLimitResult = await checkRateLimit(clientIP, 'auth:register');
+    if (!rateLimitResult.success) {
+      const headers = createRateLimitHeaders(rateLimitResult);
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Too many registration attempts. Please try again later.',
+          retryAfter: rateLimitResult.retryAfter,
+        }),
+        {
+          status: 429,
+          headers: {
+            'Content-Type': 'application/json',
+            ...Object.fromEntries(headers.entries()),
+          },
+        },
+      );
+    }
+
     // Parse and validate input
     const body = await parseJsonBody(request);
     
