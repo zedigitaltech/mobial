@@ -180,6 +180,21 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Cancel zombie PENDING orders older than 2 hours with no payment
+    const zombies = await db.order.updateMany({
+      where: {
+        status: "PENDING",
+        paymentStatus: "PENDING",
+        paymentReference: null,
+        createdAt: { lt: new Date(Date.now() - 2 * 60 * 60 * 1000) },
+      },
+      data: { status: "CANCELLED" },
+    });
+
+    if (zombies.count > 0) {
+      log.info(`Cancelled ${zombies.count} zombie PENDING orders`);
+    }
+
     await logAudit({
       action: "security_alert",
       entity: "order",
@@ -189,6 +204,7 @@ export async function GET(request: NextRequest) {
         succeeded,
         failed,
         refunded,
+        zombiesCancelled: zombies.count,
       },
     });
 
@@ -198,6 +214,7 @@ export async function GET(request: NextRequest) {
       succeeded,
       failed,
       refunded,
+      zombiesCancelled: zombies.count,
       details: results,
     });
   } catch (error) {

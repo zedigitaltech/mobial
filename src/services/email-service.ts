@@ -554,7 +554,7 @@ export async function sendTravelAgainReminder(
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Failed to send travel reminder";
-    console.error("[EmailService] sendTravelAgainReminder error:", message);
+    log.error("sendTravelAgainReminder failed", { metadata: { error: message } });
     return { success: false, error: message };
   }
 }
@@ -601,7 +601,7 @@ export async function sendOrderFailed(
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Failed to send order failed email";
-    console.error("[EmailService] sendOrderFailed error:", message);
+    log.error("sendOrderFailed failed", { metadata: { error: message } });
     return { success: false, error: message };
   }
 }
@@ -615,9 +615,7 @@ export async function sendAdminAlert(params: {
     const adminEmail = process.env.ADMIN_EMAIL || process.env.SMTP_FROM;
 
     if (!adminEmail) {
-      console.warn(
-        "[EmailService] No ADMIN_EMAIL or SMTP_FROM configured for admin alerts",
-      );
+      log.warn("No ADMIN_EMAIL or SMTP_FROM configured for admin alerts");
       return { success: false, error: "No admin email configured" };
     }
 
@@ -671,7 +669,7 @@ export async function sendAdminAlert(params: {
   } catch (err) {
     const message =
       err instanceof Error ? err.message : "Failed to send admin alert";
-    console.error("[EmailService] sendAdminAlert error:", message);
+    log.error("sendAdminAlert failed", { metadata: { error: message } });
     return { success: false, error: message };
   }
 }
