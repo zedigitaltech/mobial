@@ -35,6 +35,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useCurrency } from "@/contexts/currency-context";
 import { useCompare } from "@/contexts/compare-context";
+import { getCountryByCode } from "@/lib/countries";
 
 interface Network {
   networkName: string;
@@ -114,6 +115,23 @@ export function ProductCard({
       return [];
     }
   })();
+
+  const countryCodes: string[] = (() => {
+    if (!product.countries) return [];
+    if (Array.isArray(product.countries)) return product.countries;
+    try {
+      return JSON.parse(product.countries);
+    } catch {
+      return [];
+    }
+  })();
+
+  const countryFlags = countryCodes
+    .map((code) => {
+      const data = getCountryByCode(code);
+      return data ? { code, name: data.name, flag: data.flag } : null;
+    })
+    .filter(Boolean) as { code: string; name: string; flag: string }[];
 
   const productLink = product.slug
     ? `/products/${product.slug}`
@@ -209,6 +227,42 @@ export function ProductCard({
         </div>
 
         <div className="space-y-4">
+          {countryFlags.length > 0 && (
+            <TooltipProvider>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <Globe className="h-3 w-3 text-muted-foreground/60 shrink-0" />
+                {countryFlags.length === 1 ? (
+                  <span className="text-xs font-medium text-foreground/80">
+                    {countryFlags[0].flag} {countryFlags[0].name}
+                  </span>
+                ) : (
+                  <>
+                    {countryFlags.slice(0, 8).map((c) => (
+                      <Tooltip key={c.code}>
+                        <TooltipTrigger asChild>
+                          <span className="text-base leading-none cursor-default">
+                            {c.flag}
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="top"
+                          className="text-xs font-medium"
+                        >
+                          {c.name}
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                    {countryCodes.length > 8 && (
+                      <span className="text-[10px] font-bold text-muted-foreground">
+                        +{countryCodes.length - 8} more
+                      </span>
+                    )}
+                  </>
+                )}
+              </div>
+            </TooltipProvider>
+          )}
+
           <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 border-y border-white/5 py-2">
             <span className="flex items-center gap-1.5">
               <Power className="h-3 w-3" />{" "}
