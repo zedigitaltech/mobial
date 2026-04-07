@@ -438,7 +438,7 @@ export function ProductDetailClient({
                     <span className="text-4xl font-bold">
                       {formatPrice(product.price)}
                     </span>
-                    {product.originalPrice && (
+                    {product.originalPrice && product.originalPrice > product.price && (
                       <span className="text-lg text-muted-foreground line-through">
                         {formatPrice(product.originalPrice)}
                       </span>
