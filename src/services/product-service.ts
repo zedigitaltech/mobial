@@ -373,10 +373,11 @@ export async function syncProductsFromMobimatter(): Promise<SyncResult> {
               productFamilyId: rawProduct.productFamilyId ?? existing.productFamilyId,
               networkListId: rawProduct.networkListId ?? existing.networkListId,
               slug,
+              isActive: true,
               syncedAt: new Date(),
             },
           });
-          
+
           result.updated++;
         } else {
           // Create new product
