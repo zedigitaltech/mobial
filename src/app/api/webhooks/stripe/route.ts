@@ -163,30 +163,25 @@ export async function POST(request: NextRequest) {
             "SYSTEM_WEBHOOK",
           );
 
-          if (!fulfillment.success) {
-            console.error(
-              `Fulfillment failed for order ${orderId}:`,
-              fulfillment.error,
-            );
-            // Notify customer about the issue
-            const failedOrder = await db.order.findUnique({
-              where: { id: orderId },
-              select: { email: true, orderNumber: true },
-            });
-            if (failedOrder) {
-              sendOrderFailed(failedOrder.email, failedOrder.orderNumber).catch(
-                () => {},
-              );
-            }
-          }
-
-          // Send order confirmation email
           const order = await db.order.findUnique({
             where: { id: orderId },
             include: { items: true },
           });
 
-          if (order) {
+          if (!fulfillment.success) {
+            console.error(
+              `Fulfillment failed for order ${orderId}:`,
+              fulfillment.error,
+            );
+            if (order) {
+              sendOrderFailed(order.email, order.orderNumber).catch((err) => {
+                console.error(
+                  `Failed to send failure email for order ${orderId}:`,
+                  err,
+                );
+              });
+            }
+          } else if (order) {
             await sendOrderConfirmation(
               order.email,
               order.orderNumber,
