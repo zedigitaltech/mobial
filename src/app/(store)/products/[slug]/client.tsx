@@ -159,10 +159,12 @@ export function ProductDetailClient({
     },
   ];
 
+  const HIDDEN_TAGS = ["special offer", "best deal", "best price", "cheapest", "discount", "sale", "promo"];
   const parsedTags: { item: string; color?: string }[] = (() => {
     if (!product.tags) return [];
     try {
-      return JSON.parse(product.tags);
+      const tags = JSON.parse(product.tags) as { item: string; color?: string }[];
+      return tags.filter((t) => !HIDDEN_TAGS.includes(t.item.toLowerCase()));
     } catch {
       return [];
     }

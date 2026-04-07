@@ -106,14 +106,11 @@ export function ProductCard({
   const has5G =
     product.is5G || networks.some((n) => n.generation?.includes("5G"));
 
+  const HIDDEN_TAGS = ["special offer", "best deal", "best price", "cheapest", "discount", "sale", "promo"];
   const parsedTags: Array<{ item: string; color?: string }> = (() => {
     if (!product.tags) return [];
-    if (Array.isArray(product.tags)) return product.tags;
-    try {
-      return JSON.parse(product.tags);
-    } catch {
-      return [];
-    }
+    const raw = Array.isArray(product.tags) ? product.tags : (() => { try { return JSON.parse(product.tags as string); } catch { return []; } })();
+    return raw.filter((t: { item: string }) => !HIDDEN_TAGS.includes(t.item.toLowerCase()));
   })();
 
   const countryCodes: string[] = (() => {
