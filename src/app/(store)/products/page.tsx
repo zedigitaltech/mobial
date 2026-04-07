@@ -154,6 +154,12 @@ export default function ProductsPage() {
         if (show5GOnly && !p.is5G) return false;
         if (showUnlimitedOnly && !p.isUnlimited) return false;
         if (showCallsOnly && !p.supportsCalls) return false;
+
+        // Filter by usage type — only show plans matching the data range
+        const gb = p.dataAmount || 0;
+        if (usageType === "light" && (gb > 5 || p.isUnlimited)) return false;
+        if (usageType === "balanced" && (gb <= 5 || gb > 20) && !p.isUnlimited) return false;
+        if (usageType === "heavy" && gb < 20 && !p.isUnlimited) return false;
         return true;
       })
       .sort((a, b) => b.score - a.score);
