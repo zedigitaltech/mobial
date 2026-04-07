@@ -112,7 +112,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             dataAmount: item.product.dataAmount,
             dataUnit: item.product.dataUnit,
             validityDays: item.product.validityDays,
-            countries: (item.product.countries as string[]) || [],
+            countries: item.product.countries ? JSON.parse(item.product.countries) : [],
           } : null,
         })),
         user: order.user,

@@ -66,7 +66,7 @@ async function getCountryProducts(countryCode: string) {
         isActive: true,
         externallyShown: true,
         category: 'esim_realtime',
-        countries: { array_contains: [countryCode] },
+        countries: { contains: countryCode },
       },
       orderBy: { price: 'asc' },
       take: 20,
@@ -97,9 +97,9 @@ async function getCountryProducts(countryCode: string) {
 
     return products.map(p => ({
       ...p,
-      countries: (p.countries as string[]) || [],
-      regions: (p.regions as string[]) || [],
-      networks: (p.networks as string | null) ?? undefined,
+      countries: p.countries ? JSON.parse(p.countries) : [],
+      regions: p.regions ? JSON.parse(p.regions) : [],
+      networks: p.networks ?? undefined,
       providerLogo: p.providerLogo ?? undefined,
       speedInfo: p.speedInfo ?? undefined,
       networkType: p.networkType ?? undefined,

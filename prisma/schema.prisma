@@ -121,7 +121,7 @@ model Product {
   category              String?  // data, voice, combo
 
   // Carrier Truth Layer
-  networks              Json?    // JSON array of local carriers and their tech (5G/4G)
+  networks              String?  // JSON-encoded array of local carriers and their tech
   bestFitReason         String?  // AI-generated or rule-based fit reason
   
   // Advanced MobiMatter Meta
@@ -141,7 +141,7 @@ model Product {
   networkListId         Int?     // Network list identifier for carrier lookups
 
   // Quality & Visibility
-  tags                  Json?    // JSON array of {item, color?} quality badges
+  tags                  String?  // JSON-encoded array of {item, color?} quality badges
   externallyShown       Boolean  @default(true)  // Whether to display to customers
   additionalDetails     String?  // HTML additional info from MobiMatter
   phoneNumberPrefix     String?  // Phone number included with plan (e.g. "+382")
@@ -149,8 +149,8 @@ model Product {
   speedLong             String?  // Detailed speed description
 
   // Coverage
-  countries             Json?    // JSON array of country codes
-  regions               Json?    // JSON array of regions
+  countries             String?  // JSON-encoded array of country codes
+  regions               String?  // JSON-encoded array of regions
   
   // Data/Validity
   dataAmount            Float?   // In GB
@@ -164,7 +164,7 @@ model Product {
   wholesalePrice        Float?   // MobiMatter wholesale cost
   
   // Features
-  features              Json?    // JSON array of features
+  features              String?  // JSON-encoded array of features
   isUnlimited           Boolean  @default(false)
   supportsHotspot       Boolean  @default(true)
   supportsCalls         Boolean  @default(false)

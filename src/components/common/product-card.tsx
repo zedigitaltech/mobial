@@ -101,9 +101,8 @@ export function ProductCard({
   const { toggleItem, isInCompare, isFull } = useCompare();
   const networks: Network[] = (() => {
     if (!product.networks) return [];
-    if (Array.isArray(product.networks)) return product.networks as Network[];
     try {
-      return JSON.parse(product.networks as string);
+      return JSON.parse(product.networks);
     } catch {
       return [];
     }
@@ -115,15 +114,15 @@ export function ProductCard({
   const HIDDEN_TAGS = ["special offer", "best deal", "best price", "cheapest", "discount", "sale", "promo"];
   const parsedTags: Array<{ item: string; color?: string }> = (() => {
     if (!product.tags) return [];
-    const raw = Array.isArray(product.tags) ? product.tags : (() => { try { return JSON.parse(product.tags as string); } catch { return []; } })() as Array<{ item: string; color?: string }>;
+    const raw = Array.isArray(product.tags) ? product.tags : (() => { try { return JSON.parse(product.tags as string); } catch { return []; } })();
     return raw.filter((t: { item: string }) => !HIDDEN_TAGS.includes(t.item.toLowerCase()));
   })();
 
   const countryCodes: string[] = (() => {
     if (!product.countries) return [];
-    if (Array.isArray(product.countries)) return product.countries as string[];
+    if (Array.isArray(product.countries)) return product.countries;
     try {
-      return JSON.parse(product.countries as string);
+      return JSON.parse(product.countries);
     } catch {
       return [];
     }
@@ -316,7 +315,15 @@ export function ProductCard({
         <button
           onClick={(e) => {
             e.preventDefault();
-            const countries = countryCodes;
+            const countries = (() => {
+              if (!product.countries) return [];
+              if (Array.isArray(product.countries)) return product.countries;
+              try {
+                return JSON.parse(product.countries);
+              } catch {
+                return [];
+              }
+            })();
             toggleItem({
               id: product.id,
               name: product.name,

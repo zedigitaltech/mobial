@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     const supportsHotspot = searchParams.get("supportsHotspot");
     const isUnlimited = searchParams.get("isUnlimited");
     const sortBy = searchParams.get("sortBy") || "price_asc";
-    const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 100);
+    const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 50);
     const offset = parseInt(searchParams.get("offset") || "0");
 
     // Build Where Clause
@@ -54,10 +54,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (country) {
-      where.countries = { array_contains: [country.toUpperCase()] };
+      where.countries = { contains: country, mode: "insensitive" };
     }
     if (region) {
-      where.regions = { array_contains: [region] };
+      where.regions = { contains: region, mode: "insensitive" };
     }
     if (provider) {
       where.provider = provider;
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
       where.OR = [
         { name: { contains: search, mode: "insensitive" } },
         { provider: { contains: search, mode: "insensitive" } },
-        ...(countryCode ? [{ countries: { array_contains: [countryCode] } }] : []),
+        ...(countryCode ? [{ countries: { contains: countryCode } }] : []),
       ];
     }
     if (minPrice || maxPrice) {
@@ -153,11 +153,11 @@ export async function GET(request: NextRequest) {
       db.product.count({ where }),
     ]);
 
-    // Json columns are returned as parsed values by Prisma — cast to typed arrays
+    // Format products (parse JSON strings)
     const formattedProducts = products.map((p) => ({
       ...p,
-      countries: (p.countries as string[]) || [],
-      regions: (p.regions as string[]) || [],
+      countries: p.countries ? JSON.parse(p.countries) : [],
+      regions: p.regions ? JSON.parse(p.regions) : [],
     }));
 
     return new Response(
