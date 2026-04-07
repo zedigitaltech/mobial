@@ -23,7 +23,7 @@ import {
   Loader2,
   RefreshCw,
 } from "lucide-react";
-import DOMPurify from "isomorphic-dompurify";
+import type DOMPurifyType from "dompurify";
 import { ProductCard } from "@/components/common/product-card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +50,16 @@ export function ProductDetailClient({
   const { formatPrice } = useCurrency();
   const posthog = usePostHog();
   const [addingToCart, setAddingToCart] = useState(false);
+  const [sanitizedDetails, setSanitizedDetails] = useState("");
+
+  useEffect(() => {
+    if (product.additionalDetails) {
+      import("dompurify").then((mod) => {
+        const DOMPurify: typeof DOMPurifyType = mod.default;
+        setSanitizedDetails(DOMPurify.sanitize(product.additionalDetails));
+      });
+    }
+  }, [product.additionalDetails]);
 
   const discount = product.originalPrice
     ? Math.round(
@@ -391,7 +401,7 @@ export function ProductDetailClient({
             )}
 
             {/* Additional Details */}
-            {product.additionalDetails && (
+            {sanitizedDetails && (
               <Card>
                 <CardContent className="p-5 space-y-3">
                   <h3 className="font-semibold text-sm">
@@ -400,7 +410,7 @@ export function ProductDetailClient({
                   <div
                     className="prose prose-sm prose-invert max-w-none"
                     dangerouslySetInnerHTML={{
-                      __html: DOMPurify.sanitize(product.additionalDetails),
+                      __html: sanitizedDetails,
                     }}
                   />
                 </CardContent>
