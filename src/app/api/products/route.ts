@@ -27,6 +27,8 @@ export async function GET(request: NextRequest) {
     const maxPrice = searchParams.get("maxPrice");
     const category = searchParams.get("category");
     const productFamilyId = searchParams.get("productFamilyId");
+    const minData = searchParams.get("minData");
+    const maxData = searchParams.get("maxData");
     const is5G = searchParams.get("is5G");
     const supportsCalls = searchParams.get("supportsCalls");
     const supportsHotspot = searchParams.get("supportsHotspot");
@@ -82,6 +84,15 @@ export async function GET(request: NextRequest) {
         gte: minPrice ? parseFloat(minPrice) : undefined,
         lte: maxPrice ? parseFloat(maxPrice) : undefined,
       };
+    }
+    if (minData || maxData) {
+      where.dataAmount = {
+        ...(minData ? { gt: parseFloat(minData) } : {}),
+        ...(maxData ? { lte: parseFloat(maxData) } : {}),
+      };
+      if (maxData) {
+        where.isUnlimited = false;
+      }
     }
     if (is5G === "true") {
       where.is5G = true;

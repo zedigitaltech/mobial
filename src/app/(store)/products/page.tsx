@@ -56,6 +56,8 @@ async function fetchProducts(params: {
   is5G?: boolean;
   supportsCalls?: boolean;
   isUnlimited?: boolean;
+  minData?: number;
+  maxData?: number;
 }): Promise<ProductsResponse> {
   const searchParams = new URLSearchParams();
   if (params.country) searchParams.set("country", params.country);
@@ -64,6 +66,8 @@ async function fetchProducts(params: {
   if (params.is5G) searchParams.set("is5G", "true");
   if (params.supportsCalls) searchParams.set("supportsCalls", "true");
   if (params.isUnlimited) searchParams.set("isUnlimited", "true");
+  if (params.minData) searchParams.set("minData", params.minData.toString());
+  if (params.maxData) searchParams.set("maxData", params.maxData.toString());
   searchParams.set("sortBy", params.sortBy || "rank");
   searchParams.set("limit", (params.limit || 50).toString());
   searchParams.set("offset", (params.offset || 0).toString());
@@ -93,6 +97,14 @@ export default function ProductsPage() {
   const country = searchParams.get("country");
   const region = searchParams.get("region");
 
+  // Derive data range from usage type for server-side filtering
+  const dataRange = useMemo(() => {
+    if (usageType === "light") return { maxData: 5 };
+    if (usageType === "balanced") return { minData: 5, maxData: 20 };
+    if (usageType === "heavy") return { minData: 20 };
+    return {};
+  }, [usageType]);
+
   // Queries
   const { data: productsData, isLoading } = useQuery({
     queryKey: [
@@ -103,6 +115,7 @@ export default function ProductsPage() {
       show5GOnly,
       showUnlimitedOnly,
       showCallsOnly,
+      usageType,
     ],
     queryFn: () =>
       fetchProducts({
@@ -112,6 +125,7 @@ export default function ProductsPage() {
         is5G: show5GOnly || undefined,
         supportsCalls: showCallsOnly || undefined,
         isUnlimited: showUnlimitedOnly || undefined,
+        ...dataRange,
       }),
   });
 
@@ -154,12 +168,6 @@ export default function ProductsPage() {
         if (show5GOnly && !p.is5G) return false;
         if (showUnlimitedOnly && !p.isUnlimited) return false;
         if (showCallsOnly && !p.supportsCalls) return false;
-
-        // Filter by usage type — only show plans matching the data range
-        const gb = p.dataAmount || 0;
-        if (usageType === "light" && (gb > 5 || p.isUnlimited)) return false;
-        if (usageType === "balanced" && (gb <= 5 || gb > 20) && !p.isUnlimited) return false;
-        if (usageType === "heavy" && gb < 20 && !p.isUnlimited) return false;
         return true;
       })
       .sort((a, b) => b.score - a.score);
