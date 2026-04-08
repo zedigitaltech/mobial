@@ -38,7 +38,11 @@ export type AuditAction =
   | 'usage_lookup'
   | 'topup_payment_success'
   | 'topup_payment_failed'
-  | 'stripe_payment_success';
+  | 'stripe_payment_success'
+  | 'wallet_topup'
+  | 'wallet_deduct'
+  | 'reward_created'
+  | 'referral_code_created';
 
 interface AuditLogData {
   userId?: string;

@@ -63,10 +63,17 @@ model User {
   gdprConsents      GDPRConsent[]
   dataExportRequests DataExportRequest[]
   
+  // Stripe
+  stripeCustomerId  String?   @unique
+
   // Customer specific
   orders            Order[]
   addresses         Address[]
-  
+
+  // Financial
+  wallet            Wallet?
+  rewards           Reward[]
+
   // Notifications
   notifications     Notification[]
   pushTokens        PushToken[]
@@ -761,4 +768,33 @@ model AbandonedCart {
   @@index([reminderSentAt])
   @@index([createdAt])
   @@index([recoveryToken])
+}
+
+// ==================== WALLET ====================
+
+model Wallet {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  balance   Float    @default(0)
+  currency  String   @default("USD")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ==================== REWARDS & CASHBACK ====================
+
+model Reward {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  type        String   // "cashback" | "referral_bonus" | "discount"
+  amount      Float
+  orderId     String?
+  description String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
 }

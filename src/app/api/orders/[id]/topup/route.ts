@@ -98,6 +98,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       amount: product.price,
       isTopUp: true,
       parentMobimatterOrderId: originalOrder.mobimatterOrderId,
+      userId: user.id,
       items: [
         {
           name: `Top-Up: ${product.name}`,

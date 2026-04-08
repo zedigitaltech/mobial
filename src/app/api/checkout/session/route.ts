@@ -3,7 +3,8 @@ import { z } from 'zod';
 import {
   successResponse,
   errorResponse,
-  parseJsonBody
+  parseJsonBody,
+  getAuthUser,
 } from '@/lib/auth-helpers';
 import { getOrderById } from '@/services/order-service';
 import { createCheckoutSession } from '@/lib/stripe';
@@ -42,7 +43,10 @@ export async function POST(request: NextRequest) {
       return errorResponse(`Order cannot be paid (Status: ${order.status})`, 400);
     }
 
-    // 2. Create Stripe session
+    // 2. Resolve authenticated user (optional -- guests can checkout)
+    const authUser = await getAuthUser(request);
+
+    // 3. Create Stripe session
     const session = await createCheckoutSession({
       orderId: order.id,
       orderNumber: order.orderNumber,
@@ -50,6 +54,7 @@ export async function POST(request: NextRequest) {
       amount: order.total,
       isTopUp,
       parentMobimatterOrderId,
+      userId: authUser?.id ?? order.userId ?? undefined,
       items: order.items.map(item => ({
         name: isTopUp ? `Top-Up: ${item.productName}` : item.productName,
         amount: item.unitPrice,
@@ -63,7 +68,6 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Checkout session error:', error);
     const message = error instanceof Error ? error.message : 'Failed to create checkout session';
     return errorResponse(message, 500);
   }

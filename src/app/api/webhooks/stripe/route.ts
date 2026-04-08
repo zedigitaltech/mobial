@@ -45,12 +45,64 @@ export async function POST(request: NextRequest) {
         const session = event.data.object;
         const orderId = session.client_reference_id;
         const isTopUp = session.metadata?.isTopUp === "true";
+        const isWalletTopup = session.metadata?.isWalletTopup === "true";
         const parentMobimatterOrderId =
           session.metadata?.parentMobimatterOrderId;
+
+        // ── Wallet top-up flow ──
+        if (isWalletTopup) {
+          const walletUserId = session.metadata?.userId;
+          const walletAmount = parseFloat(
+            session.metadata?.walletAmount ?? "0",
+          );
+          if (walletUserId && walletAmount > 0) {
+            await db.wallet.upsert({
+              where: { userId: walletUserId },
+              create: {
+                userId: walletUserId,
+                balance: walletAmount,
+              },
+              update: {
+                balance: { increment: walletAmount },
+              },
+            });
+            await logAudit({
+              action: "stripe_payment_success",
+              entity: "wallet",
+              entityId: walletUserId,
+              newValues: {
+                sessionId: session.id,
+                walletAmount,
+                type: "topup",
+              },
+            });
+          }
+          break;
+        }
 
         if (!orderId) {
           log.error("No orderId found in session metadata");
           break;
+        }
+
+        // ── Save Stripe customer ID to user if available ──
+        if (session.customer) {
+          const orderForCustomer = await db.order.findUnique({
+            where: { id: orderId },
+            select: { userId: true },
+          });
+          if (orderForCustomer?.userId) {
+            await db.user
+              .update({
+                where: { id: orderForCustomer.userId },
+                data: {
+                  stripeCustomerId: session.customer as string,
+                },
+              })
+              .catch(() => {
+                // Ignore if already set (unique constraint)
+              });
+          }
         }
 
         // Idempotency: skip if this session was already processed
@@ -261,6 +313,46 @@ export async function POST(request: NextRequest) {
                   },
                 });
               }
+            }
+          }
+
+          // ── Cashback reward (10% of order total) ──
+          if (fulfillment.success && order?.userId) {
+            const cashbackAmount = Math.round(order.total * 0.1 * 100) / 100;
+            if (cashbackAmount > 0) {
+              await db.reward
+                .create({
+                  data: {
+                    userId: order.userId,
+                    type: "cashback",
+                    amount: cashbackAmount,
+                    orderId: order.id,
+                    description: `10% cashback on order ${order.orderNumber}`,
+                  },
+                })
+                .catch((err: unknown) => {
+                  log.errorWithException("Failed to create cashback reward", err, {
+                    metadata: { orderId: order.id },
+                  });
+                });
+
+              // Credit wallet
+              await db.wallet
+                .upsert({
+                  where: { userId: order.userId },
+                  create: {
+                    userId: order.userId,
+                    balance: cashbackAmount,
+                  },
+                  update: {
+                    balance: { increment: cashbackAmount },
+                  },
+                })
+                .catch((err: unknown) => {
+                  log.errorWithException("Failed to credit wallet cashback", err, {
+                    metadata: { orderId: order.id },
+                  });
+                });
             }
           }
         }
