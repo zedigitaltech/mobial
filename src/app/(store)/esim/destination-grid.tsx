@@ -75,7 +75,7 @@ export function DestinationGrid({ countries }: { countries: CountryWithPricing[]
                 layout
               >
                 <Link href={`/esim/${country.slug}`}>
-                  <Card className="group h-full hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-white/5 bg-white/[0.03] backdrop-blur-2xl overflow-hidden cursor-pointer">
+                  <Card className="group h-full hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border-border/50 bg-card overflow-hidden cursor-pointer">
                     <CardContent className="p-5 text-center space-y-3">
                       <div className="text-4xl group-hover:scale-110 transition-transform">
                         {country.flag}

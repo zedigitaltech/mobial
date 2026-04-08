@@ -116,12 +116,6 @@ export default async function HomePage() {
 
         {/* Hero Section */}
         <section className="relative pt-20 pb-32 overflow-hidden">
-          <div className="absolute inset-0 -z-10 overflow-hidden">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_center,_var(--primary)_0%,_transparent_70%)] opacity-[0.03]" />
-            <div className="absolute -top-[10%] -right-[10%] w-[40%] h-[40%] bg-primary/10 blur-[120px] rounded-full animate-pulse" />
-            <div className="absolute -bottom-[10%] -left-[10%] w-[40%] h-[40%] bg-blue-500/10 blur-[120px] rounded-full animate-pulse" />
-          </div>
-
           <div className="container mx-auto px-4 text-center">
             <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider">
@@ -146,7 +140,7 @@ export default async function HomePage() {
                   <Button
                     key={region.slug}
                     variant="outline"
-                    className="rounded-full bg-card/50 backdrop-blur-sm border-border/50 hover:border-primary/50 transition-all hover:scale-105 h-12 px-6"
+                    className="rounded-full bg-card border-border/50 hover:border-primary/50 transition-all hover:scale-105 h-12 px-6"
                     asChild
                   >
                     <Link href={`/esim/region/${region.slug}`}>
@@ -325,7 +319,6 @@ export default async function HomePage() {
               </div>
 
               <div className="flex-1 relative">
-                <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full" />
                 <div className="relative bg-card border-[12px] border-muted rounded-[3rem] p-1 shadow-2xl max-w-[320px] mx-auto overflow-hidden">
                   <div className="bg-muted h-6 w-32 mx-auto rounded-full mt-2 mb-2" />
                   <Image
