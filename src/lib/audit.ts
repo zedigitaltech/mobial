@@ -42,7 +42,8 @@ export type AuditAction =
   | 'wallet_topup'
   | 'wallet_deduct'
   | 'reward_created'
-  | 'referral_code_created';
+  | 'referral_code_created'
+  | 'gdpr_permanent_delete';
 
 interface AuditLogData {
   userId?: string;

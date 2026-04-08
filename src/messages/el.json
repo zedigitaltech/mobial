@@ -35,7 +35,7 @@
     "heroTitleLine1": "Η Παγκόσμια Ταξιδιωτική",
     "heroTitleLine2": "Συνδεσιμότητά σας",
     "heroTitleSuffix": "Συνεργάτης",
-    "heroDescription": "Πλάνα δεδομένων eSIM υψηλής ταχύτητας για 150+ χώρες. Χωρίς τέλη περιαγωγής. Χωρίς φυσικές SIM. Άμεση ενεργοποίηση.",
+    "heroDescription": "Πλάνα δεδομένων eSIM υψηλής ταχύτητας για 190+ χώρες. Χωρίς τέλη περιαγωγής. Χωρίς φυσικές SIM. Άμεση ενεργοποίηση.",
     "heroSubtitle": "Άμεσα πλάνα δεδομένων eSIM για 190+ χώρες. Χωρίς τέλη περιαγωγής, χωρίς φυσικές SIM.",
     "searchPlaceholder": "Πού ταξιδεύετε;",
     "popularDestinations": "Δημοφιλείς Προορισμοί",
@@ -44,7 +44,7 @@
     "quickTopUp": "Αναπλήρωση eSIM",
     "quickTopUpDesc": "Προσθέστε περισσότερα δεδομένα",
     "quickDestinations": "Προορισμοί",
-    "quickDestinationsDesc": "150+ χώρες",
+    "quickDestinationsDesc": "190+ χώρες",
     "quickCompatibility": "Συμβατότητα",
     "quickCompatibilityDesc": "Ελέγξτε τη συσκευή σας",
     "step1Title": "Επιλέξτε τον προορισμό σας",
@@ -267,7 +267,7 @@
     "support": "Υποστήριξη 24/7"
   },
   "esim": {
-    "destinationsBadge": "150+ Προορισμοί",
+    "destinationsBadge": "190+ Προορισμοί",
     "title": "Πλάνα eSIM ανά",
     "titleHighlight": "Χώρα",
     "heroDesc": "Βρείτε το ιδανικό πλάνο δεδομένων για τον προορισμό σας. Άμεση ενεργοποίηση, χωρίς τέλη περιαγωγής, χωρίς φυσική SIM.",

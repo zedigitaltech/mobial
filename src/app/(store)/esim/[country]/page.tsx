@@ -248,7 +248,7 @@ export default async function CountryPage({ params }: PageProps) {
               Traveling to more countries?
             </h2>
             <p className="text-muted-foreground max-w-lg mx-auto">
-              We offer eSIM plans for 150+ destinations worldwide. Find the perfect plan for your trip.
+              We offer eSIM plans for 190+ destinations worldwide. Find the perfect plan for your trip.
             </p>
             <Button
               size="lg"

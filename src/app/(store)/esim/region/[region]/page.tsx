@@ -261,7 +261,7 @@ export default async function RegionPage({ params }: PageProps) {
               Looking for a specific country?
             </h2>
             <p className="text-muted-foreground max-w-lg mx-auto">
-              Browse our full list of 150+ destinations to find the perfect eSIM plan.
+              Browse our full list of 190+ destinations to find the perfect eSIM plan.
             </p>
             <Button size="lg" className="rounded-2xl px-10 h-14 text-lg font-black" asChild>
               <Link href="/esim">

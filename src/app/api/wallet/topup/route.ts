@@ -12,6 +12,7 @@ import {
   parseJsonBody,
   AuthError,
 } from "@/lib/auth-helpers";
+import Stripe from "stripe";
 import { stripe, getOrCreateStripeCustomer } from "@/lib/stripe";
 import { logger } from "@/lib/logger";
 
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
       user.email,
     );
 
-    const sessionParams: Parameters<typeof stripe.checkout.sessions.create>[0] =
+    const sessionParams: Stripe.Checkout.SessionCreateParams =
       {
         client_reference_id: user.id,
         metadata: {

@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     template: "%s | MobiaL",
   },
   description:
-    "Instant high-speed data in 150+ countries. No roaming fees, no physical SIMs. The premium choice for digital nomads.",
+    "Instant high-speed data in 190+ countries. No roaming fees, no physical SIMs. The premium choice for digital nomads.",
   keywords: [
     "eSIM",
     "travel data",
@@ -77,7 +77,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "MobiaL | Global eSIM Connectivity",
-    description: "Connect instantly in 150+ countries.",
+    description: "Connect instantly in 190+ countries.",
     images: ["/og-image.png"],
   },
   icons: {

@@ -8,7 +8,7 @@ const nextConfig: NextConfig = {
   output: "standalone",
   reactStrictMode: true,
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   experimental: {
     optimizePackageImports: ["lucide-react", "framer-motion"],

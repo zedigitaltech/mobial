@@ -35,7 +35,7 @@
     "heroTitleLine1": "Your Global Travel",
     "heroTitleLine2": "Connectivity",
     "heroTitleSuffix": "Partner",
-    "heroDescription": "High-speed eSIM data plans for 150+ countries. No roaming fees. No physical SIMs. Instant activation.",
+    "heroDescription": "High-speed eSIM data plans for 190+ countries. No roaming fees. No physical SIMs. Instant activation.",
     "heroSubtitle": "Instant eSIM data plans for 190+ countries. No roaming fees, no physical SIMs.",
     "searchPlaceholder": "Where are you traveling?",
     "popularDestinations": "Popular Destinations",
@@ -44,7 +44,7 @@
     "quickTopUp": "Top Up eSIM",
     "quickTopUpDesc": "Add more data",
     "quickDestinations": "Destinations",
-    "quickDestinationsDesc": "150+ countries",
+    "quickDestinationsDesc": "190+ countries",
     "quickCompatibility": "Compatibility",
     "quickCompatibilityDesc": "Check your device",
     "step1Title": "Choose your destination",
@@ -376,7 +376,7 @@
     "setupGuide": "Setup Guide"
   },
   "esim": {
-    "destinationsBadge": "150+ Destinations",
+    "destinationsBadge": "190+ Destinations",
     "title": "eSIM Plans by",
     "titleHighlight": "Country",
     "heroDesc": "Find the perfect data plan for your destination. Instant activation, no roaming fees, no physical SIM needed.",

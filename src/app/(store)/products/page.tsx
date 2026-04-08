@@ -106,7 +106,7 @@ export default function ProductsPage() {
   }, [usageType]);
 
   // Queries
-  const { data: productsData, isLoading } = useQuery({
+  const { data: productsData, isLoading, isError, error } = useQuery({
     queryKey: [
       "products",
       debouncedSearch,
@@ -127,6 +127,8 @@ export default function ProductsPage() {
         isUnlimited: showUnlimitedOnly || undefined,
         ...dataRange,
       }),
+    staleTime: 5 * 60 * 1000,
+    retry: 2,
   });
 
   const products = productsData?.data?.products || [];
@@ -293,6 +295,23 @@ export default function ProductsPage() {
             <p className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground">
               {t("analyzingFits")}
             </p>
+          </div>
+        ) : isError ? (
+          <div className="text-center py-32 bg-card rounded-[3rem] border border-dashed border-destructive/30">
+            <div className="w-20 h-20 bg-destructive/10 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
+              <X className="h-10 w-10 text-destructive" />
+            </div>
+            <h3 className="text-2xl font-black">{t("noMatchingPlans")}</h3>
+            <p className="text-muted-foreground mt-2 max-w-md mx-auto">
+              Something went wrong loading plans. Please try again.
+            </p>
+            <Button
+              variant="outline"
+              className="mt-6"
+              onClick={() => window.location.reload()}
+            >
+              Retry
+            </Button>
           </div>
         ) : (
           <div className="space-y-12">

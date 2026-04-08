@@ -35,7 +35,7 @@
     "heroTitleLine1": "Twój globalny partner",
     "heroTitleLine2": "łączności",
     "heroTitleSuffix": "w podróży",
-    "heroDescription": "Szybkie plany danych eSIM dla 150+ krajów. Bez opłat roamingowych. Bez fizycznych kart SIM. Natychmiastowa aktywacja.",
+    "heroDescription": "Szybkie plany danych eSIM dla 190+ krajów. Bez opłat roamingowych. Bez fizycznych kart SIM. Natychmiastowa aktywacja.",
     "heroSubtitle": "Natychmiastowe plany danych eSIM dla 190+ krajów. Bez opłat roamingowych, bez fizycznych kart SIM.",
     "searchPlaceholder": "Dokąd podróżujesz?",
     "popularDestinations": "Popularne destynacje",
@@ -44,7 +44,7 @@
     "quickTopUp": "Doładuj eSIM",
     "quickTopUpDesc": "Dodaj więcej danych",
     "quickDestinations": "Destynacje",
-    "quickDestinationsDesc": "150+ krajów",
+    "quickDestinationsDesc": "190+ krajów",
     "quickCompatibility": "Kompatybilność",
     "quickCompatibilityDesc": "Sprawdź swoje urządzenie",
     "step1Title": "Wybierz destynację",
@@ -267,7 +267,7 @@
     "support": "Wsparcie 24/7"
   },
   "esim": {
-    "destinationsBadge": "150+ Destynacji",
+    "destinationsBadge": "190+ Destynacji",
     "title": "Plany eSIM według",
     "titleHighlight": "Kraju",
     "heroDesc": "Znajdź idealny plan danych dla swojej destynacji. Natychmiastowa aktywacja, bez opłat roamingowych, bez fizycznej karty SIM.",

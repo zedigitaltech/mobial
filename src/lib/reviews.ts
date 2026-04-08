@@ -158,15 +158,34 @@ export const reviews: Review[] = [
   },
 ]
 
-export const REVIEW_STATS = {
-  averageRating: 4.8,
-  totalReviews: 2847,
-  fiveStarPercent: 78,
-  fourStarPercent: 19,
-  threeStarPercent: 2,
-  twoStarPercent: 1,
-  oneStarPercent: 0,
+// Stats derived from the curated reviews above (not inflated)
+function computeReviewStats(reviewList: readonly Review[]): {
+  averageRating: number
+  totalReviews: number
+  fiveStarPercent: number
+  fourStarPercent: number
+  threeStarPercent: number
+  twoStarPercent: number
+  oneStarPercent: number
+} {
+  const total = reviewList.length
+  if (total === 0) {
+    return { averageRating: 0, totalReviews: 0, fiveStarPercent: 0, fourStarPercent: 0, threeStarPercent: 0, twoStarPercent: 0, oneStarPercent: 0 }
+  }
+  const sum = reviewList.reduce((acc, r) => acc + r.rating, 0)
+  const count = (stars: number) => reviewList.filter((r) => r.rating === stars).length
+  return {
+    averageRating: Math.round((sum / total) * 10) / 10,
+    totalReviews: total,
+    fiveStarPercent: Math.round((count(5) / total) * 100),
+    fourStarPercent: Math.round((count(4) / total) * 100),
+    threeStarPercent: Math.round((count(3) / total) * 100),
+    twoStarPercent: Math.round((count(2) / total) * 100),
+    oneStarPercent: Math.round((count(1) / total) * 100),
+  }
 }
+
+export const REVIEW_STATS = computeReviewStats(reviews)
 
 export function getReviews(limit?: number): Review[] {
   if (limit) return reviews.slice(0, limit)

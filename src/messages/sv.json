@@ -35,7 +35,7 @@
     "heroTitleLine1": "Din globala rese-",
     "heroTitleLine2": "uppkoppling",
     "heroTitleSuffix": "partner",
-    "heroDescription": "Höghastighets eSIM-datapaket för 150+ länder. Inga roamingavgifter. Inga fysiska SIM-kort. Omedelbar aktivering.",
+    "heroDescription": "Höghastighets eSIM-datapaket för 190+ länder. Inga roamingavgifter. Inga fysiska SIM-kort. Omedelbar aktivering.",
     "heroSubtitle": "Omedelbara eSIM-datapaket för 190+ länder. Inga roamingavgifter, inga fysiska SIM-kort.",
     "searchPlaceholder": "Vart reser du?",
     "popularDestinations": "Populära destinationer",
@@ -44,7 +44,7 @@
     "quickTopUp": "Fyll på eSIM",
     "quickTopUpDesc": "Lägg till mer data",
     "quickDestinations": "Destinationer",
-    "quickDestinationsDesc": "150+ länder",
+    "quickDestinationsDesc": "190+ länder",
     "quickCompatibility": "Kompatibilitet",
     "quickCompatibilityDesc": "Kontrollera din enhet",
     "step1Title": "Välj din destination",
@@ -267,7 +267,7 @@
     "support": "Support dygnet runt"
   },
   "esim": {
-    "destinationsBadge": "150+ destinationer",
+    "destinationsBadge": "190+ destinationer",
     "title": "eSIM-planer efter",
     "titleHighlight": "land",
     "heroDesc": "Hitta den perfekta dataplanen för din destination. Omedelbar aktivering, inga roamingavgifter, inget fysiskt SIM-kort behövs.",

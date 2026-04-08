@@ -53,10 +53,11 @@ export function ProductDetailClient({
   const [sanitizedDetails, setSanitizedDetails] = useState("");
 
   useEffect(() => {
-    if (product.additionalDetails) {
+    const details = product.additionalDetails;
+    if (details) {
       import("dompurify").then((mod) => {
         const DOMPurify: typeof DOMPurifyType = mod.default;
-        setSanitizedDetails(DOMPurify.sanitize(product.additionalDetails));
+        setSanitizedDetails(DOMPurify.sanitize(details));
       });
     }
   }, [product.additionalDetails]);

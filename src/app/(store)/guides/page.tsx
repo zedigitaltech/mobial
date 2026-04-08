@@ -63,7 +63,7 @@ const guides = [
   {
     title: "Browse Destinations",
     description:
-      "Explore eSIM plans available for 150+ countries and find the best deal for your trip.",
+      "Explore eSIM plans available for 190+ countries and find the best deal for your trip.",
     href: "/esim",
     icon: Globe,
     color: "text-rose-500",

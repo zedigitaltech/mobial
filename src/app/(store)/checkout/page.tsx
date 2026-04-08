@@ -363,7 +363,7 @@ export default function CheckoutPage() {
                       <Check className="h-4 w-4" />
                       <span>
                         {t("codeApplied", {
-                          discount: affiliateValidation.discount,
+                          discount: affiliateValidation.discount ?? 0,
                         })}
                       </span>
                     </div>

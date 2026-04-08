@@ -9,13 +9,13 @@ import { countries, getCountrySlug } from "@/lib/countries"
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://mobialo.eu"
 
 export const metadata: Metadata = {
-  title: "eSIM Coverage Map - 150+ Countries",
+  title: "eSIM Coverage Map - 190+ Countries",
   description:
-    "See where MobiaL eSIM plans work. Coverage in 150+ countries with 4G/5G networks. Check availability for your destination.",
+    "See where MobiaL eSIM plans work. Coverage in 190+ countries with 4G/5G networks. Check availability for your destination.",
   openGraph: {
     title: "eSIM Coverage Map | MobiaL",
     description:
-      "Explore our global eSIM coverage. 4G/5G plans available in 150+ countries worldwide.",
+      "Explore our global eSIM coverage. 4G/5G plans available in 190+ countries worldwide.",
   },
 }
 

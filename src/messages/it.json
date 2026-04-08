@@ -44,7 +44,7 @@
     "quickTopUp": "Ricarica eSIM",
     "quickTopUpDesc": "Aggiungi piu' dati",
     "quickDestinations": "Destinazioni",
-    "quickDestinationsDesc": "150+ paesi",
+    "quickDestinationsDesc": "190+ paesi",
     "quickCompatibility": "Compatibilita'",
     "quickCompatibilityDesc": "Verifica il tuo dispositivo",
     "step1Title": "Scegli la tua destinazione",
@@ -376,7 +376,7 @@
     "setupGuide": "Guida alla configurazione"
   },
   "esim": {
-    "destinationsBadge": "150+ destinazioni",
+    "destinationsBadge": "190+ destinazioni",
     "title": "Piani eSIM per",
     "titleHighlight": "Paese",
     "heroDesc": "Trova il piano dati perfetto per la tua destinazione. Attivazione istantanea, nessun costo di roaming, nessuna SIM fisica necessaria.",

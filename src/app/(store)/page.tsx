@@ -20,6 +20,7 @@ import { regions } from "@/lib/regions"
 import { getProducts } from "@/services/product-service"
 import { getTranslations } from "next-intl/server"
 import Link from "next/link"
+import Image from "next/image"
 import { ProductsSection, CTASection, LazyReviewsSection } from "./home-client"
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://mobialo.eu"
@@ -327,13 +328,13 @@ export default async function HomePage() {
                 <div className="absolute inset-0 bg-primary/20 blur-[100px] rounded-full" />
                 <div className="relative bg-card border-[12px] border-muted rounded-[3rem] p-1 shadow-2xl max-w-[320px] mx-auto overflow-hidden">
                   <div className="bg-muted h-6 w-32 mx-auto rounded-full mt-2 mb-2" />
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
                     src="/app-screenshot.png"
-                    alt="Mobial eSIM App - Browse eSIM plans for 150+ countries"
+                    alt="Mobial eSIM App - Browse eSIM plans for 190+ countries"
                     width={296}
                     height={580}
                     className="rounded-[1.5rem] w-full"
+                    priority
                   />
                 </div>
               </div>

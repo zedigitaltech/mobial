@@ -60,22 +60,6 @@
       "purpose": "maskable any"
     }
   ],
-  "screenshots": [
-    {
-      "src": "/screenshots/home.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "MobiaL eSIM Homepage"
-    },
-    {
-      "src": "/screenshots/mobile.png",
-      "sizes": "720x1280",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "MobiaL eSIM Mobile View"
-    }
-  ],
   "shortcuts": [
     {
       "name": "Browse eSIM Plans",

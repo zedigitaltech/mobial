@@ -35,7 +35,7 @@
     "heroTitleLine1": "Uw wereldwijde reis-",
     "heroTitleLine2": "connectiviteit",
     "heroTitleSuffix": "partner",
-    "heroDescription": "Snelle eSIM-databundels voor 150+ landen. Geen roamingkosten. Geen fysieke SIM-kaarten. Directe activering.",
+    "heroDescription": "Snelle eSIM-databundels voor 190+ landen. Geen roamingkosten. Geen fysieke SIM-kaarten. Directe activering.",
     "heroSubtitle": "Directe eSIM-databundels voor 190+ landen. Geen roamingkosten, geen fysieke SIM-kaarten.",
     "searchPlaceholder": "Waar gaat u naartoe?",
     "popularDestinations": "Populaire bestemmingen",
@@ -44,7 +44,7 @@
     "quickTopUp": "eSIM opwaarderen",
     "quickTopUpDesc": "Meer data toevoegen",
     "quickDestinations": "Bestemmingen",
-    "quickDestinationsDesc": "150+ landen",
+    "quickDestinationsDesc": "190+ landen",
     "quickCompatibility": "Compatibiliteit",
     "quickCompatibilityDesc": "Controleer uw apparaat",
     "step1Title": "Kies uw bestemming",
@@ -376,7 +376,7 @@
     "setupGuide": "Installatiehandleiding"
   },
   "esim": {
-    "destinationsBadge": "150+ bestemmingen",
+    "destinationsBadge": "190+ bestemmingen",
     "title": "eSIM-bundels per",
     "titleHighlight": "Land",
     "heroDesc": "Vind de perfecte databundel voor uw bestemming. Directe activering, geen roamingkosten, geen fysieke SIM nodig.",

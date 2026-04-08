@@ -39,7 +39,7 @@ const FEATURES = [
   },
   {
     icon: Globe,
-    title: "150+ Countries",
+    title: "190+ Countries",
     description:
       "Global coverage for business travel. One platform for all destinations, no local SIM hassle.",
   },

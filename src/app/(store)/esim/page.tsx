@@ -22,11 +22,11 @@ export const revalidate = 3600
 export const metadata: Metadata = {
   title: "eSIM Plans by Country",
   description:
-    "Browse eSIM data plans for 150+ countries. Find affordable prepaid travel data for your next destination with instant activation.",
+    "Browse eSIM data plans for 190+ countries. Find affordable prepaid travel data for your next destination with instant activation.",
   openGraph: {
     title: "eSIM Plans by Country | MobiaL",
     description:
-      "Browse eSIM data plans for 150+ countries. Instant activation, no roaming fees.",
+      "Browse eSIM data plans for 190+ countries. Instant activation, no roaming fees.",
   },
 }
 

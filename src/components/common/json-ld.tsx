@@ -31,7 +31,7 @@ export function OrganizationJsonLd({ baseUrl }: { baseUrl: string }) {
         url: baseUrl,
         logo: `${baseUrl}/icons/icon-512x512.png`,
         description:
-          "Global eSIM marketplace offering instant high-speed data plans for 150+ countries with no roaming fees.",
+          "Global eSIM marketplace offering instant high-speed data plans for 190+ countries with no roaming fees.",
         contactPoint: {
           "@type": "ContactPoint",
           email: "support@mobialo.eu",

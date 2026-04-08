@@ -35,7 +35,7 @@
     "heroTitleLine1": "Вашият глобален",
     "heroTitleLine2": "партньор за свързаност",
     "heroTitleSuffix": "по време на пътуване",
-    "heroDescription": "Високоскоростни eSIM планове за данни за 150+ държави. Без роуминг такси. Без физически SIM карти. Моментално активиране.",
+    "heroDescription": "Високоскоростни eSIM планове за данни за 190+ държави. Без роуминг такси. Без физически SIM карти. Моментално активиране.",
     "heroSubtitle": "Моментални eSIM планове за данни за 190+ държави. Без роуминг такси, без физически SIM карти.",
     "searchPlaceholder": "Къде пътувате?",
     "popularDestinations": "Популярни дестинации",
@@ -44,7 +44,7 @@
     "quickTopUp": "Зареди eSIM",
     "quickTopUpDesc": "Добави още данни",
     "quickDestinations": "Дестинации",
-    "quickDestinationsDesc": "150+ държави",
+    "quickDestinationsDesc": "190+ държави",
     "quickCompatibility": "Съвместимост",
     "quickCompatibilityDesc": "Провери устройството си",
     "step1Title": "Изберете дестинация",
@@ -299,7 +299,7 @@
     "setupGuide": "Ръководство за настройка"
   },
   "esim": {
-    "destinationsBadge": "150+ дестинации",
+    "destinationsBadge": "190+ дестинации",
     "title": "eSIM планове по",
     "titleHighlight": "Държава",
     "heroDesc": "Намерете перфектния план за данни за вашата дестинация. Моментално активиране, без роуминг такси, без нужда от физическа SIM карта.",

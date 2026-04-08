@@ -109,6 +109,11 @@
   @apply sticky top-4 z-40 rounded-[28px] border border-white/12 bg-black/40 backdrop-blur-3xl ring-1 ring-inset ring-white/5 shadow-2xl;
 }
 
+.gradient-accent {
+  background: linear-gradient(135deg, oklch(0.65 0.12 210), oklch(0.55 0.15 220));
+  color: white;
+}
+
 /* Hide scrollbar for horizontal scroll areas */
 .scrollbar-hide {
   -ms-overflow-style: none;

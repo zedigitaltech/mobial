@@ -35,7 +35,7 @@
     "heroTitleLine1": "Vasa globalna putna",
     "heroTitleLine2": "konekcija",
     "heroTitleSuffix": "Partner",
-    "heroDescription": "Brzi eSIM paketi podataka za 150+ zemalja. Bez roaming naknada. Bez fizickih SIM kartica. Trenutna aktivacija.",
+    "heroDescription": "Brzi eSIM paketi podataka za 190+ zemalja. Bez roaming naknada. Bez fizickih SIM kartica. Trenutna aktivacija.",
     "heroSubtitle": "Trenutni eSIM paketi podataka za 190+ zemalja. Bez roaming naknada, bez fizickih SIM kartica.",
     "searchPlaceholder": "Gde putujete?",
     "popularDestinations": "Popularne destinacije",
@@ -44,7 +44,7 @@
     "quickTopUp": "Dopuni eSIM",
     "quickTopUpDesc": "Dodaj jos podataka",
     "quickDestinations": "Destinacije",
-    "quickDestinationsDesc": "150+ zemalja",
+    "quickDestinationsDesc": "190+ zemalja",
     "quickCompatibility": "Kompatibilnost",
     "quickCompatibilityDesc": "Proveri svoj uredaj",
     "step1Title": "Izaberite destinaciju",
@@ -267,7 +267,7 @@
     "support": "24/7 podrska"
   },
   "esim": {
-    "destinationsBadge": "150+ destinacija",
+    "destinationsBadge": "190+ destinacija",
     "title": "eSIM paketi po",
     "titleHighlight": "zemlji",
     "heroDesc": "Pronadjite savrseni paket podataka za vasu destinaciju. Trenutna aktivacija, bez roaming naknada, bez fizicke SIM kartice.",

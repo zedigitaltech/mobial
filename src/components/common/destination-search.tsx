@@ -508,7 +508,7 @@ function DesktopSearch() {
               <div className="p-4 bg-white/5 border-t border-white/10 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                   <TrendingUp className="h-3 w-3 text-primary" />
-                  150+ destinations available
+                  190+ destinations available
                 </div>
                 <Button
                   variant="ghost"
