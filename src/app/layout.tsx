@@ -33,7 +33,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0a",
+  themeColor: "#f2f6f8",
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -106,7 +106,7 @@ export default async function RootLayout({
   const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   return (
-    <html lang={locale} suppressHydrationWarning className="dark">
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <Script
           src="https://accounts.google.com/gsi/client"
@@ -122,8 +122,8 @@ export default async function RootLayout({
               <PostHogProvider>
                 <ThemeProvider
                   attribute="class"
-                  defaultTheme="dark"
-                  enableSystem={false}
+                  defaultTheme="system"
+                  enableSystem={true}
                   disableTransitionOnChange
                   nonce={nonce}
                 >

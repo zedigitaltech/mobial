@@ -10,57 +10,122 @@
   --color-foreground: var(--foreground);
   --font-sans: "Inter", var(--font-geist-sans);
   --font-mono: "JetBrains Mono", var(--font-geist-mono);
-  
+
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  
+
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
-  
+
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-sidebar-background: var(--sidebar-background);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
 }
 
 :root {
   --radius: 1rem;
-  
-  /* "Airport-at-Night" System (Light Mode - subtle) */
-  --background: oklch(0.98 0.005 220);
-  --foreground: oklch(0.15 0.02 220);
-  --card: oklch(1 0 0 / 0.8);
-  --card-foreground: oklch(0.15 0.02 220);
-  
-  --primary: oklch(0.55 0.15 220); /* Cold Blue */
-  --primary-foreground: oklch(0.99 0 0);
-  
-  --popover: oklch(0.98 0.005 220);
-  --popover-foreground: oklch(0.15 0.02 220);
-  --border: oklch(0.92 0.01 220);
-  --input: oklch(0.92 0.01 220);
-  --ring: oklch(0.55 0.15 220 / 0.5);
+
+  --background: 210 25% 96%;
+  --foreground: 215 22% 13%;
+  --card: 0 0% 100%;
+  --card-foreground: 215 22% 13%;
+  --primary: 196 100% 47%;
+  --primary-foreground: 0 0% 100%;
+  --muted: 214 32% 95%;
+  --muted-foreground: 215 5% 55%;
+  --border: 210 18% 91%;
+  --input: 210 18% 91%;
+  --ring: 196 100% 47% / 0.3;
+  --accent: 210 18% 91%;
+  --accent-foreground: 215 22% 13%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --secondary: 210 18% 91%;
+  --secondary-foreground: 215 22% 13%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 215 22% 13%;
+
+  --sidebar-background: 0 0% 100%;
+  --sidebar-foreground: 215 22% 13%;
+  --sidebar-primary: 196 100% 47%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 210 18% 91%;
+  --sidebar-accent-foreground: 215 22% 13%;
+  --sidebar-border: 210 18% 91%;
+  --sidebar-ring: 196 100% 47%;
+
+  --chart-1: 196 100% 47%;
+  --chart-2: 160 32% 40%;
+  --chart-3: 215 22% 13%;
+  --chart-4: 43 96% 56%;
+  --chart-5: 0 84% 60%;
+
+  --price-green: 167 32% 40%;
 }
 
 .dark {
-  /* "Airport-at-Night" System (Dark Mode - Primary) */
-  --background: oklch(0.12 0.015 220); /* Deep Ink */
-  --foreground: oklch(0.92 0.01 220);
-  --card: oklch(0.16 0.02 220 / 0.4);
-  --card-foreground: oklch(0.95 0.01 220);
-  
-  --primary: oklch(0.65 0.12 210); /* Cold Signal Blue */
-  --primary-foreground: oklch(0.12 0.015 220);
-  
-  --popover: oklch(0.16 0.02 220 / 0.85);
-  --popover-foreground: oklch(0.95 0.01 220);
-  --border: oklch(0.25 0.02 220 / 0.6);
-  --input: oklch(0.2 0.02 220);
-  --ring: oklch(0.65 0.12 210 / 0.3);
-  
-  --muted: oklch(0.2 0.02 220);
-  --muted-foreground: oklch(0.65 0.02 220);
+  --background: 225 22% 7%;
+  --foreground: 216 14% 91%;
+  --card: 220 16% 12%;
+  --card-foreground: 216 14% 91%;
+  --primary: 201 47% 57%;
+  --primary-foreground: 225 22% 7%;
+  --muted: 218 13% 20%;
+  --muted-foreground: 218 8% 58%;
+  --border: 215 14% 21%;
+  --input: 218 13% 20%;
+  --ring: 201 47% 57% / 0.3;
+  --accent: 218 13% 20%;
+  --accent-foreground: 216 14% 91%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --secondary: 218 13% 20%;
+  --secondary-foreground: 216 14% 91%;
+  --popover: 220 16% 12%;
+  --popover-foreground: 216 14% 91%;
+
+  --sidebar-background: 220 16% 12%;
+  --sidebar-foreground: 216 14% 91%;
+  --sidebar-primary: 201 47% 57%;
+  --sidebar-primary-foreground: 225 22% 7%;
+  --sidebar-accent: 218 13% 20%;
+  --sidebar-accent-foreground: 216 14% 91%;
+  --sidebar-border: 215 14% 21%;
+  --sidebar-ring: 201 47% 57%;
+
+  --chart-1: 201 47% 57%;
+  --chart-2: 167 32% 51%;
+  --chart-3: 216 14% 91%;
+  --chart-4: 43 96% 56%;
+  --chart-5: 0 84% 60%;
+
+  --price-green: 167 32% 51%;
 }
 
 @layer base {
@@ -69,52 +134,28 @@
   }
   body {
     @apply bg-background text-foreground antialiased selection:bg-primary/30;
-    background-image: 
-      radial-gradient(at 0% 0%, oklch(0.65 0.12 210 / 0.05) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, oklch(0.65 0.12 210 / 0.03) 0px, transparent 50%);
-    background-attachment: fixed;
   }
 }
 
 @layer utilities {
-  .glass-panel {
-    @apply bg-white/[0.03] dark:bg-white/[0.05] backdrop-blur-2xl border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.3)];
-  }
-  
-  .glass-card {
-    @apply bg-white/[0.05] dark:bg-white/[0.08] backdrop-blur-md border border-white/10 hover:border-white/20 transition-all duration-300;
-  }
-
-  .pulse-signal {
-    @apply relative before:absolute before:inset-0 before:rounded-full before:bg-emerald-500/40 before:animate-ping;
-  }
-
-  .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-br from-white to-white/60;
-  }
-
-  .text-micro {
-    font-size: 0.625rem;
-    line-height: 1rem;
+  .text-price-green {
+    color: hsl(var(--price-green));
   }
 }
 
-/* Custom Utilities for Codex Research */
 .mono-data {
   font-family: "JetBrains Mono", monospace;
   letter-spacing: -0.02em;
 }
 
 .search-rail {
-  @apply sticky top-4 z-40 rounded-[28px] border border-white/12 bg-black/40 backdrop-blur-3xl ring-1 ring-inset ring-white/5 shadow-2xl;
+  @apply sticky top-4 z-40 rounded-[28px] border border-border bg-card/80 backdrop-blur-3xl ring-1 ring-inset ring-border/50 shadow-2xl;
 }
 
 .gradient-accent {
-  background: linear-gradient(135deg, oklch(0.65 0.12 210), oklch(0.55 0.15 220));
-  color: white;
+  @apply bg-primary text-primary-foreground rounded-xl;
 }
 
-/* Hide scrollbar for horizontal scroll areas */
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
