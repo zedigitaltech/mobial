@@ -31,6 +31,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { MobileNav } from "./mobile-nav"
+import { CartDrawer } from "@/components/store/cart-drawer"
 import { LanguageSwitcher } from "@/components/common/language-switcher"
 import { CurrencySelector } from "@/components/common/currency-selector"
 
@@ -114,6 +115,9 @@ export function Header() {
               <span className="sr-only">Toggle theme</span>
             </Button>
 
+            {/* Cart */}
+            <CartDrawer />
+
             {/* Auth Buttons / User Menu */}
             {user ? (
               <DropdownMenu>
@@ -170,7 +174,7 @@ export function Header() {
                   <LogIn className="mr-2 h-4 w-4" />
                   {t('login')}
                 </Button>
-                <Button size="sm" className="bg-primary text-primary-foreground" onClick={() => openAuthModal("register")}>
+                <Button size="sm" className="gradient-accent text-accent-foreground" onClick={() => openAuthModal("register")}>
                   <UserPlus className="mr-2 h-4 w-4" />
                   {t('signUp')}
                 </Button>

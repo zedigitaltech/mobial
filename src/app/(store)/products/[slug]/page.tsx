@@ -1,6 +1,10 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getProductById, getProducts } from "@/services/product-service";
+import {
+  getProductById,
+  ProductWithDetails,
+  getProducts,
+} from "@/services/product-service";
 import { ProductDetailClient } from "./client";
 import { ProductJsonLd, BreadcrumbJsonLd } from "@/components/common/json-ld";
 import { db } from "@/lib/db";
@@ -90,6 +94,31 @@ export default async function ProductPage({
     /* non-critical */
   }
 
+  // Get related products with graceful degradation — page renders even if these fail
+  let filteredRelated: ProductWithDetails[] = [];
+  let countryRelated: ProductWithDetails[] = [];
+
+  try {
+    const [providerResults, countryResults] = await Promise.all([
+      getProducts({ provider: product.provider, limit: 4 }),
+      product.countries[0]
+        ? getProducts({ country: product.countries[0], limit: 6 })
+        : Promise.resolve({ products: [] } as {
+            products: ProductWithDetails[];
+          }),
+    ]);
+
+    filteredRelated = providerResults.products
+      .filter((p) => p.id !== product.id)
+      .slice(0, 3);
+
+    countryRelated = countryResults.products
+      .filter((p) => p.id !== product.id && p.provider !== product.provider)
+      .slice(0, 3);
+  } catch (error) {
+    console.error("[ProductPage] Failed to fetch related products:", error);
+  }
+
   return (
     <>
       <ProductJsonLd
@@ -105,7 +134,11 @@ export default async function ProductPage({
           { name: product.name },
         ]}
       />
-      <ProductDetailClient product={product} />
+      <ProductDetailClient
+        product={product}
+        relatedProducts={filteredRelated}
+        countryRelatedProducts={countryRelated}
+      />
     </>
   );
 }

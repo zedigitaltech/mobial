@@ -158,7 +158,7 @@ export function MobileNav({ onClose }: MobileNavProps) {
               {t('login')}
             </Button>
             <Button
-              className="w-full justify-start bg-primary text-primary-foreground"
+              className="w-full justify-start gradient-accent text-accent-foreground"
               onClick={() => {
                 onClose?.()
                 openAuthModal("register")

@@ -41,10 +41,6 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "api.mobimatter.com",
       },
-      {
-        protocol: "https",
-        hostname: "flagcdn.com",
-      },
     ],
   },
 };

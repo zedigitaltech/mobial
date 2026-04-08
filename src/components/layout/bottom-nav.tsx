@@ -3,19 +3,22 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { Home, Globe, Search, User } from "lucide-react"
+import { Home, Globe, Search, ShoppingCart, User } from "lucide-react"
+import { useCart } from "@/contexts/cart-context"
 import { useAuth } from "@/components/providers/auth-provider"
 import { cn } from "@/lib/utils"
 
 export function BottomNav() {
   const t = useTranslations("bottomNav")
   const pathname = usePathname()
+  const { itemCount } = useCart()
   const { user, openAuthModal } = useAuth()
 
   const NAV_ITEMS = [
     { href: "/", icon: Home, label: t("home") },
     { href: "/esim", icon: Globe, label: t("destinations") },
     { href: "/products", icon: Search, label: t("browse") },
+    { href: "__cart__", icon: ShoppingCart, label: t("cart") },
     { href: "__account__", icon: User, label: t("account") },
   ]
 
@@ -30,6 +33,28 @@ export function BottomNav() {
       <div className="flex items-center justify-around h-16">
         {NAV_ITEMS.map((item) => {
           const active = isActive(item.href)
+
+          if (item.href === "__cart__") {
+            return (
+              <Link
+                key={item.label}
+                href="/checkout"
+                className="flex flex-col items-center justify-center gap-0.5 min-w-[64px] py-1"
+              >
+                <div className="relative">
+                  <item.icon className={cn("h-5 w-5", itemCount > 0 ? "text-primary" : "text-muted-foreground")} />
+                  {itemCount > 0 && (
+                    <span className="absolute -top-1.5 -right-2 h-4 min-w-4 rounded-full bg-primary text-primary-foreground text-[10px] font-bold flex items-center justify-center px-1">
+                      {itemCount > 9 ? "9+" : itemCount}
+                    </span>
+                  )}
+                </div>
+                <span className={cn("text-[10px] font-medium", itemCount > 0 ? "text-primary" : "text-muted-foreground")}>
+                  {item.label}
+                </span>
+              </Link>
+            )
+          }
 
           if (item.href === "__account__") {
             if (user) {

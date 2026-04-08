@@ -20,7 +20,7 @@ export async function middleware(request: NextRequest) {
     default-src 'self';
     script-src 'self' 'nonce-${nonce}' https://js.stripe.com https://client.crisp.chat https://accounts.google.com;
     style-src 'self' 'unsafe-inline' https://client.crisp.chat;
-    img-src 'self' blob: data: https://api.mobimatter.com https://mobimatterstorage.blob.core.windows.net https://client.crisp.chat https://image.crisp.chat https://flagcdn.com;
+    img-src 'self' blob: data: https://api.mobimatter.com https://mobimatterstorage.blob.core.windows.net https://client.crisp.chat https://image.crisp.chat;
     font-src 'self' data: https://client.crisp.chat;
     object-src 'none';
     base-uri 'self';
