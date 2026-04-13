@@ -50,9 +50,19 @@ test.describe("Checkout Flow", () => {
   })
 
   test("should validate email on checkout", async ({ page }) => {
-    // Inject a cart item into localStorage before visiting checkout
-    await page.goto("/products")
-    await page.evaluate(() => {
+    // Inject localStorage before any navigation so cookie consent component
+    // mounts with consent already stored (avoids the z-[9999] overlay blocking clicks)
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "cookie-consent",
+        JSON.stringify({
+          essential: true,
+          analytics: false,
+          marketing: false,
+          thirdParty: false,
+          timestamp: new Date().toISOString(),
+        })
+      )
       localStorage.setItem(
         "mobial_cart",
         JSON.stringify([
@@ -72,20 +82,6 @@ test.describe("Checkout Flow", () => {
 
     await page.goto("/checkout")
     await page.waitForLoadState("networkidle")
-
-    // Dismiss cookie consent if visible (blocks pointer events)
-    const cookieAccept = page.locator('[aria-label="Cookie consent"] button').first()
-    if (await cookieAccept.isVisible({ timeout: 2_000 }).catch(() => false)) {
-      await cookieAccept.click()
-      await page.waitForTimeout(300)
-    }
-
-    // Dismiss any auth modal backdrop by pressing Escape
-    const backdrop = page.locator('[aria-hidden="true"].fixed.inset-0')
-    if (await backdrop.isVisible({ timeout: 1_000 }).catch(() => false)) {
-      await page.keyboard.press("Escape")
-      await page.waitForTimeout(300)
-    }
 
     // If checkout page loaded (cart has items), test email validation
     const emailInput = page.locator('input[type="email"]')
