@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import { Search, MapPin, X } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -22,9 +22,19 @@ function flagUrl(code: string): string {
 }
 
 export function DestinationGrid({ countries }: { countries: CountryWithPricing[] }) {
+  const [inputValue, setInputValue] = useState("")
   const [search, setSearch] = useState("")
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const t = useTranslations("destinationGrid")
   const { formatPrice } = useCurrency()
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => setSearch(inputValue), 200)
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [inputValue])
 
   const filtered = useMemo(() => {
     if (!search.trim()) return countries
@@ -48,12 +58,13 @@ export function DestinationGrid({ countries }: { countries: CountryWithPricing[]
           placeholder={t("searchPlaceholder")}
           aria-label="Search destinations"
           className="w-full h-12 bg-muted/60 border-0 rounded-2xl pl-11 pr-11 text-[15px] font-medium outline-none focus:ring-2 ring-primary/20 transition-all"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
         />
-        {search && (
+        {inputValue && (
           <button
-            onClick={() => setSearch("")}
+            type="button"
+            onClick={() => { setInputValue(""); setSearch("") }}
             className="absolute right-4 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full bg-muted flex items-center justify-center hover:bg-muted-foreground/20 transition-colors"
           >
             <X className="h-3.5 w-3.5" />

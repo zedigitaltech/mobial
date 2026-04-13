@@ -30,7 +30,8 @@
     "language": "Dil",
     "view": "Görüntüle",
     "toggleTheme": "Tema değiştir",
-    "openMenu": "Menüyü aç"
+    "openMenu": "Menüyü aç",
+    "cart": "Sepet"
   },
   "home": {
     "trustedBadge": "Güvenilir eSIM Pazaryeri",

@@ -30,7 +30,8 @@
     "language": "Lingua",
     "view": "Visualizza",
     "toggleTheme": "Cambia tema",
-    "openMenu": "Apri menu"
+    "openMenu": "Apri menu",
+    "cart": "Carrello"
   },
   "home": {
     "trustedBadge": "Marketplace eSIM affidabile",

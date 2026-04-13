@@ -5,6 +5,7 @@ import Image from "next/image"
 import { useTheme } from "next-themes"
 import { useTranslations } from "next-intl"
 import { useAuth } from "@/components/providers/auth-provider"
+import { useCart } from "@/contexts/cart-context"
 import {
   Sun,
   Moon,
@@ -19,6 +20,7 @@ import {
   HelpCircle,
   TrendingUp,
   Zap,
+  ShoppingCart,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -32,6 +34,7 @@ interface MobileNavProps {
 export function MobileNav({ onClose }: MobileNavProps) {
   const { theme, setTheme } = useTheme()
   const { user, logout, openAuthModal } = useAuth()
+  const { itemCount } = useCart()
   const t = useTranslations('common')
 
   const navigation = [
@@ -63,6 +66,21 @@ export function MobileNav({ onClose }: MobileNavProps) {
             <span className="font-medium">{item.name}</span>
           </Link>
         ))}
+        <Link
+          href="/checkout"
+          onClick={onClose}
+          className="flex items-center justify-between px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+        >
+          <div className="flex items-center space-x-3">
+            <ShoppingCart className="h-5 w-5" />
+            <span className="font-medium">{t('cart')}</span>
+          </div>
+          {itemCount > 0 && (
+            <span className="h-5 w-5 rounded-full bg-primary text-primary-foreground text-[10px] font-black flex items-center justify-center">
+              {itemCount}
+            </span>
+          )}
+        </Link>
       </nav>
 
       <Separator className="my-4" />

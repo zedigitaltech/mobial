@@ -30,7 +30,8 @@
     "language": "Език",
     "view": "Преглед",
     "toggleTheme": "Смяна на темата",
-    "openMenu": "Отвори менюто"
+    "openMenu": "Отвори менюто",
+    "cart": "Количка"
   },
   "home": {
     "trustedBadge": "Доверен eSIM маркетплейс",

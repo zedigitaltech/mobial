@@ -30,7 +30,8 @@
     "language": "Γλώσσα",
     "view": "Προβολή",
     "toggleTheme": "Εναλλαγή θέματος",
-    "openMenu": "Άνοιγμα μενού"
+    "openMenu": "Άνοιγμα μενού",
+    "cart": "Καλάθι"
   },
   "home": {
     "trustedBadge": "Έμπιστη Αγορά eSIM",

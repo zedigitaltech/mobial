@@ -30,7 +30,8 @@
     "language": "Jezik",
     "view": "Pogledaj",
     "toggleTheme": "Promijeni temu",
-    "openMenu": "Otvori meni"
+    "openMenu": "Otvori meni",
+    "cart": "Korpa"
   },
   "home": {
     "trustedBadge": "Pouzdana eSIM prodavnica",

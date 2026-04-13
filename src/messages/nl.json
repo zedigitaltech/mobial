@@ -30,7 +30,8 @@
     "language": "Taal",
     "view": "Bekijken",
     "toggleTheme": "Thema wisselen",
-    "openMenu": "Menu openen"
+    "openMenu": "Menu openen",
+    "cart": "Winkelwagen"
   },
   "home": {
     "trustedBadge": "Vertrouwde eSIM marktplaats",

@@ -30,7 +30,8 @@
     "language": "Język",
     "view": "Zobacz",
     "toggleTheme": "Przełącz motyw",
-    "openMenu": "Otwórz menu"
+    "openMenu": "Otwórz menu",
+    "cart": "Koszyk"
   },
   "home": {
     "trustedBadge": "Zaufany marketplace eSIM",

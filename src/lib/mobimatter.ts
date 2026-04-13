@@ -271,7 +271,16 @@ async function makeRequest<T>(
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        // Don't retry 4xx — these are client errors (bad request, not found, etc.)
+        // 429 Rate limit — retryable with longer backoff
+        if (response.status === 429) {
+          const retryAfter = response.headers.get("Retry-After");
+          const waitMs = retryAfter ? parseInt(retryAfter) * 1000 : BASE_RETRY_DELAY_MS * Math.pow(2, attempt + 1);
+          await new Promise((resolve) => setTimeout(resolve, waitMs));
+          lastError = new Error(`MobiMatter API rate limited (429)`);
+          continue;
+        }
+
+        // Don't retry other 4xx — these are client errors (bad request, not found, etc.)
         if (response.status >= 400 && response.status < 500) {
           let errorMessage = `HTTP ${response.status}`;
           try {

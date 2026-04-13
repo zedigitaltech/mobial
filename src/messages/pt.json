@@ -30,7 +30,8 @@
     "language": "Idioma",
     "view": "Ver",
     "toggleTheme": "Alternar tema",
-    "openMenu": "Abrir menu"
+    "openMenu": "Abrir menu",
+    "cart": "Carrinho"
   },
   "home": {
     "trustedBadge": "Marketplace de eSIM Confiável",

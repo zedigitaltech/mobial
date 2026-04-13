@@ -30,7 +30,8 @@
     "language": "Språk",
     "view": "Visa",
     "toggleTheme": "Byt tema",
-    "openMenu": "Öppna meny"
+    "openMenu": "Öppna meny",
+    "cart": "Varukorg"
   },
   "home": {
     "trustedBadge": "Betrodd eSIM-marknadsplats",

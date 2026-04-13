@@ -510,6 +510,8 @@ export async function getProductById(idOrSlug: string): Promise<ProductWithDetai
       try {
         const product = await db.product.findFirst({
           where: {
+            isActive: true,
+            externallyShown: true,
             OR: [
               { id: idOrSlug },
               { slug: idOrSlug },
