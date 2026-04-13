@@ -34,9 +34,9 @@
   },
   "home": {
     "trustedBadge": "Güvenilir eSIM Pazaryeri",
-    "heroTitleLine1": "Küresel Seyahat",
-    "heroTitleLine2": "Bağlantınız",
-    "heroTitleSuffix": "Ortağınız",
+    "heroTitleLine1": "Bağlı",
+    "heroTitleLine2": "190+ Ülkede",
+    "heroTitleSuffix": "Anında",
     "heroDescription": "150'den fazla ülke için yüksek hızlı eSIM veri planları. Roaming ücreti yok. Fiziksel SIM yok. Anında aktivasyon.",
     "heroSubtitle": "190'dan fazla ülke için anında eSIM veri planları. Roaming ücreti yok, fiziksel SIM yok.",
     "searchPlaceholder": "Nereye seyahat ediyorsunuz?",
@@ -83,7 +83,8 @@
     "referralDesc": "MobiaL'i arkadaşlarınızla paylaşın ve yaptıkları her alışverişten ödül kazanın.",
     "referralButton": "Kazanmaya Başla",
     "startBrowsing": "Gezinmeye Başla",
-    "appScreenshot": "Mobial eSIM Uygulaması"
+    "appScreenshot": "Mobial eSIM Uygulaması",
+    "heroJustLanded": "Az önce mü indiniz? 2 dakikada internete bağlanın."
   },
   "products": {
     "title": "eSIM Planları",
@@ -705,7 +706,8 @@
     "planCountPlural": "{count} plan",
     "comingSoon": "Yakında",
     "noDestinations": "Destinasyon bulunamadı",
-    "noDestinationsHint": "Farklı bir arama terimi deneyin veya tüm destinasyonlara göz atın."
+    "noDestinationsHint": "Farklı bir arama terimi deneyin veya tüm destinasyonlara göz atın.",
+    "fromPrice": "{price}'den"
   },
   "planCard": {
     "bestValue": "En İyi Fiyat",

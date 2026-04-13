@@ -34,9 +34,9 @@
   },
   "home": {
     "trustedBadge": "Betrodd eSIM-marknadsplats",
-    "heroTitleLine1": "Din globala rese-",
-    "heroTitleLine2": "uppkoppling",
-    "heroTitleSuffix": "partner",
+    "heroTitleLine1": "Ansluten i",
+    "heroTitleLine2": "190+ Länder",
+    "heroTitleSuffix": "Direkt",
     "heroDescription": "Höghastighets eSIM-datapaket för 190+ länder. Inga roamingavgifter. Inga fysiska SIM-kort. Omedelbar aktivering.",
     "heroSubtitle": "Omedelbara eSIM-datapaket för 190+ länder. Inga roamingavgifter, inga fysiska SIM-kort.",
     "searchPlaceholder": "Vart reser du?",
@@ -83,7 +83,8 @@
     "referralDesc": "Dela MobiaL med vänner och tjäna belöningar på varje köp de gör.",
     "referralButton": "Börja tjäna",
     "startBrowsing": "Börja bläddra",
-    "appScreenshot": "Mobial eSIM App"
+    "appScreenshot": "Mobial eSIM App",
+    "heroJustLanded": "Precis landat? Online på 2 minuter."
   },
   "products": {
     "title": "eSIM-paket",
@@ -705,7 +706,8 @@
     "planCountPlural": "{count} paket",
     "comingSoon": "Kommer snart",
     "noDestinations": "Inga destinationer hittades",
-    "noDestinationsHint": "Prova en annan sökterm eller bläddra bland alla destinationer."
+    "noDestinationsHint": "Prova en annan sökterm eller bläddra bland alla destinationer.",
+    "fromPrice": "från {price}"
   },
   "planCard": {
     "bestValue": "Bästa Värde",

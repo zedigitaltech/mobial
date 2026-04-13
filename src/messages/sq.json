@@ -34,13 +34,13 @@
   },
   "home": {
     "trustedBadge": "Treg i besuar i eSIM",
-    "heroTitleLine1": "Partneri juaj global",
-    "heroTitleLine2": "i lidhshmërisë",
-    "heroTitleSuffix": "për udhëtim",
+    "heroTitleLine1": "Qëndro i Lidhur në",
+    "heroTitleLine2": "190+ Vende",
+    "heroTitleSuffix": "Menjëherë",
     "heroDescription": "Plane të dhënash eSIM me shpejtësi të lartë për mbi 150 vende. Pa tarifa roaming. Pa SIM fizike. Aktivizim i menjëhershëm.",
     "heroSubtitle": "Plane të dhënash eSIM të menjëhershme për mbi 190 vende. Pa tarifa roaming, pa SIM fizike.",
     "searchPlaceholder": "Ku po udhëtoni?",
-    "popularDestinations": "Destinacione të njohura",
+    "popularDestinations": "Destinacione të njohura eSIM",
     "quickCheckUsage": "Kontrollo përdorimin",
     "quickCheckUsageDesc": "Monitoro të dhënat",
     "quickTopUp": "Rimbush eSIM",
@@ -83,8 +83,8 @@
     "referralDesc": "Ndaj MobiaL me miqtë dhe fito shpërblime për çdo blerje që bëjnë.",
     "referralButton": "Fillo të fitosh",
     "startBrowsing": "Fillo shfletimin",
-    "popularDestinations": "Destinacione të njohura eSIM",
-    "appScreenshot": "Mobial eSIM App"
+    "appScreenshot": "Mobial eSIM App",
+    "heroJustLanded": "Sapo zbarkuat? Lidhuni në internet brenda 2 minutave."
   },
   "products": {
     "title": "Planet eSIM",
@@ -697,7 +697,8 @@
     "planCountPlural": "{count} plane",
     "comingSoon": "Së shpejti",
     "noDestinations": "Nuk u gjetën destinacione",
-    "noDestinationsHint": "Provoni një term tjetër kërkimi ose shfletoni të gjitha destinacionet."
+    "noDestinationsHint": "Provoni një term tjetër kërkimi ose shfletoni të gjitha destinacionet.",
+    "fromPrice": "nga {price}"
   },
   "planCard": {
     "bestValue": "Vlera më e mirë",

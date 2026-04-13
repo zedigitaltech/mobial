@@ -34,9 +34,9 @@
   },
   "home": {
     "trustedBadge": "Pouzdana eSIM prodavnica",
-    "heroTitleLine1": "Vasa globalna putna",
-    "heroTitleLine2": "povezanost",
-    "heroTitleSuffix": "Partner",
+    "heroTitleLine1": "Spojen u",
+    "heroTitleLine2": "190+ Zemalja",
+    "heroTitleSuffix": "Odmah",
     "heroDescription": "Brzi eSIM paketi podataka za 190+ zemalja. Bez roaming naknada. Bez fizickih SIM kartica. Trenutna aktivacija.",
     "heroSubtitle": "Trenutni eSIM paketi podataka za 190+ zemalja. Bez roaming naknada, bez fizickih SIM kartica.",
     "searchPlaceholder": "Gdje putujete?",
@@ -83,7 +83,8 @@
     "referralDesc": "Podijelite MobiaL sa prijateljima i zaradite nagrade za svaku njihovu kupovinu.",
     "referralButton": "Pocni zaradjivati",
     "startBrowsing": "Pocni pregledati",
-    "appScreenshot": "Mobial eSIM aplikacija"
+    "appScreenshot": "Mobial eSIM aplikacija",
+    "heroJustLanded": "Tek sletjeli? Povežite se za 2 minute."
   },
   "products": {
     "title": "eSIM paketi",
@@ -705,7 +706,8 @@
     "planCountPlural": "{count} paketa",
     "comingSoon": "Uskoro",
     "noDestinations": "Nema pronadjenih destinacija",
-    "noDestinationsHint": "Pokusajte sa drugim terminom pretrage ili pregledajte sve destinacije."
+    "noDestinationsHint": "Pokusajte sa drugim terminom pretrage ili pregledajte sve destinacije.",
+    "fromPrice": "od {price}"
   },
   "planCard": {
     "bestValue": "Najbolja vrijednost",

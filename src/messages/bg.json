@@ -34,9 +34,9 @@
   },
   "home": {
     "trustedBadge": "Доверен eSIM маркетплейс",
-    "heroTitleLine1": "Вашият глобален",
-    "heroTitleLine2": "партньор за свързаност",
-    "heroTitleSuffix": "по време на пътуване",
+    "heroTitleLine1": "Свързан в",
+    "heroTitleLine2": "190+ Страни",
+    "heroTitleSuffix": "Веднага",
     "heroDescription": "Високоскоростни eSIM планове за данни за 190+ държави. Без роуминг такси. Без физически SIM карти. Моментално активиране.",
     "heroSubtitle": "Моментални eSIM планове за данни за 190+ държави. Без роуминг такси, без физически SIM карти.",
     "searchPlaceholder": "Къде пътувате?",
@@ -83,7 +83,8 @@
     "referralDesc": "Споделете MobiaL с приятели и печелете награди при всяка тяхна покупка.",
     "referralButton": "Започнете да печелите",
     "startBrowsing": "Започнете да разглеждате",
-    "appScreenshot": "Mobial eSIM приложение"
+    "appScreenshot": "Mobial eSIM приложение",
+    "heroJustLanded": "Току-що кацнахте? Онлайн за 2 минути."
   },
   "products": {
     "title": "eSIM планове",
@@ -705,7 +706,8 @@
     "planCountPlural": "{count} плана",
     "comingSoon": "Очаквайте скоро",
     "noDestinations": "Не са намерени дестинации",
-    "noDestinationsHint": "Опитайте с друг термин за търсене или разгледайте всички дестинации."
+    "noDestinationsHint": "Опитайте с друг термин за търсене или разгледайте всички дестинации.",
+    "fromPrice": "от {price}"
   },
   "planCard": {
     "bestValue": "Най-добра стойност",

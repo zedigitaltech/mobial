@@ -34,9 +34,9 @@
   },
   "home": {
     "trustedBadge": "Piață de eSIM de Încredere",
-    "heroTitleLine1": "Conectivitatea Ta",
-    "heroTitleLine2": "Globală de Călătorie",
-    "heroTitleSuffix": "Partener",
+    "heroTitleLine1": "Conectat în",
+    "heroTitleLine2": "190+ Țări",
+    "heroTitleSuffix": "Instant",
     "heroDescription": "Planuri de date eSIM de mare viteză pentru peste 150 de țări. Fără taxe de roaming. Fără SIM-uri fizice. Activare instantă.",
     "heroSubtitle": "Planuri de date eSIM instant pentru peste 190 de țări. Fără taxe de roaming, fără SIM-uri fizice.",
     "searchPlaceholder": "Unde călătorești?",
@@ -83,7 +83,8 @@
     "referralDesc": "Distribuie MobiaL prietenilor și câștigă recompense pentru fiecare achiziție pe care o fac.",
     "referralButton": "Începe să Câștigi",
     "startBrowsing": "Începe Navigarea",
-    "appScreenshot": "Mobial eSIM App"
+    "appScreenshot": "Mobial eSIM App",
+    "heroJustLanded": "Tocmai ați aterizat? Online în mai puțin de 2 minute."
   },
   "products": {
     "title": "Planuri eSIM",
@@ -705,7 +706,8 @@
     "planCountPlural": "{count} planuri",
     "comingSoon": "În curând",
     "noDestinations": "Nicio destinație găsită",
-    "noDestinationsHint": "Încercați un alt termen de căutare sau navigați toate destinațiile."
+    "noDestinationsHint": "Încercați un alt termen de căutare sau navigați toate destinațiile.",
+    "fromPrice": "de la {price}"
   },
   "planCard": {
     "bestValue": "Cel Mai Bun Preț",

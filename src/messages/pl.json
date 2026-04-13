@@ -34,9 +34,9 @@
   },
   "home": {
     "trustedBadge": "Zaufany marketplace eSIM",
-    "heroTitleLine1": "Twój globalny partner",
-    "heroTitleLine2": "łączności",
-    "heroTitleSuffix": "w podróży",
+    "heroTitleLine1": "Połączony w",
+    "heroTitleLine2": "190+ Krajach",
+    "heroTitleSuffix": "Natychmiast",
     "heroDescription": "Szybkie plany danych eSIM dla 190+ krajów. Bez opłat roamingowych. Bez fizycznych kart SIM. Natychmiastowa aktywacja.",
     "heroSubtitle": "Natychmiastowe plany danych eSIM dla 190+ krajów. Bez opłat roamingowych, bez fizycznych kart SIM.",
     "searchPlaceholder": "Dokąd podróżujesz?",
@@ -83,7 +83,8 @@
     "referralDesc": "Udostępnij MobiaL znajomym i zarabiaj nagrody przy każdym ich zakupie.",
     "referralButton": "Zacznij zarabiać",
     "startBrowsing": "Zacznij przeglądać",
-    "appScreenshot": "Mobial eSIM App"
+    "appScreenshot": "Mobial eSIM App",
+    "heroJustLanded": "Właśnie wylądowałeś? Połącz się w 2 minuty."
   },
   "products": {
     "title": "Plany eSIM",
@@ -705,7 +706,8 @@
     "planCountPlural": "{count} planów",
     "comingSoon": "Wkrótce",
     "noDestinations": "Nie znaleziono destynacji",
-    "noDestinationsHint": "Spróbuj innego wyszukiwania lub przeglądaj wszystkie destynacje."
+    "noDestinationsHint": "Spróbuj innego wyszukiwania lub przeglądaj wszystkie destynacje.",
+    "fromPrice": "od {price}"
   },
   "planCard": {
     "bestValue": "Najlepsza Wartość",

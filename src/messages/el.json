@@ -34,9 +34,9 @@
   },
   "home": {
     "trustedBadge": "Έμπιστη Αγορά eSIM",
-    "heroTitleLine1": "Η Παγκόσμια Ταξιδιωτική",
-    "heroTitleLine2": "Συνδεσιμότητά σας",
-    "heroTitleSuffix": "Συνεργάτης",
+    "heroTitleLine1": "Συνδεδεμένος σε",
+    "heroTitleLine2": "190+ Χώρες",
+    "heroTitleSuffix": "Αμέσως",
     "heroDescription": "Πλάνα δεδομένων eSIM υψηλής ταχύτητας για 190+ χώρες. Χωρίς τέλη περιαγωγής. Χωρίς φυσικές SIM. Άμεση ενεργοποίηση.",
     "heroSubtitle": "Άμεσα πλάνα δεδομένων eSIM για 190+ χώρες. Χωρίς τέλη περιαγωγής, χωρίς φυσικές SIM.",
     "searchPlaceholder": "Πού ταξιδεύετε;",
@@ -83,7 +83,8 @@
     "referralDesc": "Μοιραστείτε το MobiaL με φίλους και κερδίστε ανταμοιβές για κάθε αγορά που κάνουν.",
     "referralButton": "Ξεκινήστε να Κερδίζετε",
     "startBrowsing": "Ξεκινήστε Περιήγηση",
-    "appScreenshot": "Εφαρμογή Mobial eSIM"
+    "appScreenshot": "Εφαρμογή Mobial eSIM",
+    "heroJustLanded": "Μόλις προσγειωθήκατε; Συνδεθείτε σε 2 λεπτά."
   },
   "products": {
     "title": "Πλάνα eSIM",
@@ -705,7 +706,8 @@
     "planCountPlural": "{count} πακέτα",
     "comingSoon": "Σύντομα Διαθέσιμο",
     "noDestinations": "Δεν βρέθηκαν προορισμοί",
-    "noDestinationsHint": "Δοκιμάστε διαφορετικό όρο αναζήτησης ή περιηγηθείτε σε όλους τους προορισμούς."
+    "noDestinationsHint": "Δοκιμάστε διαφορετικό όρο αναζήτησης ή περιηγηθείτε σε όλους τους προορισμούς.",
+    "fromPrice": "από {price}"
   },
   "planCard": {
     "bestValue": "Καλύτερη Αξία",

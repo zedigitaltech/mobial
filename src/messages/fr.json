@@ -34,13 +34,13 @@
   },
   "home": {
     "trustedBadge": "Marketplace eSIM de confiance",
-    "heroTitleLine1": "Votre partenaire de",
-    "heroTitleLine2": "connectivité",
-    "heroTitleSuffix": "voyage mondial",
+    "heroTitleLine1": "Connecté dans",
+    "heroTitleLine2": "190+ Pays",
+    "heroTitleSuffix": "Instantanément",
     "heroDescription": "Forfaits data eSIM haut débit pour plus de 150 pays. Pas de frais d'itinérance. Pas de SIM physique. Activation instantanée.",
     "heroSubtitle": "Forfaits data eSIM instantanés pour plus de 190 pays. Pas de frais d'itinérance, pas de SIM physique.",
     "searchPlaceholder": "Où voyagez-vous ?",
-    "popularDestinations": "Destinations populaires",
+    "popularDestinations": "Destinations eSIM populaires",
     "quickCheckUsage": "Vérifier l'utilisation",
     "quickCheckUsageDesc": "Surveillez vos données",
     "quickTopUp": "Recharger eSIM",
@@ -83,8 +83,8 @@
     "referralDesc": "Partagez MobiaL avec vos amis et gagnez des récompenses sur chacun de leurs achats.",
     "referralButton": "Commencer à gagner",
     "startBrowsing": "Commencer à parcourir",
-    "popularDestinations": "Destinations eSIM populaires",
-    "appScreenshot": "Mobial eSIM App"
+    "appScreenshot": "Mobial eSIM App",
+    "heroJustLanded": "Vous venez d'atterrir ? Connectez-vous en moins de 2 minutes."
   },
   "products": {
     "title": "Forfaits eSIM",
@@ -697,7 +697,8 @@
     "planCountPlural": "{count} forfaits",
     "comingSoon": "Bientôt disponible",
     "noDestinations": "Aucune destination trouvée",
-    "noDestinationsHint": "Essayez un autre terme de recherche ou parcourez toutes les destinations."
+    "noDestinationsHint": "Essayez un autre terme de recherche ou parcourez toutes les destinations.",
+    "fromPrice": "dès {price}"
   },
   "planCard": {
     "bestValue": "Meilleur rapport qualité-prix",

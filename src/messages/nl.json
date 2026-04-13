@@ -34,9 +34,9 @@
   },
   "home": {
     "trustedBadge": "Vertrouwde eSIM marktplaats",
-    "heroTitleLine1": "Uw wereldwijde reis-",
-    "heroTitleLine2": "connectiviteit",
-    "heroTitleSuffix": "partner",
+    "heroTitleLine1": "Verbonden in",
+    "heroTitleLine2": "190+ Landen",
+    "heroTitleSuffix": "Direct",
     "heroDescription": "Snelle eSIM-databundels voor 190+ landen. Geen roamingkosten. Geen fysieke SIM-kaarten. Directe activering.",
     "heroSubtitle": "Directe eSIM-databundels voor 190+ landen. Geen roamingkosten, geen fysieke SIM-kaarten.",
     "searchPlaceholder": "Waar gaat u naartoe?",
@@ -83,7 +83,8 @@
     "referralDesc": "Deel MobiaL met vrienden en verdien beloningen bij elke aankoop die zij doen.",
     "referralButton": "Begin met verdienen",
     "startBrowsing": "Begin met bladeren",
-    "appScreenshot": "Mobial eSIM App"
+    "appScreenshot": "Mobial eSIM App",
+    "heroJustLanded": "Net geland? In 2 minuten online."
   },
   "products": {
     "title": "eSIM-bundels",
@@ -705,7 +706,8 @@
     "planCountPlural": "{count} abonnementen",
     "comingSoon": "Binnenkort Beschikbaar",
     "noDestinations": "Geen bestemmingen gevonden",
-    "noDestinationsHint": "Probeer een andere zoekterm of blader door alle bestemmingen."
+    "noDestinationsHint": "Probeer een andere zoekterm of blader door alle bestemmingen.",
+    "fromPrice": "vanaf {price}"
   },
   "planCard": {
     "bestValue": "Beste Waarde",

@@ -34,9 +34,9 @@
   },
   "home": {
     "trustedBadge": "Marketplace eSIM affidabile",
-    "heroTitleLine1": "Il tuo partner di",
-    "heroTitleLine2": "connettivita'",
-    "heroTitleSuffix": "globale",
+    "heroTitleLine1": "Connesso in",
+    "heroTitleLine2": "190+ Paesi",
+    "heroTitleSuffix": "All'istante",
     "heroDescription": "Piani dati eSIM ad alta velocita' per oltre 150 paesi. Nessun costo di roaming. Nessuna SIM fisica. Attivazione istantanea.",
     "heroSubtitle": "Piani dati eSIM istantanei per oltre 190 paesi. Nessun costo di roaming, nessuna SIM fisica.",
     "searchPlaceholder": "Dove stai viaggiando?",
@@ -83,7 +83,8 @@
     "referralDesc": "Condividi MobiaL con gli amici e guadagna ricompense per ogni loro acquisto.",
     "referralButton": "Inizia a guadagnare",
     "startBrowsing": "Inizia a navigare",
-    "appScreenshot": "App Mobial eSIM"
+    "appScreenshot": "App Mobial eSIM",
+    "heroJustLanded": "Appena atterrato? Online in meno di 2 minuti."
   },
   "products": {
     "title": "Piani eSIM",
@@ -705,7 +706,8 @@
     "planCountPlural": "{count} piani",
     "comingSoon": "In arrivo",
     "noDestinations": "Nessuna destinazione trovata",
-    "noDestinationsHint": "Prova un termine di ricerca diverso o sfoglia tutte le destinazioni."
+    "noDestinationsHint": "Prova un termine di ricerca diverso o sfoglia tutte le destinazioni.",
+    "fromPrice": "da {price}"
   },
   "planCard": {
     "bestValue": "Miglior rapporto qualita'-prezzo",

@@ -6,6 +6,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { useTranslations } from "next-intl"
+import { useCurrency } from "@/contexts/currency-context"
 
 interface CountryWithPricing {
   slug: string
@@ -23,6 +24,7 @@ function flagUrl(code: string): string {
 export function DestinationGrid({ countries }: { countries: CountryWithPricing[] }) {
   const [search, setSearch] = useState("")
   const t = useTranslations("destinationGrid")
+  const { formatPrice } = useCurrency()
 
   const filtered = useMemo(() => {
     if (!search.trim()) return countries
@@ -103,6 +105,11 @@ export function DestinationGrid({ countries }: { countries: CountryWithPricing[]
                 <p className="text-[11px] font-bold text-center leading-tight group-hover:text-primary transition-colors truncate max-w-full">
                   {country.name}
                 </p>
+                {country.minPrice != null && (
+                  <p className="text-[10px] font-black text-primary">
+                    {t("fromPrice", { price: formatPrice(country.minPrice) })}
+                  </p>
+                )}
                 <p className="text-[9px] font-semibold text-muted-foreground">
                   {country.productCount === 1
                     ? t("planCount", { count: country.productCount })
