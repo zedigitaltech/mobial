@@ -109,7 +109,7 @@ export async function GET(request: NextRequest) {
 
         // Alert admin when fulfillment keeps failing after 3+ retries
         if (!result.success && order.retryCount + 1 >= 3) {
-          sendAdminAlert({
+          await sendAdminAlert({
             type: "fulfillment_failure",
             subject: `Order ${order.orderNumber} failed fulfillment after ${order.retryCount + 1} retries`,
             details: {
@@ -192,7 +192,7 @@ export async function GET(request: NextRequest) {
         }
       } catch (err) {
         log.errorWithException(`Auto-refund failed for ${order.orderNumber}`, err);
-        sendAdminAlert({
+        await sendAdminAlert({
           type: "refund_failure",
           subject: `Auto-refund failed for order ${order.orderNumber}`,
           details: {

@@ -66,7 +66,7 @@ const OPTIONAL_VARS = [
 ] as const;
 
 // Centralized runtime constants — import these instead of inlining process.env
-export const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || '';
+export const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || 'https://mobialo.eu';
 export const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'support@mobialo.eu';
 export const REFERRAL_CREDIT_USD = Number(process.env.REFERRAL_CREDIT_USD) || 3;
 export const CASHBACK_PERCENT = Number(process.env.CASHBACK_PERCENT) || 0.1;
