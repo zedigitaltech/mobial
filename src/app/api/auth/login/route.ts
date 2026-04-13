@@ -3,9 +3,10 @@
  * Authenticate user and return tokens
  */
 
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { setAuthCookies } from "@/lib/auth-cookies";
 import { z } from "zod";
-import { verifyPassword } from "@/lib/password";
+import { verifyPassword, isBcryptHash, hashPassword } from "@/lib/password";
 import { generateTokenPair } from "@/lib/jwt";
 import { logAuditWithContext } from "@/lib/audit";
 import { checkRateLimit, createRateLimitHeaders } from "@/lib/rate-limit";
@@ -19,6 +20,7 @@ import {
   getUserAgent,
 } from "@/lib/auth-helpers";
 import { getPostHogClient } from "@/lib/posthog-server";
+import { logger } from "@/lib/logger";
 
 // Validation schema
 const loginSchema = z.object({
@@ -146,6 +148,15 @@ export async function POST(request: NextRequest) {
       return errorResponse("Invalid email or password", 401);
     }
 
+    // Transparently re-hash legacy PBKDF2 passwords to bcrypt
+    if (!isBcryptHash(user.passwordHash)) {
+      const bcryptHash = await hashPassword(password);
+      await db.user.update({
+        where: { id: user.id },
+        data: { passwordHash: bcryptHash },
+      });
+    }
+
     // Check 2FA if enabled
     if (user.twoFactorEnabled) {
       if (!totpCode) {
@@ -162,9 +173,16 @@ export async function POST(request: NextRequest) {
           totpSecret = rawSecret;
         }
       }
-      const backupCodes = user.twoFactorBackupCodes
-        ? JSON.parse(user.twoFactorBackupCodes)
-        : [];
+      // Parse backup codes defensively — corrupt JSON should not crash login.
+      let backupCodes: string[] = [];
+      if (user.twoFactorBackupCodes) {
+        try {
+          const parsed: unknown = JSON.parse(user.twoFactorBackupCodes);
+          if (Array.isArray(parsed)) backupCodes = parsed as string[];
+        } catch {
+          backupCodes = [];
+        }
+      }
 
       if (totpSecret) {
         const isValidTOTP = verifyTOTPCode(totpSecret, totpCode);
@@ -241,38 +259,31 @@ export async function POST(request: NextRequest) {
     });
 
     // Return user and tokens (exclude sensitive fields)
-    const {
-      passwordHash: _pw,
-      twoFactorSecret: _ts,
-      twoFactorBackupCodes: _bc,
-      ...safeUser
-    } = user;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { passwordHash: _pw, twoFactorSecret: _ts, twoFactorBackupCodes: _bc, ...safeUser } = user;
 
-    const headers = createRateLimitHeaders(rateLimitResult);
+    const rateHeaders = createRateLimitHeaders(rateLimitResult);
 
-    return new Response(
-      JSON.stringify({
+    const response = NextResponse.json(
+      {
         success: true,
         data: {
           user: safeUser,
           tokens: {
             accessToken: tokens.accessToken,
-            refreshToken: tokens.refreshToken,
             expiresIn: tokens.expiresIn,
           },
         },
         message: "Login successful",
-      }),
-      {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          ...Object.fromEntries(headers.entries()),
-        },
       },
+      { status: 200 },
     );
+
+    for (const [k, v] of rateHeaders.entries()) response.headers.set(k, v);
+    setAuthCookies(response, tokens.refreshToken);
+    return response;
   } catch (error) {
-    console.error("Login error:", error);
+    logger.errorWithException("Login error", error);
     return errorResponse("An error occurred during login", 500);
   }
 }

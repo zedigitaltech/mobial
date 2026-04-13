@@ -159,8 +159,8 @@ describe('syncProductsFromMobimatter', () => {
   it('should create new products when they do not exist', async () => {
     const rawProduct = makeMobimatterProduct()
     mockFetchProducts.mockResolvedValue([rawProduct] as never)
-    vi.mocked(mockDb.product.findUnique).mockResolvedValue(null)
-    vi.mocked(mockDb.product.findFirst).mockResolvedValue(null)
+    // Sync bulk-fetches all existing products via findMany — empty means no existing products
+    vi.mocked(mockDb.product.findMany).mockResolvedValue([] as never)
     vi.mocked(mockDb.product.create).mockResolvedValue({} as never)
 
     const result = await syncProductsFromMobimatter()
@@ -178,8 +178,8 @@ describe('syncProductsFromMobimatter', () => {
     const existing = makeDbProduct()
 
     mockFetchProducts.mockResolvedValue([rawProduct] as never)
-    vi.mocked(mockDb.product.findUnique).mockResolvedValue(existing as never)
-    vi.mocked(mockDb.product.findFirst).mockResolvedValue(null) // For unique slug check
+    // Sync now bulk-fetches all existing products via findMany
+    vi.mocked(mockDb.product.findMany).mockResolvedValue([existing] as never)
     vi.mocked(mockDb.product.update).mockResolvedValue({} as never)
 
     const result = await syncProductsFromMobimatter()
@@ -193,7 +193,7 @@ describe('syncProductsFromMobimatter', () => {
   it('should skip products with price <= 0', async () => {
     const rawProduct = makeMobimatterProduct({ price: 0 })
     mockFetchProducts.mockResolvedValue([rawProduct] as never)
-    vi.mocked(mockDb.product.findUnique).mockResolvedValue(null)
+    vi.mocked(mockDb.product.findMany).mockResolvedValue([] as never)
 
     const result = await syncProductsFromMobimatter()
 
@@ -204,7 +204,7 @@ describe('syncProductsFromMobimatter', () => {
   it('should skip test products', async () => {
     const rawProduct = makeMobimatterProduct({ name: 'Test Product ABC' })
     mockFetchProducts.mockResolvedValue([rawProduct] as never)
-    vi.mocked(mockDb.product.findUnique).mockResolvedValue(null)
+    vi.mocked(mockDb.product.findMany).mockResolvedValue([] as never)
 
     const result = await syncProductsFromMobimatter()
 
@@ -214,7 +214,7 @@ describe('syncProductsFromMobimatter', () => {
   it('should skip esim_replacement category products', async () => {
     const rawProduct = makeMobimatterProduct({ productCategory: 'esim_replacement' })
     mockFetchProducts.mockResolvedValue([rawProduct] as never)
-    vi.mocked(mockDb.product.findUnique).mockResolvedValue(null)
+    vi.mocked(mockDb.product.findMany).mockResolvedValue([] as never)
 
     const result = await syncProductsFromMobimatter()
 
@@ -224,8 +224,8 @@ describe('syncProductsFromMobimatter', () => {
   it('should apply 10% markup to the price', async () => {
     const rawProduct = makeMobimatterProduct({ price: 10.0 })
     mockFetchProducts.mockResolvedValue([rawProduct] as never)
-    vi.mocked(mockDb.product.findUnique).mockResolvedValue(null)
-    vi.mocked(mockDb.product.findFirst).mockResolvedValue(null)
+    // Sync bulk-fetches all existing products — empty means no existing products
+    vi.mocked(mockDb.product.findMany).mockResolvedValue([] as never)
     vi.mocked(mockDb.product.create).mockResolvedValue({} as never)
 
     await syncProductsFromMobimatter()
@@ -261,12 +261,12 @@ describe('syncProductsFromMobimatter', () => {
 
     mockFetchProducts.mockResolvedValue([rawProduct1, rawProduct2] as never)
 
-    // First product lookup throws
-    vi.mocked(mockDb.product.findUnique)
+    // Sync bulk-fetches all existing products — neither exists in DB
+    vi.mocked(mockDb.product.findMany).mockResolvedValue([] as never)
+    // First product create throws, second succeeds
+    vi.mocked(mockDb.product.create)
       .mockRejectedValueOnce(new Error('DB error'))
-      .mockResolvedValueOnce(null)
-    vi.mocked(mockDb.product.findFirst).mockResolvedValue(null)
-    vi.mocked(mockDb.product.create).mockResolvedValue({} as never)
+      .mockResolvedValueOnce({} as never)
 
     const result = await syncProductsFromMobimatter()
 
@@ -281,7 +281,8 @@ describe('syncProductsFromMobimatter', () => {
     const existingActive = makeDbProduct({ isActive: true })
 
     mockFetchProducts.mockResolvedValue([rawProduct] as never)
-    vi.mocked(mockDb.product.findUnique).mockResolvedValue(existingActive as never)
+    // Sync bulk-fetches all existing products via findMany
+    vi.mocked(mockDb.product.findMany).mockResolvedValue([existingActive] as never)
     vi.mocked(mockDb.product.update).mockResolvedValue({} as never)
 
     await syncProductsFromMobimatter()

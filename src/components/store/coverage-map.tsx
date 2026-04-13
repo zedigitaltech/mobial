@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useTranslations } from "next-intl"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Signal, Wifi, Globe } from "lucide-react"
@@ -70,6 +71,7 @@ const REGION_PATHS: Record<string, { label: string; countries: string[] }> = {
 }
 
 export function CoverageMap({ countries }: CoverageMapProps) {
+  const t = useTranslations("coverageMap")
   const [selectedRegion, setSelectedRegion] = useState<string | null>(null)
   const [hoveredCountry, setHoveredCountry] = useState<CoverageCountry | null>(null)
 
@@ -109,7 +111,7 @@ export function CoverageMap({ countries }: CoverageMapProps) {
           }`}
         >
           <Globe className="h-3 w-3 inline mr-1" />
-          All ({countries.length})
+          {t("all")} ({countries.length})
         </button>
         {regionStats.map((region) => (
           <button
@@ -160,7 +162,7 @@ export function CoverageMap({ countries }: CoverageMapProps) {
                   <div className="min-w-0">
                     <p className="font-bold text-sm truncate">{country.name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {country.planCount} plan{country.planCount !== 1 ? "s" : ""}
+                      {country.planCount === 1 ? t("planCount", { count: country.planCount }) : t("planCountPlural", { count: country.planCount })}
                     </p>
                   </div>
                   <Badge
@@ -185,8 +187,8 @@ export function CoverageMap({ countries }: CoverageMapProps) {
             <div>
               <p className="font-bold text-sm">{hoveredCountry.name}</p>
               <p className="text-xs text-muted-foreground">
-                {hoveredCountry.networkType || "4G/LTE"} coverage &middot;{" "}
-                {hoveredCountry.planCount} plans available
+                {hoveredCountry.networkType || "4G/LTE"} {t("coverage")} &middot;{" "}
+                {hoveredCountry.planCount} {t("plansAvailable")}
               </p>
             </div>
             <div className="ml-auto">
@@ -197,8 +199,7 @@ export function CoverageMap({ countries }: CoverageMapProps) {
       )}
 
       <p className="text-xs text-muted-foreground text-center">
-        Coverage data based on available eSIM plans. Actual network speeds may vary by
-        location and carrier.
+        {t("disclaimer")}
       </p>
     </div>
   )

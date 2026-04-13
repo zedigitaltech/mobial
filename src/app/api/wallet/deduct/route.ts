@@ -62,11 +62,13 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      await tx.reward.create({
+      // Record in the wallet ledger (signed by `type`, amount is non-negative).
+      await tx.walletTransaction.create({
         data: {
+          walletId: wallet.id,
           userId: user.id,
-          type: "discount",
-          amount: -amount,
+          type: "debit",
+          amount,
           orderId: orderId ?? null,
           description: description ?? "Wallet payment",
         },

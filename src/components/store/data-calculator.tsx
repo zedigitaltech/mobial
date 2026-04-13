@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react"
 import Link from "next/link"
+import { useTranslations } from "next-intl"
 import {
   Mail,
   Map,
@@ -20,90 +21,52 @@ import { cn } from "@/lib/utils"
 
 interface Activity {
   id: string
-  label: string
   icon: React.ComponentType<{ className?: string }>
   dailyMB: number
-  description: string
 }
 
 const ACTIVITIES: Activity[] = [
-  {
-    id: "email",
-    label: "Email & Messaging",
-    icon: Mail,
-    dailyMB: 50,
-    description: "Sending emails, WhatsApp, Telegram",
-  },
-  {
-    id: "maps",
-    label: "Maps & Navigation",
-    icon: Map,
-    dailyMB: 80,
-    description: "Google Maps, Uber, ride-sharing apps",
-  },
-  {
-    id: "social",
-    label: "Social Media",
-    icon: Camera,
-    dailyMB: 200,
-    description: "Instagram, TikTok, Facebook, X",
-  },
-  {
-    id: "browsing",
-    label: "Web Browsing",
-    icon: Globe,
-    dailyMB: 150,
-    description: "News, search, travel info",
-  },
-  {
-    id: "messaging_voice",
-    label: "Voice & Video Calls",
-    icon: Phone,
-    dailyMB: 300,
-    description: "WhatsApp/Zoom calls, 30min/day",
-  },
-  {
-    id: "video_calls",
-    label: "Video Conferencing",
-    icon: Video,
-    dailyMB: 600,
-    description: "Zoom/Teams meetings, 1hr/day",
-  },
-  {
-    id: "streaming",
-    label: "Video Streaming",
-    icon: Tv,
-    dailyMB: 1500,
-    description: "Netflix, YouTube, 1hr/day SD",
-  },
-  {
-    id: "social_heavy",
-    label: "Heavy Social (Reels/Stories)",
-    icon: MessageCircle,
-    dailyMB: 400,
-    description: "Watching & posting video content",
-  },
+  { id: "email", icon: Mail, dailyMB: 50 },
+  { id: "maps", icon: Map, dailyMB: 80 },
+  { id: "social", icon: Camera, dailyMB: 200 },
+  { id: "browsing", icon: Globe, dailyMB: 150 },
+  { id: "messaging_voice", icon: Phone, dailyMB: 300 },
+  { id: "video_calls", icon: Video, dailyMB: 600 },
+  { id: "streaming", icon: Tv, dailyMB: 1500 },
+  { id: "social_heavy", icon: MessageCircle, dailyMB: 400 },
 ]
+
+const ACTIVITY_KEYS: Record<string, { label: string; desc: string }> = {
+  email: { label: "activityEmail", desc: "activityEmailDesc" },
+  maps: { label: "activityMaps", desc: "activityMapsDesc" },
+  social: { label: "activitySocial", desc: "activitySocialDesc" },
+  browsing: { label: "activityBrowsing", desc: "activityBrowsingDesc" },
+  messaging_voice: { label: "activityVoice", desc: "activityVoiceDesc" },
+  video_calls: { label: "activityVideo", desc: "activityVideoDesc" },
+  streaming: { label: "activityStreaming", desc: "activityStreamingDesc" },
+  social_heavy: { label: "activitySocialHeavy", desc: "activitySocialHeavyDesc" },
+}
+
+const PROFILE_KEYS: Record<string, { label: string; desc: string }> = {
+  light: { label: "profileLight", desc: "profileLightDesc" },
+  moderate: { label: "profileModerate", desc: "profileModerateDesc" },
+  heavy: { label: "profileHeavy", desc: "profileHeavyDesc" },
+  streaming: { label: "profileStreaming", desc: "profileStreamingDesc" },
+}
 
 const USAGE_PROFILES = [
   {
     id: "light",
-    label: "Light",
-    description: "Email, maps, basic browsing",
     activities: ["email", "maps", "browsing"],
     color: "bg-emerald-500",
   },
   {
     id: "moderate",
-    label: "Moderate",
-    description: "Social media, some calls",
     activities: ["email", "maps", "social", "browsing", "messaging_voice"],
     color: "bg-blue-500",
   },
   {
     id: "heavy",
-    label: "Heavy",
-    description: "Video calls, heavy social",
     activities: [
       "email",
       "maps",
@@ -116,8 +79,6 @@ const USAGE_PROFILES = [
   },
   {
     id: "streaming",
-    label: "Streaming",
-    description: "Netflix, YouTube, everything",
     activities: [
       "email",
       "maps",
@@ -155,6 +116,7 @@ function getRecommendedGB(totalMB: number): number {
 }
 
 export function DataCalculator() {
+  const t = useTranslations("dataCalculator")
   const [days, setDays] = useState(7)
   const [selectedProfile, setSelectedProfile] = useState<string>("moderate")
   const [customActivities, setCustomActivities] = useState<Set<string>>(
@@ -211,9 +173,9 @@ export function DataCalculator() {
       <Card>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-lg">Trip Duration</h3>
+            <h3 className="font-bold text-lg">{t("tripDuration")}</h3>
             <Badge variant="outline" className="text-lg font-bold px-4 py-1">
-              {days} {days === 1 ? "day" : "days"}
+              {days} {days === 1 ? t("day") : t("days")}
             </Badge>
           </div>
           <Slider
@@ -225,10 +187,10 @@ export function DataCalculator() {
             className="py-2"
           />
           <div className="flex justify-between text-xs text-muted-foreground">
-            <span>1 day</span>
-            <span>1 week</span>
-            <span>2 weeks</span>
-            <span>30 days</span>
+            <span>{t("day1")}</span>
+            <span>{t("week1")}</span>
+            <span>{t("weeks2")}</span>
+            <span>{t("days30")}</span>
           </div>
         </CardContent>
       </Card>
@@ -236,7 +198,7 @@ export function DataCalculator() {
       {/* Usage Profile */}
       <Card>
         <CardContent className="space-y-4">
-          <h3 className="font-bold text-lg">Usage Profile</h3>
+          <h3 className="font-bold text-lg">{t("usageProfile")}</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {USAGE_PROFILES.map((profile) => (
               <button
@@ -251,17 +213,17 @@ export function DataCalculator() {
               >
                 <div className="flex items-center gap-2 mb-1">
                   <div className={cn("w-2.5 h-2.5 rounded-full", profile.color)} />
-                  <span className="font-bold text-sm">{profile.label}</span>
+                  <span className="font-bold text-sm">{t(PROFILE_KEYS[profile.id].label)}</span>
                 </div>
                 <p className="text-xs text-muted-foreground leading-tight">
-                  {profile.description}
+                  {t(PROFILE_KEYS[profile.id].desc)}
                 </p>
               </button>
             ))}
           </div>
           {isCustom && (
             <p className="text-xs text-muted-foreground">
-              Custom selection active. Pick a profile above to reset.
+              {t("customActive")}
             </p>
           )}
         </CardContent>
@@ -271,15 +233,16 @@ export function DataCalculator() {
       <Card>
         <CardContent className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-lg">Activities</h3>
+            <h3 className="font-bold text-lg">{t("activities")}</h3>
             <span className="text-sm text-muted-foreground">
-              Click to toggle
+              {t("clickToToggle")}
             </span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {ACTIVITIES.map((activity) => {
               const isActive = activeActivities.has(activity.id)
               const Icon = activity.icon
+              const keys = ACTIVITY_KEYS[activity.id]
               return (
                 <button
                   key={activity.id}
@@ -300,12 +263,12 @@ export function DataCalculator() {
                     <Icon className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
-                    <div className="font-semibold text-sm">{activity.label}</div>
+                    <div className="font-semibold text-sm">{t(keys.label)}</div>
                     <div className="text-xs text-muted-foreground">
-                      {activity.description}
+                      {t(keys.desc)}
                     </div>
                     <div className="text-xs font-medium mt-1">
-                      ~{formatDataAmount(activity.dailyMB)}/day
+                      ~{formatDataAmount(activity.dailyMB)}/{t("perDay")}
                     </div>
                   </div>
                 </button>
@@ -318,40 +281,39 @@ export function DataCalculator() {
       {/* Results */}
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
         <CardContent className="space-y-6">
-          <h3 className="font-bold text-lg">Your Recommendation</h3>
+          <h3 className="font-bold text-lg">{t("yourRecommendation")}</h3>
 
           <div className="grid grid-cols-3 gap-4 text-center">
             <div>
               <div className="text-2xl font-black">{formatDataAmount(dailyMB)}</div>
-              <div className="text-xs text-muted-foreground">per day</div>
+              <div className="text-xs text-muted-foreground">{t("perDay")}</div>
             </div>
             <div>
               <div className="text-2xl font-black">{formatDataAmount(totalMB)}</div>
               <div className="text-xs text-muted-foreground">
-                total ({days} days + buffer)
+                {t("totalWithBuffer", { days })}
               </div>
             </div>
             <div>
               <div className="text-3xl font-black text-primary">
                 {recommendedGB} GB
               </div>
-              <div className="text-xs text-muted-foreground">recommended plan</div>
+              <div className="text-xs text-muted-foreground">{t("recommendedPlan")}</div>
             </div>
           </div>
 
           <div className="bg-muted/50 rounded-xl p-4 text-sm text-muted-foreground">
-            We added a 20% buffer to account for app updates, background data, and
-            unexpected usage. Better to have a bit extra than run out mid-trip.
+            {t("bufferExplanation")}
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
             <Button asChild size="lg" className="flex-1 font-bold">
               <Link href={`/esim?minData=${recommendedGB}`}>
-                View {recommendedGB} GB+ Plans
+                {t("viewPlans", { gb: recommendedGB })}
               </Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="flex-1">
-              <Link href="/esim">Browse All Plans</Link>
+              <Link href="/esim">{t("browseAllPlans")}</Link>
             </Button>
           </div>
         </CardContent>
@@ -361,6 +323,7 @@ export function DataCalculator() {
 }
 
 export function DataCalculatorCompact() {
+  const t = useTranslations("dataCalculator")
   const [days, setDays] = useState(5)
   const [profile, setProfile] = useState<"light" | "moderate" | "heavy" | "streaming">("moderate")
 
@@ -376,9 +339,9 @@ export function DataCalculatorCompact() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">Trip: {days} days</span>
+        <span className="text-sm font-medium">{t("tripDays", { days })}</span>
         <Badge variant="outline" className="font-bold">
-          {recommended} GB recommended
+          {t("gbRecommended", { gb: recommended })}
         </Badge>
       </div>
       <Slider
@@ -400,12 +363,12 @@ export function DataCalculatorCompact() {
                 : "border-border/50 text-muted-foreground hover:border-border"
             )}
           >
-            {p.label}
+            {t(PROFILE_KEYS[p.id].label)}
           </button>
         ))}
       </div>
       <Button asChild size="sm" className="w-full font-semibold">
-        <Link href="/data-calculator">Full Calculator</Link>
+        <Link href="/data-calculator">{t("fullCalculator")}</Link>
       </Button>
     </div>
   )

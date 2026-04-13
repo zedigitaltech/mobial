@@ -6,6 +6,7 @@
 import { NextRequest } from 'next/server';
 import { getAvailableCountries } from '@/services/product-service';
 import { errorResponse } from '@/lib/auth-helpers';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/products/countries
@@ -34,7 +35,7 @@ export async function GET(_request: NextRequest) {
       }
     );
   } catch (error) {
-    console.error('Error fetching countries:', error);
+    logger.errorWithException('Error fetching countries', error);
     return errorResponse('Failed to fetch countries', 500);
   }
 }

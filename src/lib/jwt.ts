@@ -1,13 +1,11 @@
 /**
  * JWT Utilities for authentication
- * Uses RS256 for secure signing
+ * Uses HS256 (HMAC-SHA256) for secure signing
  */
 
 import crypto from 'crypto';
 
 const JWT_ALGORITHM = 'HS256';
-const _ACCESS_TOKEN_EXPIRY = '15m'; // 15 minutes
-const _REFRESH_TOKEN_EXPIRY = '7d'; // 7 days
 
 interface JWTPayload {
   sub: string;
@@ -31,7 +29,7 @@ function getJWTSecret(): string {
     if (process.env.NODE_ENV !== 'development') {
       throw new Error('JWT_SECRET environment variable is required in non-development environments');
     }
-    console.warn('WARNING: Using default JWT secret. Set JWT_SECRET in production!');
+    // Development fallback only — JWT_SECRET must be set in production
     return 'mobial-default-jwt-secret-do-not-use-in-production';
   }
   return secret;
@@ -64,7 +62,7 @@ function sign(payload: string, secret: string): string {
   const signature = crypto
     .createHmac('sha256', secret)
     .update(payload)
-    .digest('base64');
+    .digest(); // Returns Buffer — avoids double-encoding through base64URLEncode
   return base64URLEncode(signature);
 }
 
@@ -126,10 +124,10 @@ export function verifyToken(token: string): JWTPayload | null {
   const [header, payloadEncoded, signature] = parts;
   const expectedSignature = sign(`${header}.${payloadEncoded}`, secret);
   
-  if (!crypto.timingSafeEqual(
-    Buffer.from(signature),
-    Buffer.from(expectedSignature)
-  )) {
+  const sigBuf = Buffer.from(signature);
+  const expectedBuf = Buffer.from(expectedSignature);
+
+  if (sigBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(sigBuf, expectedBuf)) {
     return null;
   }
   

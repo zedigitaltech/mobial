@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { Suspense, useState, useEffect, useRef, useCallback } from "react"
 import { useSearchParams } from "next/navigation"
 import { useTranslations } from "next-intl"
 import { motion } from "framer-motion"
@@ -51,13 +51,12 @@ interface OrderData {
   } | null
 }
 
-const PROCESSING_TIMEOUT_MS = 30_000
+const PROCESSING_TIMEOUT_MS = 120_000
 
-export default function CheckoutSuccessPage() {
+function CheckoutSuccessContent() {
   const searchParams = useSearchParams()
   const sessionId = searchParams.get("session_id")
   const t = useTranslations("checkoutSuccess")
-  const tCommon = useTranslations("common")
   const { clearCart } = useCart()
   const { formatPrice } = useCurrency()
   const posthog = usePostHog()
@@ -66,15 +65,17 @@ export default function CheckoutSuccessPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [timedOut, setTimedOut] = useState(false)
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
     clearCart()
   }, [clearCart])
 
-  useEffect(() => {
-    const fetchOrder = async () => {
-      try {
+  const orderRefRef = useRef<{ identifier: string; email: string | null } | null>(null)
+
+  const fetchOrder = useCallback(async () => {
+    try {
+      // On first call, extract order reference from sessionStorage
+      if (!orderRefRef.current) {
         const pendingRaw = sessionStorage.getItem("mobial_pending_order")
         if (!pendingRaw && !sessionId) {
           throw new Error("No order reference found")
@@ -90,48 +91,83 @@ export default function CheckoutSuccessPage() {
           sessionStorage.removeItem("mobial_pending_order")
         }
 
+        // Fallback: if sessionStorage was lost (browser crash, hard refresh),
+        // use the Stripe session_id that is always present in the redirect URL.
+        if (!orderIdentifier && sessionId) {
+          const lookupRes = await fetch(
+            `/api/orders/by-session?stripe_session_id=${encodeURIComponent(sessionId)}`
+          )
+          if (lookupRes.ok) {
+            const lookupData = await lookupRes.json()
+            if (lookupData.success && lookupData.data?.orderNumber) {
+              orderIdentifier = lookupData.data.orderNumber
+              orderEmail = lookupData.data.email || null
+            }
+          }
+        }
+
         if (!orderIdentifier) {
           throw new Error("Unable to locate your order. Please check your email for confirmation details.")
         }
 
-        const emailParam = orderEmail ? `?email=${encodeURIComponent(orderEmail)}` : ""
-        const orderRes = await fetch(`/api/orders/${orderIdentifier}${emailParam}`)
-        const orderData = await orderRes.json()
+        orderRefRef.current = { identifier: orderIdentifier, email: orderEmail }
+      }
 
-        if (!orderRes.ok || !orderData.success) {
-          throw new Error(orderData.message || "Failed to load order details")
-        }
+      const { identifier, email } = orderRefRef.current
+      const emailParam = email ? `?email=${encodeURIComponent(email)}` : ""
+      const orderRes = await fetch(`/api/orders/${identifier}${emailParam}`)
+      const orderData = await orderRes.json()
 
-        const fetchedOrder = orderData.data.order
-        setOrder(fetchedOrder)
-        if (fetchedOrder.status === "COMPLETED") {
-          posthog?.capture("order_completed", {
-            order_number: fetchedOrder.orderNumber,
-            total: fetchedOrder.total,
-            currency: fetchedOrder.currency,
-            items_count: fetchedOrder.items.length,
-          })
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Something went wrong")
-      } finally {
-        setLoading(false)
+      if (!orderRes.ok || !orderData.success) {
+        throw new Error(orderData.message || "Failed to load order details")
+      }
+
+      const fetchedOrder = orderData.data.order
+      setOrder(fetchedOrder)
+      if (fetchedOrder.status === "COMPLETED") {
+        posthog?.capture("order_completed", {
+          order_number: fetchedOrder.orderNumber,
+          total: fetchedOrder.total,
+          currency: fetchedOrder.currency,
+          items_count: fetchedOrder.items.length,
+        })
+      }
+      return fetchedOrder
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong")
+      return null
+    } finally {
+      setLoading(false)
+    }
+  }, [sessionId, posthog])
+
+  // Initial fetch + polling while processing
+  useEffect(() => {
+    let pollTimer: ReturnType<typeof setTimeout> | null = null
+    let cancelled = false
+    const startTime = Date.now()
+
+    const poll = async () => {
+      const result = await fetchOrder()
+      if (cancelled) return
+
+      const isStillProcessing = result && (result.status === "PROCESSING" || result.status === "PENDING")
+      const elapsed = Date.now() - startTime
+
+      if (isStillProcessing && elapsed < PROCESSING_TIMEOUT_MS) {
+        pollTimer = setTimeout(poll, 5000) // Re-check every 5s
+      } else if (isStillProcessing) {
+        setTimedOut(true)
       }
     }
 
-    fetchOrder()
-  }, [sessionId])
+    poll()
 
-  // Timeout for processing state — show fallback message after 30s
-  useEffect(() => {
-    const isProcessing = order && (order.status === "PROCESSING" || order.status === "PENDING")
-    if (isProcessing && !timedOut) {
-      timeoutRef.current = setTimeout(() => setTimedOut(true), PROCESSING_TIMEOUT_MS)
-    }
     return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current)
+      cancelled = true
+      if (pollTimer) clearTimeout(pollTimer)
     }
-  }, [order, timedOut])
+  }, [fetchOrder])
 
   if (loading) {
     return (
@@ -366,5 +402,13 @@ export default function CheckoutSuccessPage() {
             </div>
           </div>
         </div>
+  )
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense fallback={<div className="flex-1 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+      <CheckoutSuccessContent />
+    </Suspense>
   )
 }

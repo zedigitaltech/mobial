@@ -3,14 +3,12 @@
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
 import { LoginForm } from "./login-form";
 import { RegisterForm } from "./register-form";
 
@@ -28,8 +26,13 @@ export function AuthModal({
   const t = useTranslations("auth");
   const [view, setView] = useState<"login" | "register">(defaultView);
 
+  // Reset view to defaultView each time the modal opens.
+  // setState inside effect is intentional — syncing controlled state from a prop change.
   useEffect(() => {
-    if (open) setView(defaultView);
+    if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setView(defaultView);
+    }
   }, [open, defaultView]);
 
   const handleSuccess = () => {

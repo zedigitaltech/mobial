@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { useCompare, CompareItem } from "@/contexts/compare-context"
 import { useCart } from "@/contexts/cart-context"
 import { useCurrency } from "@/contexts/currency-context"
@@ -44,14 +45,17 @@ function FeatureCheck({ supported }: { supported?: boolean }) {
 }
 
 function CompareColumn({ item }: { item: CompareItem }) {
+  const t = useTranslations("compare")
   const { removeItem } = useCompare()
-  const { addItem: addToCart } = useCart()
+  const { addItem: addToCart, isInCart } = useCart()
   const { formatPrice } = useCurrency()
 
   const perDay =
     item.validityDays && item.validityDays > 0
       ? item.price / item.validityDays
       : null
+
+  const count = item.countries?.length || 0
 
   return (
     <div className="min-w-[180px] flex-1 border-r last:border-r-0 border-border/30 px-3">
@@ -69,7 +73,7 @@ function CompareColumn({ item }: { item: CompareItem }) {
         </button>
       </div>
 
-      <CompareValue label="Price">
+      <CompareValue label={t("price")}>
         <span className="text-primary font-bold">{formatPrice(item.price)}</span>
         {perDay && (
           <span className="text-xs text-muted-foreground ml-1">
@@ -78,37 +82,37 @@ function CompareColumn({ item }: { item: CompareItem }) {
         )}
       </CompareValue>
 
-      <CompareValue label="Data">
+      <CompareValue label={t("data")}>
         {item.isUnlimited
-          ? "Unlimited"
+          ? t("unlimited")
           : item.dataAmount
             ? `${item.dataAmount} ${item.dataUnit || "GB"}`
-            : "N/A"}
+            : t("na")}
       </CompareValue>
 
-      <CompareValue label="Validity">
-        {item.validityDays ? `${item.validityDays} days` : "Flexible"}
+      <CompareValue label={t("validity")}>
+        {item.validityDays ? t("daysCount", { days: item.validityDays }) : t("flexible")}
       </CompareValue>
 
-      <CompareValue label="Coverage">
-        {item.countries?.length || 0} countries
+      <CompareValue label={t("coverage")}>
+        {t("countriesCount", { count })}
       </CompareValue>
 
-      <CompareValue label="Network">
+      <CompareValue label={t("network")}>
         {item.networkType || "4G/LTE"}
       </CompareValue>
 
-      <CompareValue label="Features">
+      <CompareValue label={t("features")}>
         <div className="flex gap-3">
-          <div className="flex items-center gap-1" title="Hotspot">
+          <div className="flex items-center gap-1" title={t("hotspot")}>
             <Wifi className="h-3 w-3" />
             <FeatureCheck supported={item.supportsHotspot} />
           </div>
-          <div className="flex items-center gap-1" title="Calls">
+          <div className="flex items-center gap-1" title={t("calls")}>
             <Phone className="h-3 w-3" />
             <FeatureCheck supported={item.supportsCalls} />
           </div>
-          <div className="flex items-center gap-1" title="SMS">
+          <div className="flex items-center gap-1" title={t("sms")}>
             <MessageSquare className="h-3 w-3" />
             <FeatureCheck supported={item.supportsSms} />
           </div>
@@ -119,6 +123,8 @@ function CompareColumn({ item }: { item: CompareItem }) {
         <Button
           size="sm"
           className="w-full"
+          variant={isInCart(item.id) ? "secondary" : "default"}
+          disabled={isInCart(item.id)}
           onClick={() =>
             addToCart({
               productId: item.id,
@@ -132,12 +138,15 @@ function CompareColumn({ item }: { item: CompareItem }) {
             })
           }
         >
-          <ShoppingCart className="h-3 w-3 mr-1" />
-          Add to Cart
+          {isInCart(item.id) ? (
+            <><Check className="h-3 w-3 mr-1" />{t("inCart")}</>
+          ) : (
+            <><ShoppingCart className="h-3 w-3 mr-1" />{t("addToCart")}</>
+          )}
         </Button>
         <Button size="sm" variant="ghost" className="w-full" asChild>
           <Link href={`/products/${item.slug}`}>
-            View Details <ArrowRight className="h-3 w-3 ml-1" />
+            {t("viewDetails")} <ArrowRight className="h-3 w-3 ml-1" />
           </Link>
         </Button>
       </div>
@@ -146,6 +155,7 @@ function CompareColumn({ item }: { item: CompareItem }) {
 }
 
 export function CompareDrawer() {
+  const t = useTranslations("compare")
   const { items, isOpen, setOpen, clear } = useCompare()
 
   return (
@@ -153,20 +163,20 @@ export function CompareDrawer() {
       <SheetContent side="bottom" className="max-h-[80vh]">
         <SheetHeader className="flex-row items-center justify-between">
           <SheetTitle className="flex items-center gap-2">
-            Compare Plans
+            {t("comparePlans")}
             <Badge variant="secondary">{items.length}</Badge>
           </SheetTitle>
           <Button variant="ghost" size="sm" onClick={clear}>
-            Clear All
+            {t("clearAll")}
           </Button>
         </SheetHeader>
 
         {items.length === 0 ? (
           <div className="py-12 text-center text-muted-foreground">
             <Share2 className="h-8 w-8 mx-auto mb-3 opacity-50" />
-            <p className="font-medium">No plans to compare</p>
+            <p className="font-medium">{t("noPlans")}</p>
             <p className="text-sm mt-1">
-              Add plans from the product listing to compare them side-by-side.
+              {t("noPlansHint")}
             </p>
           </div>
         ) : (
@@ -184,6 +194,7 @@ export function CompareDrawer() {
 }
 
 export function CompareBar() {
+  const t = useTranslations("compare")
   const { items, toggleDrawer, clear } = useCompare()
 
   if (items.length === 0) return null
@@ -196,7 +207,7 @@ export function CompareBar() {
             {items.length}
           </Badge>
           <span className="text-sm font-medium">
-            {items.length === 1 ? "plan" : "plans"} selected
+            {items.length === 1 ? t("plan") : t("plans")} {t("selected")}
           </span>
           <div className="hidden sm:flex gap-2">
             {items.map((item) => (
@@ -208,10 +219,10 @@ export function CompareBar() {
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={clear}>
-            Clear
+            {t("clear")}
           </Button>
           <Button size="sm" onClick={toggleDrawer} disabled={items.length < 2}>
-            Compare Now
+            {t("compareNow")}
           </Button>
         </div>
       </div>

@@ -6,6 +6,7 @@ import {
 } from '@/lib/auth-helpers';
 import { getStructuredUsage } from '@/lib/mobimatter';
 import { db } from '@/lib/db';
+import { logger } from '@/lib/logger';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -95,7 +96,17 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     });
 
   } catch (error) {
-    console.error('Usage check error:', error);
-    return errorResponse('Failed to fetch usage data', 500);
+    logger.errorWithException('Usage check error', error);
+    // Any failure past the DB lookup is an upstream (MobiMatter) problem —
+    // the DB branch returns 404 before this catch runs. Surface it as 502
+    // with a retry hint so clients show "try again later" instead of "not found".
+    return Response.json(
+      {
+        success: false,
+        error: 'eSIM provider temporarily unavailable. Please try again in a few moments.',
+        retryable: true,
+      },
+      { status: 502, headers: { 'Retry-After': '30' } },
+    );
   }
 }

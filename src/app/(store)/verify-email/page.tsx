@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { useTranslations } from "next-intl"
 import { useSearchParams } from "next/navigation"
 import { motion } from "framer-motion"
@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 type VerificationState = "loading" | "success" | "error"
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const t = useTranslations("verifyEmail")
   const searchParams = useSearchParams()
   const token = searchParams.get("token")
@@ -127,5 +127,13 @@ export default function VerifyEmailPage() {
           </Card>
         </motion.div>
       </div>
+  )
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={<div className="flex-1 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+      <VerifyEmailContent />
+    </Suspense>
   )
 }

@@ -8,7 +8,7 @@ Sentry.init({
   enableLogs: true,
   replaysSessionSampleRate: 0.05,
   replaysOnErrorSampleRate: 1.0,
-  sendDefaultPii: true,
+  sendDefaultPii: false,
   debug: false,
 });
 

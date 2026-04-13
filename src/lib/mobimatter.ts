@@ -226,6 +226,8 @@ export interface StructuredUsageInfo {
 // ==================== HTTP CLIENT ====================
 
 const DEFAULT_TIMEOUT_MS = 15_000;
+const MAX_RETRIES = 3;
+const BASE_RETRY_DELAY_MS = 500;
 
 async function makeRequest<T>(
   endpoint: string,
@@ -233,58 +235,90 @@ async function makeRequest<T>(
     method?: "GET" | "POST" | "PUT" | "DELETE";
     body?: unknown;
     timeoutMs?: number;
+    retries?: number;
   } = {},
 ): Promise<T> {
   const config = getConfig();
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const maxRetries = options.retries ?? MAX_RETRIES;
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  let lastError: Error = new Error("Unknown error");
 
-  const headers: HeadersInit = {
-    merchantId: config.merchantId,
-    "api-key": config.apiKey,
-    "Content-Type": "application/json",
-  };
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    if (attempt > 0) {
+      // Exponential backoff with jitter: 500ms, 1000ms, 2000ms
+      const delay = BASE_RETRY_DELAY_MS * Math.pow(2, attempt - 1) + Math.random() * 200;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
 
-  try {
-    const response = await fetch(`${MOBIMATTER_BASE_URL}${endpoint}`, {
-      method: options.method || "GET",
-      headers,
-      body: options.body ? JSON.stringify(options.body) : undefined,
-      signal: controller.signal,
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-    if (!response.ok) {
-      let errorMessage = `HTTP ${response.status}`;
-      try {
-        const errorData = await response.json();
-        errorMessage = errorData.message || errorData.error || errorMessage;
-      } catch {
-        // response body wasn't JSON
+    const headers: HeadersInit = {
+      merchantId: config.merchantId,
+      "api-key": config.apiKey,
+      "Content-Type": "application/json",
+    };
+
+    try {
+      const response = await fetch(`${MOBIMATTER_BASE_URL}${endpoint}`, {
+        method: options.method || "GET",
+        headers,
+        body: options.body ? JSON.stringify(options.body) : undefined,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        // Don't retry 4xx — these are client errors (bad request, not found, etc.)
+        if (response.status >= 400 && response.status < 500) {
+          let errorMessage = `HTTP ${response.status}`;
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorData.error || errorMessage;
+          } catch {
+            // ignore
+          }
+          throw new Error(`MobiMatter API error: ${errorMessage}`);
+        }
+
+        // 5xx — retryable
+        lastError = new Error(`MobiMatter API error: HTTP ${response.status}`);
+        continue;
       }
-      throw new Error(`MobiMatter API error: ${errorMessage}`);
-    }
 
-    const data = (await response.json()) as MobiMatterResponse<T>;
+      const data = (await response.json()) as MobiMatterResponse<T>;
 
-    if (data.statusCode && data.statusCode >= 400) {
-      throw new Error(
-        `MobiMatter API error: ${data.statusCode} - ${data.message || "Unknown error"}`,
-      );
-    }
+      if (data.statusCode && data.statusCode >= 400) {
+        throw new Error(
+          `MobiMatter API error: ${data.statusCode} - ${data.message || "Unknown error"}`,
+        );
+      }
 
-    return data.result;
-  } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") {
-      throw new Error(
-        `MobiMatter API timeout: ${endpoint} did not respond within ${timeoutMs}ms`,
-      );
+      return data.result;
+    } catch (error) {
+      clearTimeout(timeoutId);
+
+      if (error instanceof DOMException && error.name === "AbortError") {
+        lastError = new Error(
+          `MobiMatter API timeout: ${endpoint} did not respond within ${timeoutMs}ms`,
+        );
+        // Timeouts are retryable
+        continue;
+      }
+
+      // Re-throw non-retryable errors immediately (4xx, logic errors)
+      if (error instanceof Error && error.message.startsWith("MobiMatter API error:")) {
+        throw error;
+      }
+
+      // Network errors are retryable
+      lastError = error instanceof Error ? error : new Error(String(error));
     }
-    throw error;
-  } finally {
-    clearTimeout(timeoutId);
   }
+
+  throw lastError;
 }
 
 // ==================== MERCHANT ====================

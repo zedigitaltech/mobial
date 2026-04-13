@@ -105,7 +105,7 @@ export async function GET(): Promise<NextResponse<HealthResponse>> {
   return NextResponse.json({
     status,
     timestamp: new Date().toISOString(),
-    version: process.env.npm_package_version || "0.2.0",
+    version: "ok",
     checks,
     cache: getCacheStats(),
   });

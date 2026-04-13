@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { troubleshootingTree, type TroubleshootingNode } from "@/lib/troubleshooting-data"
+import { troubleshootingTree } from "@/lib/troubleshooting-data"
 import Link from "next/link"
 
 export default function TroubleshootingPage() {

@@ -1,6 +1,7 @@
 import { db } from '@/lib/db';
 import { ErrorLevel, ErrorSource } from '@prisma/client';
 import crypto from 'crypto';
+import { logger } from '@/lib/logger';
 
 // ==================== ERROR LOGGING ====================
 
@@ -77,7 +78,7 @@ export async function logError(input: LogErrorInput): Promise<void> {
       },
     });
   } catch (err) {
-    console.error('[monitoring] Failed to log error:', err);
+    logger.errorWithException('[monitoring] Failed to log error', err);
   }
 }
 
@@ -115,7 +116,7 @@ export async function trackPageView(input: TrackPageViewInput): Promise<void> {
       },
     });
   } catch (err) {
-    console.error('[monitoring] Failed to track page view:', err);
+    logger.errorWithException('[monitoring] Failed to track page view', err);
   }
 }
 
@@ -147,7 +148,7 @@ export async function trackEvent(input: TrackEventInput): Promise<void> {
       },
     });
   } catch (err) {
-    console.error('[monitoring] Failed to track event:', err);
+    logger.errorWithException('[monitoring] Failed to track event', err);
   }
 }
 

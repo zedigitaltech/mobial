@@ -1,5 +1,15 @@
 import { db } from '@/lib/db';
 
+// Safe JSON parse — returns fallback on null, empty, or corrupt input
+function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
+  if (!value) return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+}
+
 interface AffiliateProfile {
   userId: string;
   status: 'ACTIVE' | 'PENDING' | 'SUSPENDED';
@@ -73,7 +83,7 @@ export async function trackClick(
   const statsKey = `affiliate_stats:${affiliateCode}`;
   const existing = await db.systemConfig.findUnique({ where: { key: statsKey } });
   const stats: AffiliateStats = existing
-    ? JSON.parse(existing.value)
+    ? safeJsonParse(existing.value, { clicks: 0, orders: 0, commission: 0 })
     : { clicks: 0, orders: 0, commission: 0 };
 
   stats.clicks += 1;
@@ -159,7 +169,7 @@ export async function getAffiliateStats(userId: string): Promise<{
   });
 
   const stats: AffiliateStats = statsConfig
-    ? JSON.parse(statsConfig.value)
+    ? safeJsonParse(statsConfig.value, { clicks: 0, orders: 0, commission: 0 })
     : { clicks: 0, orders: 0, commission: 0 };
 
   return { code, profile, stats };
@@ -186,7 +196,8 @@ export async function getAllAffiliates(filters?: {
 
   for (const config of affiliateConfigs) {
     const code = config.key.replace('affiliate:', '');
-    const profile: AffiliateProfile = JSON.parse(config.value);
+    const profile = safeJsonParse<AffiliateProfile | null>(config.value, null);
+    if (!profile) continue;
 
     if (filters?.status && profile.status !== filters.status) continue;
 
@@ -212,7 +223,7 @@ export async function getAllAffiliates(filters?: {
       where: { key: `affiliate_stats:${code}` },
     });
     const stats: AffiliateStats = statsConfig
-      ? JSON.parse(statsConfig.value)
+      ? safeJsonParse(statsConfig.value, { clicks: 0, orders: 0, commission: 0 })
       : { clicks: 0, orders: 0, commission: 0 };
 
     affiliates.push({
@@ -242,15 +253,16 @@ export async function updateAffiliateStatus(
   });
   if (!config) return null;
 
-  const profile: AffiliateProfile = JSON.parse(config.value);
-  profile.status = status;
+  const profile = safeJsonParse<AffiliateProfile | null>(config.value, null);
+  if (!profile) return null;
+  const updatedProfile: AffiliateProfile = { ...profile, status };
 
   await db.systemConfig.update({
     where: { key: `affiliate:${code}` },
-    data: { value: JSON.stringify(profile) },
+    data: { value: JSON.stringify(updatedProfile) },
   });
 
-  return profile;
+  return updatedProfile;
 }
 
 export async function updateAffiliateCommissionRate(
@@ -262,15 +274,16 @@ export async function updateAffiliateCommissionRate(
   });
   if (!config) return null;
 
-  const profile: AffiliateProfile = JSON.parse(config.value);
-  profile.commissionRate = commissionRate;
+  const profile = safeJsonParse<AffiliateProfile | null>(config.value, null);
+  if (!profile) return null;
+  const updatedProfile: AffiliateProfile = { ...profile, commissionRate };
 
   await db.systemConfig.update({
     where: { key: `affiliate:${code}` },
-    data: { value: JSON.stringify(profile) },
+    data: { value: JSON.stringify(updatedProfile) },
   });
 
-  return profile;
+  return updatedProfile;
 }
 
 export async function recordAffiliateOrder(
@@ -285,14 +298,17 @@ export async function recordAffiliateOrder(
   const statsKey = `affiliate_stats:${code}`;
   const existing = await db.systemConfig.findUnique({ where: { key: statsKey } });
   const stats: AffiliateStats = existing
-    ? JSON.parse(existing.value)
+    ? safeJsonParse(existing.value, { clicks: 0, orders: 0, commission: 0 })
     : { clicks: 0, orders: 0, commission: 0 };
 
-  stats.orders += 1;
-  stats.commission += commission;
+  const updatedStats: AffiliateStats = {
+    ...stats,
+    orders: stats.orders + 1,
+    commission: stats.commission + commission,
+  };
 
   await db.systemConfig.update({
     where: { key: statsKey },
-    data: { value: JSON.stringify(stats) },
+    data: { value: JSON.stringify(updatedStats) },
   });
 }

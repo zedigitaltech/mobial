@@ -1,16 +1,19 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-function getTokenFromRequest(request: NextRequest): string | null {
-  const authHeader = request.headers.get("authorization");
-  if (authHeader?.startsWith("Bearer ")) {
-    return authHeader.slice(7);
-  }
-  const cookie = request.cookies.get("token");
-  return cookie?.value ?? null;
+// UX-only auth detection: the presence of the `mobial_refresh` HttpOnly
+// cookie (set by login/register/refresh) or the `mobial_auth` marker cookie
+// indicates the browser has credentials. The proxy never validates them —
+// actual authorization is enforced by requireAuth()/requireAdmin() inside
+// route handlers, which verify JWT HMAC signatures and user status.
+function hasAuthMarker(request: NextRequest): boolean {
+  if (request.headers.get("authorization")?.startsWith("Bearer ")) return true;
+  if (request.cookies.get("mobial_refresh")?.value) return true;
+  if (request.cookies.get("mobial_auth")?.value) return true;
+  return false;
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Generate a cryptographic nonce for this request
@@ -58,23 +61,51 @@ export async function middleware(request: NextRequest) {
     "Strict-Transport-Security",
     "max-age=31536000; includeSubDomains; preload",
   );
+  response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
+  response.headers.set("Cross-Origin-Resource-Policy", "same-origin");
+
+  // Enforce same-origin for state-changing API calls. Preflighted CORS
+  // requests from third-party origins are rejected here; no `Access-Control-Allow-*`
+  // headers are emitted, which is the correct default for a first-party API.
+  // Webhook and cron endpoints are exempt — they authenticate via signature
+  // or bearer token and must accept cross-origin POSTs.
+  const isApi = pathname.startsWith("/api/");
+  const isMutating = ["POST", "PUT", "PATCH", "DELETE"].includes(request.method);
+  const isWebhookOrCron =
+    pathname.startsWith("/api/webhooks/") || pathname.startsWith("/api/cron/");
+  if (isApi && isMutating && !isWebhookOrCron) {
+    const origin = request.headers.get("origin");
+    const host = request.headers.get("host");
+    if (origin && host) {
+      try {
+        const originHost = new URL(origin).host;
+        if (originHost !== host) {
+          return NextResponse.json(
+            { success: false, error: "Cross-origin requests are not allowed" },
+            { status: 403 },
+          );
+        }
+      } catch {
+        return NextResponse.json(
+          { success: false, error: "Invalid origin" },
+          { status: 403 },
+        );
+      }
+    }
+  }
   // X-XSS-Protection removed — deprecated and causes issues in older browsers. CSP provides better protection.
 
   // Admin route protection
   const isProtectedPath =
     pathname.startsWith("/admin") || pathname.startsWith("/api/admin");
 
-  // UX-only redirect: if no token present, redirect to login.
+  // UX-only redirect: if no auth marker present, redirect to login.
   // Actual authorization is enforced in route handlers via requireAdmin()
   // which does full HMAC signature verification.
-  if (isProtectedPath) {
-    const rawToken = getTokenFromRequest(request);
-
-    if (!rawToken) {
-      const url = new URL("/login", request.url);
-      url.searchParams.set("callbackUrl", pathname);
-      return NextResponse.redirect(url);
-    }
+  if (isProtectedPath && !hasAuthMarker(request)) {
+    const url = new URL("/login", request.url);
+    url.searchParams.set("callbackUrl", pathname);
+    return NextResponse.redirect(url);
   }
 
   return response;
@@ -82,6 +113,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|logo.png|logo.svg|manifest.json|api/health).*)",
+    "/((?!_next/static|_next/image|favicon.ico|logo.png|logo.svg|manifest.json|api/health|monitoring).*)",
   ],
 };

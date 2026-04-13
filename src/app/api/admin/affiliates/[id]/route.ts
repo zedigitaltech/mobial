@@ -7,6 +7,7 @@ import {
   parseJsonBody,
   AuthError,
 } from '@/lib/auth-helpers';
+import { logger } from '@/lib/logger';
 import {
   updateAffiliateStatus,
   updateAffiliateCommissionRate,
@@ -81,7 +82,7 @@ export async function PATCH(
     if (error instanceof AuthError) {
       return errorResponse(error.message, error.statusCode);
     }
-    console.error('Update affiliate error:', error);
+    logger.errorWithException('Update affiliate error', error);
     return errorResponse('Failed to update affiliate', 500);
   }
 }

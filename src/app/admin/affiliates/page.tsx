@@ -1,7 +1,7 @@
 "use client"
 
+import { getAccessToken } from "@/lib/auth-token"
 import { useEffect, useState } from "react"
-import { motion } from "framer-motion"
 import {
   Users,
   Search,
@@ -95,7 +95,7 @@ export default function AdminAffiliatesPage() {
 
   const fetchAffiliates = async () => {
     try {
-      const token = localStorage.getItem("token")
+      const token = getAccessToken()
       const params = new URLSearchParams()
       if (statusFilter && statusFilter !== "all") params.set("status", statusFilter)
       if (search) params.set("search", search)
@@ -128,7 +128,7 @@ export default function AdminAffiliatesPage() {
   const updateStatus = async (affiliateId: string, status: string) => {
     setUpdating(affiliateId)
     try {
-      const token = localStorage.getItem("token")
+      const token = getAccessToken()
       const res = await fetch(`/api/admin/affiliates/${affiliateId}`, {
         method: "PATCH",
         headers: {
@@ -152,7 +152,6 @@ export default function AdminAffiliatesPage() {
     }
   }
 
-  const totalActive = affiliates.filter((a) => a.status === "ACTIVE").length
   const totalPending = affiliates.filter((a) => a.status === "PENDING").length
   const totalCommission = affiliates.reduce((sum, a) => sum + a.commission, 0)
 

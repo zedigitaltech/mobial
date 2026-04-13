@@ -9,6 +9,7 @@ import {
   parseJsonBody,
   getClientIP,
 } from '@/lib/auth-helpers';
+import { logger } from '@/lib/logger';
 
 const verifySchema = z.object({
   token: z.string().min(1, 'Token is required'),
@@ -121,7 +122,7 @@ export async function POST(request: NextRequest) {
 
     return successResponse(undefined, 'Email updated successfully');
   } catch (error) {
-    console.error('Email verify error:', error);
+    logger.errorWithException('Email verify error', error);
     return errorResponse('Failed to verify email change', 500);
   }
 }

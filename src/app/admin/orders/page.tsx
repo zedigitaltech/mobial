@@ -1,15 +1,12 @@
 "use client"
 
+import { getAccessToken } from "@/lib/auth-token"
 import { useEffect, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
-import { motion } from "framer-motion"
 import {
   Search,
   Package,
-  CheckCircle2,
   XCircle,
-  Clock,
   MoreHorizontal,
   Loader2,
   ExternalLink,
@@ -103,8 +100,6 @@ const paymentStatusColors: Record<string, string> = {
 }
 
 export default function AdminOrdersPage() {
-  const router = useRouter()
-  
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState("")
@@ -112,7 +107,6 @@ export default function AdminOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [actionDialog, setActionDialog] = useState<"process" | "cancel" | null>(null)
   const [processing, setProcessing] = useState(false)
-  const [hasMore, setHasMore] = useState(false)
   const [cancelReason, setCancelReason] = useState("")
 
   useEffect(() => {
@@ -122,7 +116,7 @@ export default function AdminOrdersPage() {
   const fetchOrders = async () => {
     try {
       setLoading(true)
-      const token = localStorage.getItem("token")
+      const token = getAccessToken()
       
       const params = new URLSearchParams()
       if (search) params.set("search", search)
@@ -137,7 +131,6 @@ export default function AdminOrdersPage() {
       
       const data: OrdersResponse = await response.json()
       setOrders(data.orders)
-      setHasMore(data.pagination.hasMore)
     } catch (error) {
       console.error("Failed to fetch orders:", error)
       toast.error("Failed to load orders")
@@ -156,7 +149,7 @@ export default function AdminOrdersPage() {
     
     setProcessing(true)
     try {
-      const token = localStorage.getItem("token")
+      const token = getAccessToken()
       const response = await fetch(`/api/orders/${selectedOrder.id}/process`, {
         method: "POST",
         headers: { 
@@ -187,7 +180,7 @@ export default function AdminOrdersPage() {
     
     setProcessing(true)
     try {
-      const token = localStorage.getItem("token")
+      const token = getAccessToken()
       const response = await fetch(`/api/orders/${selectedOrder.id}/cancel`, {
         method: "POST",
         headers: { 

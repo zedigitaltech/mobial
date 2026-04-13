@@ -1,7 +1,9 @@
 import { db } from "@/lib/db"
+import { TrialStatus } from "@prisma/client"
 import { createOrder as mobimatterCreateOrder, completeOrder as mobimatterCompleteOrder } from "@/lib/mobimatter"
 import { encryptEsimField } from "@/lib/esim-encryption"
 import { logAudit } from "@/lib/audit"
+import { logger } from "@/lib/logger"
 
 const TRIAL_DESTINATIONS = [
   { country: "TR", name: "Turkey", label: "Popular" },
@@ -23,8 +25,11 @@ export function getTrialDestinations() {
 }
 
 export async function hasClaimedTrial(email: string): Promise<boolean> {
-  const existing = await db.freeTrial.findUnique({
-    where: { email: email.toLowerCase() },
+  const existing = await db.freeTrial.findFirst({
+    where: {
+      email: email.toLowerCase(),
+      status: { not: TrialStatus.FAILED },
+    },
   })
   return !!existing
 }
@@ -116,7 +121,13 @@ export async function claimTrial(params: {
       },
     })
   } catch (error) {
-    console.error(`[FreeTrial] MobiMatter provisioning failed for trial ${trial.id}:`, error)
+    logger.errorWithException(`[FreeTrial] MobiMatter provisioning failed for trial ${trial.id}`, error)
+
+    // Mark trial as failed so user can retry
+    await db.freeTrial.update({
+      where: { id: trial.id },
+      data: { status: TrialStatus.FAILED },
+    }).catch(() => {})
 
     await logAudit({
       action: "security_alert",
@@ -129,7 +140,11 @@ export async function claimTrial(params: {
         status: "provisioning_failed",
       },
     })
-    // Trial stays in CLAIMED status — can be retried manually or via cron
+
+    return {
+      success: false,
+      error: "Failed to provision eSIM. Please try again later.",
+    }
   }
 
   return {

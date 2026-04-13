@@ -740,6 +740,7 @@ enum TrialStatus {
   ACTIVATED
   EXPIRED
   CONVERTED
+  FAILED
 }
 
 // ==================== ABANDONED CART RECOVERY ====================
@@ -773,13 +774,38 @@ model AbandonedCart {
 // ==================== WALLET ====================
 
 model Wallet {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id])
-  balance   Float    @default(0)
-  currency  String   @default("USD")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String              @id @default(cuid())
+  userId       String              @unique
+  user         User                @relation(fields: [userId], references: [id])
+  balance      Float               @default(0)
+  currency     String              @default("USD")
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  transactions WalletTransaction[]
+}
+
+// ==================== WALLET LEDGER ====================
+// Signed entries that sum to Wallet.balance. Replaces the prior pattern
+// of storing negative-amount rows in Reward, which conflated cashback
+// accruals with wallet debits.
+model WalletTransaction {
+  id          String   @id @default(cuid())
+  walletId    String
+  wallet      Wallet   @relation(fields: [walletId], references: [id])
+  userId      String
+  // "credit" = balance increase (cashback, refund, topup).
+  // "debit"  = balance decrease (checkout payment).
+  type        String
+  // Always non-negative. Direction is carried by `type`.
+  amount      Float
+  orderId     String?
+  description String?
+  createdAt   DateTime @default(now())
+
+  @@index([walletId])
+  @@index([userId])
+  @@index([orderId])
+  @@index([createdAt])
 }
 
 // ==================== REWARDS & CASHBACK ====================

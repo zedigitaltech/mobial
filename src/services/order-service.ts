@@ -30,6 +30,7 @@ export interface CreateOrderData {
   phone?: string;
   isTopUp?: boolean;
   parentMobimatterOrderId?: string;
+  affiliateCode?: string;
 }
 
 export interface OrderTotals {
@@ -202,6 +203,35 @@ export async function createOrder(
   // Calculate totals
   const totals = await calculateOrderTotal(data.items);
 
+  // Apply affiliate discount if a valid code was supplied
+  let affiliateDiscount = 0;
+  let resolvedAffiliateCode: string | undefined;
+  if (data.affiliateCode) {
+    const normalizedCode = data.affiliateCode.trim().toUpperCase();
+    const affiliateConfig = await db.systemConfig.findUnique({
+      where: { key: `affiliate:${normalizedCode}` },
+    });
+    if (affiliateConfig) {
+      let profile: { userId: string; status: string; commissionRate: number } | null = null;
+      try {
+        profile = JSON.parse(affiliateConfig.value) as {
+          userId: string;
+          status: string;
+          commissionRate: number;
+        };
+      } catch {
+        // Malformed JSON — ignore, no discount applied
+      }
+      if (profile && profile.status === 'ACTIVE' && profile.commissionRate > 0) {
+        affiliateDiscount =
+          Math.round(totals.total * (profile.commissionRate / 100) * 100) / 100;
+        resolvedAffiliateCode = normalizedCode;
+      }
+    }
+  }
+
+  const finalTotal = totals.total - affiliateDiscount;
+
   // Generate unique order number
   let orderNumber = generateOrderNumber();
   let attempts = 0;
@@ -229,9 +259,9 @@ export async function createOrder(
         status: "PENDING",
         paymentStatus: "PENDING",
         subtotal: totals.subtotal,
-        discount: totals.discount,
+        discount: affiliateDiscount,
         tax: totals.tax,
-        total: totals.total,
+        total: finalTotal,
         isTopUp: data.isTopUp || false,
         parentOrderId: data.parentMobimatterOrderId || null,
         ipAddress,
@@ -277,7 +307,10 @@ export async function createOrder(
     newValues: {
       orderNumber: order.orderNumber,
       email: order.email,
+      subtotal: totals.total,
+      discount: affiliateDiscount,
       total: order.total,
+      affiliateCode: resolvedAffiliateCode ?? null,
       itemCount: data.items.length,
     },
     ipAddress,
@@ -428,7 +461,7 @@ export async function processOrderWithMobimatter(
       try {
         const pendingOrder = await mobimatterCreateOrder({
           productId: item.product.mobimatterId,
-          productCategory: "esim_realtime",
+          productCategory: order.isTopUp ? "esim_addon" : "esim_realtime",
           label: order.orderNumber,
         });
 

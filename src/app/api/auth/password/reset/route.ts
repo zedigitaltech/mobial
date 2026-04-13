@@ -16,6 +16,7 @@ import {
   parseJsonBody,
   getClientIP
 } from '@/lib/auth-helpers';
+import { logger } from '@/lib/logger';
 
 const resetRequestSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -122,7 +123,7 @@ export async function POST(request: NextRequest) {
       "If an account exists with this email, you'll receive a reset link."
     );
   } catch (error) {
-    console.error('Password reset request error:', error);
+    logger.errorWithException('Password reset request error', error);
     return errorResponse('An error occurred', 500);
   }
 }

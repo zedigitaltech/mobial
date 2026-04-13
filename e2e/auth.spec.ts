@@ -41,41 +41,22 @@ test.describe("Authentication", () => {
     ).toBeVisible({ timeout: 10_000 })
   })
 
-  test("should display auth modal when clicking sign in", async ({ page }) => {
-    await page.goto("/settings")
+  test("should open auth modal with email input via /login", async ({ page }) => {
+    // /login opens the auth modal and redirects to /. The modal exposes an email input.
+    await page.goto("/login")
     await page.waitForLoadState("networkidle")
 
-    // Click the sign in button
-    const signInButton = page.locator("button:has-text('Sign In')").first()
-    if (await signInButton.isVisible({ timeout: 5_000 }).catch(() => false)) {
-      await signInButton.click()
-
-      // Auth modal should appear with email input
-      await expect(
-        page.locator('input[type="email"], input[placeholder*="email" i]').first()
-      ).toBeVisible({ timeout: 5_000 })
-    }
+    await expect(
+      page.locator('input[type="email"], input[placeholder*="email" i]').first()
+    ).toBeVisible({ timeout: 10_000 })
   })
 
-  test("should show password requirements on register form", async ({ page }) => {
-    await page.goto("/settings")
+  test("should show password input in auth modal", async ({ page }) => {
+    await page.goto("/login")
     await page.waitForLoadState("networkidle")
 
-    const signInButton = page.locator("button:has-text('Sign In')").first()
-    if (await signInButton.isVisible({ timeout: 5_000 }).catch(() => false)) {
-      await signInButton.click()
-      await page.waitForTimeout(500)
-
-      // Look for a register/sign-up tab or link
-      const registerTab = page.locator("text=/register|sign up|create account/i").first()
-      if (await registerTab.isVisible({ timeout: 3_000 }).catch(() => false)) {
-        await registerTab.click()
-
-        // Should show password input
-        await expect(
-          page.locator('input[type="password"]').first()
-        ).toBeVisible({ timeout: 3_000 })
-      }
-    }
+    await expect(
+      page.locator('input[type="password"]').first()
+    ).toBeVisible({ timeout: 10_000 })
   })
 })

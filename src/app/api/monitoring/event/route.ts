@@ -2,6 +2,8 @@ import { NextRequest } from 'next/server';
 import { createResponse, createErrorResponse, createServerErrorResponse } from '@/lib/api-response';
 import { trackEvent } from '@/services/monitoring-service';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { getAuthUser } from '@/lib/auth-helpers';
+import { logger } from '@/lib/logger';
 
 const ALLOWED_EVENTS = new Set([
   'product_view',
@@ -53,6 +55,9 @@ export async function POST(request: NextRequest) {
       return createErrorResponse('Missing required field: sessionId');
     }
 
+    // Derive userId from verified JWT — never trust body.userId (spoofable).
+    const authUser = await getAuthUser(request);
+
     await trackEvent({
       name: body.name,
       category: typeof body.category === 'string' ? body.category : undefined,
@@ -61,14 +66,14 @@ export async function POST(request: NextRequest) {
         : undefined,
       value: typeof body.value === 'number' ? body.value : undefined,
       sessionId: body.sessionId,
-      userId: typeof body.userId === 'string' ? body.userId : undefined,
+      userId: authUser?.id,
       ipAddress: ip,
       path: typeof body.path === 'string' ? body.path : undefined,
     });
 
     return createResponse({ tracked: true }, { status: 201 });
   } catch (err) {
-    console.error('[api/monitoring/event] Failed:', err);
+    logger.errorWithException('[api/monitoring/event] Failed', err);
     return createServerErrorResponse();
   }
 }

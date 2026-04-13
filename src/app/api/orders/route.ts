@@ -14,6 +14,7 @@ import {
   getUserAgent,
   getAuthUser,
 } from '@/lib/auth-helpers';
+import { logger } from '@/lib/logger';
 import {
   createOrder,
   getUserOrders,
@@ -35,14 +36,17 @@ const createOrderSchema = z.object({
   phone: z.string().optional(),
   isTopUp: z.boolean().optional(),
   parentMobimatterOrderId: z.string().optional(),
+  affiliateCode: z.string().optional(),
 });
 
 // Validation schema for query params
 const getOrdersQuerySchema = z.object({
   status: z.enum(['PENDING', 'PROCESSING', 'COMPLETED', 'CANCELLED', 'REFUNDED', 'FAILED']).optional(),
   paymentStatus: z.enum(['PENDING', 'PROCESSING', 'PAID', 'FAILED', 'REFUNDED', 'PARTIALLY_REFUNDED']).optional(),
-  limit: z.string().regex(/^\d+$/).optional(),
-  offset: z.string().regex(/^\d+$/).optional(),
+  // Coerce to bounded integers at the schema boundary so downstream code
+  // never sees raw strings or out-of-range values.
+  limit: z.coerce.number().int().min(1).max(100).optional(),
+  offset: z.coerce.number().int().min(0).max(10000).optional(),
 });
 
 /**
@@ -69,7 +73,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { items, email, phone, isTopUp, parentMobimatterOrderId } = validationResult.data;
+    const { items, email, phone, isTopUp, parentMobimatterOrderId, affiliateCode } = validationResult.data;
 
     // Check if user is authenticated (optional)
     const user = await getAuthUser(request);
@@ -86,6 +90,7 @@ export async function POST(request: NextRequest) {
         phone,
         isTopUp,
         parentMobimatterOrderId,
+        affiliateCode,
       },
       user?.id,
       ipAddress,
@@ -97,7 +102,7 @@ export async function POST(request: NextRequest) {
       'Order created successfully'
     );
   } catch (error) {
-    console.error('Create order error:', error);
+    logger.errorWithException('Create order error', error);
     
     const errorMessage = error instanceof Error ? error.message : 'Failed to create order';
     
@@ -136,8 +141,8 @@ export async function GET(request: NextRequest) {
     const { status, paymentStatus, limit, offset } = validationResult.data;
 
     const pagination = {
-      limit: limit ? parseInt(limit) : 20,
-      offset: offset ? parseInt(offset) : 0,
+      limit: limit ?? 20,
+      offset: offset ?? 0,
     };
 
     let result;
@@ -158,7 +163,7 @@ export async function GET(request: NextRequest) {
 
     return successResponse(result);
   } catch (error) {
-    console.error('Get orders error:', error);
+    logger.errorWithException('Get orders error', error);
     return errorResponse('Failed to retrieve orders', 500);
   }
 }

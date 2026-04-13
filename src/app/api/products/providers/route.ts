@@ -6,6 +6,7 @@
 import { NextRequest } from 'next/server';
 import { getAvailableProviders } from '@/services/product-service';
 import { successResponse, errorResponse } from '@/lib/auth-helpers';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/products/providers
@@ -24,7 +25,7 @@ export async function GET(_request: NextRequest) {
       total: providers.length,
     });
   } catch (error) {
-    console.error('Error fetching providers:', error);
+    logger.errorWithException('Error fetching providers', error);
     return errorResponse('Failed to fetch providers', 500);
   }
 }

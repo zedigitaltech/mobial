@@ -7,7 +7,8 @@ import crypto from "crypto";
 
 const ALGORITHM = "aes-256-gcm";
 const IV_LENGTH = 16;
-const _AUTH_TAG_LENGTH = 16;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const AUTH_TAG_LENGTH = 16; // expected AES-GCM auth tag length in bytes
 const SALT_LENGTH = 64;
 
 // Get encryption key from environment or generate one

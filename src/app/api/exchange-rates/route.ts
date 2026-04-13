@@ -1,5 +1,6 @@
-import { successResponse, errorResponse } from "@/lib/auth-helpers";
+import { errorResponse } from "@/lib/auth-helpers";
 import { cached, CACHE_TTL } from "@/lib/cache";
+import { logger } from "@/lib/logger";
 
 // Fallback rates (used if external API is unavailable)
 const FALLBACK_RATES: Record<string, number> = {
@@ -20,22 +21,30 @@ const FALLBACK_RATES: Record<string, number> = {
 const SUPPORTED_CODES = Object.keys(FALLBACK_RATES);
 
 async function fetchLiveRates(): Promise<Record<string, number>> {
-  const res = await fetch("https://api.exchangerate-api.com/v4/latest/USD", {
-    next: { revalidate: 3600 },
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
 
-  if (!res.ok) {
-    throw new Error(`Exchange rate API returned ${res.status}`);
+  try {
+    const res = await fetch("https://api.exchangerate-api.com/v4/latest/USD", {
+      signal: controller.signal,
+      next: { revalidate: 3600 },
+    });
+
+    if (!res.ok) {
+      throw new Error(`Exchange rate API returned ${res.status}`);
+    }
+
+    const data = await res.json();
+    const rates: Record<string, number> = {};
+
+    for (const code of SUPPORTED_CODES) {
+      rates[code] = data.rates?.[code] || FALLBACK_RATES[code];
+    }
+
+    return rates;
+  } finally {
+    clearTimeout(timeout);
   }
-
-  const data = await res.json();
-  const rates: Record<string, number> = {};
-
-  for (const code of SUPPORTED_CODES) {
-    rates[code] = data.rates?.[code] || FALLBACK_RATES[code];
-  }
-
-  return rates;
 }
 
 export async function GET() {
@@ -59,7 +68,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error("Error fetching exchange rates:", error);
+    logger.errorWithException("Error fetching exchange rates", error);
     return errorResponse("Failed to fetch exchange rates", 500);
   }
 }

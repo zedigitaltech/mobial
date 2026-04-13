@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useTranslations } from "next-intl"
 import { motion, AnimatePresence } from "framer-motion"
 import { Bell, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -12,6 +13,7 @@ const PAGE_VIEW_KEY = "mobial-page-views"
 const PAGE_VIEW_THRESHOLD = 3
 
 export function NotificationPrompt() {
+  const t = useTranslations("notifications")
   const [visible, setVisible] = useState(false)
   const { isSupported, permission, requestPermission, subscribe } = useNotifications()
   const { items: compareItems } = useCompare()
@@ -69,9 +71,9 @@ export function NotificationPrompt() {
               <div className="flex-1 space-y-3">
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <p className="font-bold text-sm">Stay in the loop</p>
+                    <p className="font-bold text-sm">{t("stayInLoop")}</p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Get order updates, delivery alerts, and exclusive deals on eSIM plans.
+                      {t("notifDesc")}
                     </p>
                   </div>
                   <button
@@ -88,7 +90,7 @@ export function NotificationPrompt() {
                     className="rounded-xl text-xs font-bold h-8 px-4"
                     onClick={handleEnable}
                   >
-                    Enable
+                    {t("enable")}
                   </Button>
                   <Button
                     size="sm"
@@ -96,7 +98,7 @@ export function NotificationPrompt() {
                     className="rounded-xl text-xs font-bold h-8 px-4 text-muted-foreground"
                     onClick={handleDismiss}
                   >
-                    Not now
+                    {t("notNow")}
                   </Button>
                 </div>
               </div>

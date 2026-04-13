@@ -1,9 +1,12 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
+import { OAuth2Client } from 'google-auth-library';
 import { db } from '@/lib/db';
 import { generateTokenPair } from '@/lib/jwt';
-import { successResponse, errorResponse, parseJsonBody } from '@/lib/auth-helpers';
+import { errorResponse, parseJsonBody } from '@/lib/auth-helpers';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { setAuthCookies } from '@/lib/auth-cookies';
+import { logger } from '@/lib/logger';
 
 const googleAuthSchema = z.object({
   credential: z.string().min(1, 'Google credential is required'),
@@ -19,26 +22,26 @@ interface GoogleTokenPayload {
   aud: string;
 }
 
-async function verifyGoogleToken(credential: string): Promise<GoogleTokenPayload | null> {
+async function verifyGoogleToken(credential: string, clientId: string): Promise<GoogleTokenPayload | null> {
   try {
-    const response = await fetch(
-      `https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`
-    );
+    const oAuth2Client = new OAuth2Client(clientId);
+    const ticket = await oAuth2Client.verifyIdToken({
+      idToken: credential,
+      audience: clientId,
+    });
 
-    if (!response.ok) return null;
+    const payload = ticket.getPayload();
+    if (!payload) return null;
 
-    const payload = await response.json() as GoogleTokenPayload;
-
-    // Verify the token was issued for our app
-    const clientId = process.env.GOOGLE_CLIENT_ID;
-    if (payload.aud !== clientId) return null;
-
-    // Verify issuer
-    if (!['accounts.google.com', 'https://accounts.google.com'].includes(payload.iss)) {
-      return null;
-    }
-
-    return payload;
+    return {
+      sub: payload.sub,
+      email: payload.email ?? '',
+      email_verified: payload.email_verified ?? false,
+      name: payload.name,
+      picture: payload.picture,
+      iss: payload.iss ?? '',
+      aud: typeof payload.aud === 'string' ? payload.aud : '',
+    };
   } catch {
     return null;
   }
@@ -60,10 +63,20 @@ export async function POST(request: NextRequest) {
 
     const { credential } = validation.data;
 
+    // Guard: ensure Google OAuth is configured before attempting verification
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      return errorResponse('Google authentication not configured', 503);
+    }
+
     // Verify the Google ID token
-    const googleUser = await verifyGoogleToken(credential);
+    const googleUser = await verifyGoogleToken(credential, clientId);
     if (!googleUser || !googleUser.email) {
       return errorResponse('Invalid Google credential', 401);
+    }
+
+    if (!googleUser.email_verified) {
+      return errorResponse('Google account email is not verified', 401);
     }
 
     // Find or create user
@@ -138,18 +151,26 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return successResponse({
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        avatar: user.avatar,
+    const response = NextResponse.json({
+      success: true,
+      data: {
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          avatar: user.avatar,
+        },
+        tokens: {
+          accessToken: tokens.accessToken,
+          expiresIn: tokens.expiresIn,
+        },
       },
-      tokens,
-    });
+    }, { status: 200 });
+    setAuthCookies(response, tokens.refreshToken);
+    return response;
   } catch (error) {
-    console.error('Google auth error:', error);
+    logger.errorWithException('Google auth error', error);
     return errorResponse('Authentication failed', 500);
   }
 }

@@ -1,5 +1,6 @@
 import Stripe from 'stripe';
 import { db } from '@/lib/db';
+import { BASE_URL } from '@/lib/env';
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY is not set');
@@ -66,6 +67,8 @@ export async function createCheckoutSession(params: {
     orderId,
     orderNumber,
     email,
+    // amount is captured in line items; not used directly for session total
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     amount: _amount,
     currency = 'usd',
     isTopUp,
@@ -96,8 +99,8 @@ export async function createCheckoutSession(params: {
       quantity: item.quantity,
     })),
     mode: 'payment',
-    success_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.NEXT_PUBLIC_BASE_URL}/checkout/cancel?order_id=${orderId}`,
+    success_url: `${BASE_URL}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${BASE_URL}/checkout/cancel?order_id=${orderId}`,
   };
 
   if (stripeCustomerId) {

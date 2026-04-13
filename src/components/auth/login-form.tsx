@@ -8,6 +8,7 @@ import { motion } from "framer-motion"
 import { Loader2, Mail, Lock, Eye, EyeOff } from "lucide-react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { setAccessToken } from "@/lib/auth-token"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -64,10 +65,11 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
         throw new Error(result.error || "Login failed")
       }
 
-      // Store tokens
+      // Access token lives in an in-memory store (XSS-proof across refreshes
+      // because /api/auth/refresh will re-mint it from the HttpOnly cookie).
+      // Refresh token is set as an HttpOnly cookie by the server.
       if (result.data?.tokens) {
-        localStorage.setItem("token", result.data.tokens.accessToken)
-        localStorage.setItem("refreshToken", result.data.tokens.refreshToken)
+        setAccessToken(result.data.tokens.accessToken)
       }
 
       toast.success(t("welcomeBackToast"))

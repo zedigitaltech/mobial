@@ -1,17 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
 import {
-  Wifi,
   Globe,
-  Clock,
-  Zap,
-  Info,
-  Smartphone,
-  ChevronRight,
-  ShieldCheck,
-  Check,
-  ShoppingCart,
   Signal,
   RefreshCw,
   Power,
@@ -93,7 +83,7 @@ function getTagColorClasses(color?: string): string {
 
 export function ProductCard({
   product,
-  onBuy,
+  onBuy: _onBuy,
   showLink = true,
   className,
 }: ProductCardProps) {

@@ -1,5 +1,6 @@
 "use client"
 
+import { getAccessToken } from "@/lib/auth-token"
 import { useEffect, useState, useCallback, useRef } from "react"
 import { motion } from "framer-motion"
 import {
@@ -24,7 +25,6 @@ import {
   Tablet,
   TrendingUp,
   Filter,
-  ArrowRight,
 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -232,7 +232,7 @@ export default function AdminMonitoringPage() {
   const [period, setPeriod] = useState<Period>("7d")
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
-  const getToken = () => localStorage.getItem("token")
+  const getToken = () => getAccessToken()
 
   const fetchHealth = useCallback(async () => {
     try {

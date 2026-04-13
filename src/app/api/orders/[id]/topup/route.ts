@@ -9,6 +9,7 @@ import {
 import { db } from '@/lib/db';
 import { createCheckoutSession } from '@/lib/stripe';
 import { createOrder } from '@/services/order-service';
+import { logger } from '@/lib/logger';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -122,7 +123,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (error?.name === 'AuthError') {
       return errorResponse(error.message, error.statusCode || 401);
     }
-    console.error('Top-up error:', error);
+    logger.errorWithException('Top-up error', error);
     return errorResponse('Failed to create top-up session', 500);
   }
 }

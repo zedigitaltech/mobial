@@ -13,6 +13,7 @@ import {
   errorResponse,
   parseJsonBody
 } from '@/lib/auth-helpers';
+import { logger } from '@/lib/logger';
 
 const confirmSchema = z.object({
   token: z.string().min(1, 'Reset token is required'),
@@ -44,26 +45,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Find reset token across SystemConfig entries
-    const configs = await db.systemConfig.findMany({
+    // Find reset token using an indexed prefix scan + value search
+    // This avoids loading all tokens into memory (N+1 pattern)
+    const config = await db.systemConfig.findFirst({
       where: {
         key: { startsWith: 'reset_token:' },
+        value: { contains: token },
       },
     });
 
     let userId: string | null = null;
     let tokenData: { token: string; expiresAt: string } | null = null;
 
-    for (const config of configs) {
+    if (config) {
       try {
         const data = JSON.parse(config.value) as { token: string; expiresAt: string };
         if (data.token === token) {
           userId = config.key.replace('reset_token:', '');
           tokenData = data;
-          break;
         }
       } catch {
-        // Skip invalid entries
+        // Corrupted entry — fall through to invalid token response
       }
     }
 
@@ -118,7 +120,7 @@ export async function POST(request: NextRequest) {
       'Password has been reset successfully. You can now log in with your new password.'
     );
   } catch (error) {
-    console.error('Password reset confirm error:', error);
+    logger.errorWithException('Password reset confirm error', error);
     return errorResponse('An error occurred', 500);
   }
 }

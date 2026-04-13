@@ -1,8 +1,8 @@
 "use client"
 
+import { getAccessToken } from "@/lib/auth-token"
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { motion } from "framer-motion"
 import {
   Users,
   Package,
@@ -12,7 +12,6 @@ import {
   CheckCircle2,
   AlertCircle,
   ArrowRight,
-  Loader2,
   MousePointer,
   ShoppingCart,
 } from "lucide-react"
@@ -157,7 +156,7 @@ export default function AdminDashboardPage() {
 
   const fetchDashboardData = async () => {
     try {
-      const token = localStorage.getItem("token")
+      const token = getAccessToken()
 
       const statsResponse = await fetch("/api/admin/stats", {
         headers: { Authorization: `Bearer ${token}` },

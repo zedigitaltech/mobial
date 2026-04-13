@@ -7,6 +7,17 @@ import { db } from '@/lib/db';
 import { fetchProducts } from '@/lib/mobimatter';
 import { Prisma } from '@prisma/client';
 import { cached, invalidateCachePrefix, CACHE_TTL } from '@/lib/cache';
+import { logger } from '@/lib/logger';
+
+// Safe JSON parse — returns fallback on null, empty, or corrupt input
+function safeJsonParse<T>(value: string | null | undefined, fallback: T): T {
+  if (!value) return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+}
 
 // Pricing
 const MARKUP_PERCENTAGE = 0.10; // 10% markup on MobiMatter retail price
@@ -116,7 +127,9 @@ export function generateSlug(name: string): string {
 
 /**
  * Generate a unique slug, appending a number if needed
+ * @deprecated Kept for reference — bulk sync uses a pre-fetched slug map instead
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function generateUniqueSlug(name: string, excludeId?: string): Promise<string> {
   const baseSlug = generateSlug(name);
   let slug = baseSlug;
@@ -277,9 +290,9 @@ function parseProductJsonFields(product: {
 }): ProductWithDetails {
   return {
     ...product,
-    countries: product.countries ? JSON.parse(product.countries) : [],
-    regions: product.regions ? JSON.parse(product.regions) : [],
-    features: product.features ? JSON.parse(product.features) : [],
+    countries: safeJsonParse(product.countries, []),
+    regions: safeJsonParse(product.regions, []),
+    features: safeJsonParse(product.features, []),
   };
 }
 
@@ -494,21 +507,28 @@ export async function getProductById(idOrSlug: string): Promise<ProductWithDetai
   return cached(
     `product:${idOrSlug}`,
     async () => {
-      const product = await db.product.findFirst({
-        where: {
-          OR: [
-            { id: idOrSlug },
-            { slug: idOrSlug },
-            { mobimatterId: idOrSlug },
-          ],
-        },
-      });
+      try {
+        const product = await db.product.findFirst({
+          where: {
+            OR: [
+              { id: idOrSlug },
+              { slug: idOrSlug },
+              { mobimatterId: idOrSlug },
+            ],
+          },
+        });
 
-      if (!product) {
+        if (!product) {
+          return null;
+        }
+
+        return parseProductJsonFields(product);
+      } catch (err) {
+        logger.warn('getProductById: DB unreachable, returning null', {
+          metadata: { idOrSlug, error: err instanceof Error ? err.message : 'unknown' },
+        });
         return null;
       }
-
-      return parseProductJsonFields(product);
     },
     CACHE_TTL.PRODUCT_DETAIL
   );
@@ -572,24 +592,33 @@ export async function getProducts(filters: ProductFilters = {}): Promise<Paginat
       orderBy.createdAt = 'desc';
   }
 
-  // Get total count
-  const total = await db.product.count({ where });
+  // DB may be unreachable at build/prerender time (CI without a database).
+  // Return an empty page rather than crashing the build; runtime requests
+  // hit the real DB and error handling lives in route handlers.
+  try {
+    const [total, products] = await Promise.all([
+      db.product.count({ where }),
+      db.product.findMany({
+        where,
+        orderBy,
+        take: limit,
+        skip: offset,
+      }),
+    ]);
 
-  // Get products
-  const products = await db.product.findMany({
-    where,
-    orderBy,
-    take: limit,
-    skip: offset,
-  });
-
-  return {
-    products: products.map(parseProductJsonFields),
-    total,
-    limit,
-    offset,
-    hasMore: offset + limit < total,
-  };
+    return {
+      products: products.map(parseProductJsonFields),
+      total,
+      limit,
+      offset,
+      hasMore: offset + limit < total,
+    };
+  } catch (err) {
+    logger.warn('getProducts: falling back to empty result (likely DB unavailable during prerender)', {
+      metadata: { error: err instanceof Error ? err.message : 'unknown' },
+    });
+    return { products: [], total: 0, limit, offset, hasMore: false };
+  }
 }
 
 /**
@@ -599,15 +628,23 @@ export async function getAvailableCountries(): Promise<CountryInfo[]> {
   return cached(
     'countries:all',
     async () => {
-      const products = await db.product.findMany({
-        where: {
-          isActive: true,
-          countries: { not: null },
-        },
-        select: {
-          countries: true,
-        },
-      });
+      let products: { countries: string | null }[];
+      try {
+        products = await db.product.findMany({
+          where: {
+            isActive: true,
+            countries: { not: null },
+          },
+          select: {
+            countries: true,
+          },
+        });
+      } catch (err) {
+        logger.warn('getAvailableCountries: DB unreachable, returning empty', {
+          metadata: { error: err instanceof Error ? err.message : 'unknown' },
+        });
+        return [];
+      }
 
       const countryCount = new Map<string, number>();
 

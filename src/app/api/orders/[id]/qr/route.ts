@@ -12,13 +12,18 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const { id } = await params;
 
   const user = await getAuthUser(request);
-  if (!user) {
+  const guestEmail = request.nextUrl.searchParams.get('email')?.toLowerCase() ?? null;
+
+  // Guests must provide email
+  if (!user && !guestEmail) {
     return new Response('Unauthorized', { status: 401 });
   }
 
-  const order = await db.order.findUnique({
+  // Look up by id first, then orderNumber
+  let order = await db.order.findUnique({
     where: { id },
     select: {
+      id: true,
       userId: true,
       email: true,
       esimQrCode: true,
@@ -29,19 +34,40 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   });
 
   if (!order) {
+    order = await db.order.findUnique({
+      where: { orderNumber: id },
+      select: {
+        id: true,
+        userId: true,
+        email: true,
+        esimQrCode: true,
+        esimActivationCode: true,
+        esimSmdpAddress: true,
+        status: true,
+      },
+    });
+  }
+
+  if (!order) {
     return new Response('Not found', { status: 404 });
   }
 
-  // Check ownership or admin
-  if (user.role !== 'ADMIN' && order.userId !== user.id && order.email !== user.email) {
-    return new Response('Forbidden', { status: 403 });
+  // Authorization
+  if (user) {
+    if (user.role !== 'ADMIN' && order.userId !== user.id && order.email !== user.email) {
+      return new Response('Forbidden', { status: 403 });
+    }
+  } else {
+    // Guest: verify email matches
+    if (!order.email || order.email.toLowerCase() !== guestEmail) {
+      return new Response('Forbidden', { status: 403 });
+    }
   }
 
   if (order.status !== 'COMPLETED') {
     return new Response('Order not completed', { status: 400 });
   }
 
-  // Build the QR string: prefer the stored QR code (LPA string), fall back to constructing from parts
   const qrData = decryptEsimField(order.esimQrCode)
     || (decryptEsimField(order.esimSmdpAddress) && decryptEsimField(order.esimActivationCode)
       ? `LPA:1$${decryptEsimField(order.esimSmdpAddress)}$${decryptEsimField(order.esimActivationCode)}`

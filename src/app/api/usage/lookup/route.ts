@@ -4,6 +4,7 @@ import { getOrderByIccid, getStructuredUsage } from '@/lib/mobimatter';
 import { db } from '@/lib/db';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { logAudit } from '@/lib/audit';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -139,7 +140,7 @@ export async function POST(request: NextRequest) {
       packages: usage.packages,
     });
   } catch (error) {
-    console.error('Usage lookup error:', error);
+    logger.errorWithException('Usage lookup error', error);
     return errorResponse('Failed to fetch usage data', 500);
   }
 }

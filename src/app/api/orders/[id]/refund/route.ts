@@ -10,6 +10,7 @@ import {
   successResponse,
   parseJsonBody,
 } from '@/lib/auth-helpers';
+import { logger } from '@/lib/logger';
 
 const refundSchema = z.object({
   reason: z.string().min(1, 'Refund reason is required').max(500),
@@ -107,7 +108,7 @@ export async function POST(
     if (error instanceof AuthError) {
       return errorResponse(error.message, error.statusCode);
     }
-    console.error('Refund error:', error);
+    logger.errorWithException('Refund error', error);
     return errorResponse('Failed to process refund', 500);
   }
 }

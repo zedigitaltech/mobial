@@ -127,7 +127,7 @@ async function cacheFirst(request, cacheName) {
       cache.put(request, response.clone());
     }
     return response;
-  } catch (error) {
+  } catch {
     // For images, return a placeholder SVG
     if (cacheName === IMAGE_CACHE_NAME) {
       return new Response(
@@ -149,7 +149,7 @@ async function networkFirst(request, cacheName) {
       cache.put(request, response.clone());
     }
     return response;
-  } catch (error) {
+  } catch {
     const cached = await cache.match(request);
     if (cached) return cached;
 
@@ -178,7 +178,7 @@ async function fetchAndCache(request, cache) {
     if (response.ok) {
       cache.put(request, response);
     }
-  } catch (error) {
+  } catch {
     // Silently fail - cached version already served
   }
 }
@@ -205,7 +205,7 @@ self.addEventListener('push', (event) => {
     try {
       const payload = event.data.json();
       data = { ...data, ...payload };
-    } catch (e) {
+    } catch {
       data.body = event.data.text();
     }
   }
@@ -260,7 +260,7 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 // Handle notification close
-self.addEventListener('notificationclose', (event) => {
+self.addEventListener('notificationclose', (_event) => {
   console.log('[SW] Notification dismissed');
 });
 

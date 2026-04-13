@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { randomBytes } from 'crypto';
 import { db } from '@/lib/db';
 import {
   requireAuth,
@@ -6,12 +7,14 @@ import {
   errorResponse,
   AuthError,
 } from '@/lib/auth-helpers';
+import { logger } from '@/lib/logger';
 
 function generateReferralCode(_userId: string): string {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const bytes = randomBytes(8);
   let code = '';
   for (let i = 0; i < 8; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
+    code += chars.charAt(bytes[i] % chars.length);
   }
   return code;
 }
@@ -50,7 +53,7 @@ export async function GET(request: NextRequest) {
     if (error instanceof AuthError) {
       return errorResponse(error.message, error.statusCode);
     }
-    console.error('Get referral stats error:', error);
+    logger.errorWithException('Get referral stats error', error);
     return errorResponse('Failed to get referral stats', 500);
   }
 }
@@ -110,7 +113,7 @@ export async function POST(request: NextRequest) {
     if (error instanceof AuthError) {
       return errorResponse(error.message, error.statusCode);
     }
-    console.error('Create referral error:', error);
+    logger.errorWithException('Create referral error', error);
     return errorResponse('Failed to generate referral code', 500);
   }
 }

@@ -3,16 +3,18 @@
  * Logout user and invalidate session
  */
 
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { logAuditWithContext } from '@/lib/audit';
 import { db } from '@/lib/db';
-import { 
-  successResponse, 
-  errorResponse, 
-  parseJsonBody, 
-  getAuthUser 
+import {
+  errorResponse,
+  parseJsonBody,
+  getAuthUser,
 } from '@/lib/auth-helpers';
+import { clearAuthCookies, readRefreshCookie } from '@/lib/auth-cookies';
+import { verifyToken } from '@/lib/jwt';
+import { logger } from '@/lib/logger';
 
 // Validation schema
 const logoutSchema = z.object({
@@ -20,65 +22,67 @@ const logoutSchema = z.object({
   allDevices: z.boolean().optional(),
 });
 
+function success(message = 'Logged out successfully'): NextResponse {
+  const response = NextResponse.json(
+    { success: true, data: null, message },
+    { status: 200 },
+  );
+  clearAuthCookies(response);
+  return response;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    // Get authenticated user
-    const user = await getAuthUser(request);
-    
-    // Parse body
+    const authUser = await getAuthUser(request);
+
     const body = await parseJsonBody(request) || {};
     const validationResult = logoutSchema.safeParse(body);
-    
+
     if (!validationResult.success) {
       return errorResponse('Invalid request body', 400);
     }
-    
-    const { refreshToken, allDevices } = validationResult.data;
-    
-    if (!user) {
-      // Still return success for unauthenticated users
-      return successResponse(null, 'Logged out successfully');
-    }
-    
-    if (allDevices) {
-      // Delete all sessions for the user
-      await db.session.deleteMany({
-        where: { userId: user.id },
-      });
-    } else if (refreshToken) {
-      // Delete specific session
-      await db.session.deleteMany({
-        where: {
-          userId: user.id,
-          token: refreshToken,
-        },
-      });
-    } else {
-      // Delete session by access token (get from Authorization header)
-      const authHeader = request.headers.get('authorization');
-      const accessToken = authHeader?.replace('Bearer ', '');
-      
-      if (accessToken) {
-        // Find and delete sessions associated with this user
-        await db.session.deleteMany({
-          where: { userId: user.id },
-        });
+
+    const { refreshToken: bodyRefreshToken, allDevices } = validationResult.data;
+    // Prefer cookie-sourced refresh token over body.
+    const refreshToken = readRefreshCookie(request) || bodyRefreshToken;
+
+    // Derive user identity from whichever credential is present.
+    // Access token may be missing or expired, but a valid refresh token
+    // still uniquely identifies the caller and must revoke the session.
+    let userId: string | null = authUser?.id ?? null;
+    if (!userId && refreshToken) {
+      const payload = verifyToken(refreshToken);
+      if (payload && payload.type === 'refresh') {
+        userId = payload.sub;
       }
     }
-    
-    // Log audit event
+
+    if (!userId) {
+      // No identifiable credential — clear cookies and move on.
+      return success();
+    }
+
+    if (allDevices) {
+      await db.session.deleteMany({ where: { userId } });
+    } else if (refreshToken) {
+      // Revoke the specific session tied to this refresh token.
+      await db.session.deleteMany({
+        where: { userId, token: refreshToken },
+      });
+    }
+
     await logAuditWithContext({
-      userId: user.id,
+      userId,
       action: 'logout',
       entity: 'user',
-      entityId: user.id,
+      entityId: userId,
       newValues: { allDevices: allDevices || false },
     });
-    
-    return successResponse(null, 'Logged out successfully');
-    
+
+    return success();
+
   } catch (error) {
-    console.error('Logout error:', error);
+    logger.errorWithException('Logout error', error);
     return errorResponse('An error occurred during logout', 500);
   }
 }

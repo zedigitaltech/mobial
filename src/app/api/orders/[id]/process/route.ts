@@ -8,10 +8,10 @@ import { NextRequest } from 'next/server';
 import {
   successResponse,
   errorResponse,
-  parseJsonBody,
   requireAdmin,
 } from '@/lib/auth-helpers';
 import { processOrderWithMobimatter } from '@/services/order-service';
+import { logger } from '@/lib/logger';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -38,12 +38,6 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const user = await requireAdmin(request);
 
-    // Parse optional body for additional parameters
-    const _body = await parseJsonBody<{
-      paymentReference?: string;
-      forceReprocess?: boolean;
-    }>(request);
-
     // Process the order with MobiMatter
     const result = await processOrderWithMobimatter(id, user.id);
 
@@ -59,7 +53,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       'Order processed with MobiMatter'
     );
   } catch (error) {
-    console.error('Process order error:', error);
+    logger.errorWithException('Process order error', error);
     
     const errorMessage = error instanceof Error ? error.message : 'Failed to process order';
     

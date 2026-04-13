@@ -7,6 +7,7 @@ import {
   AuthError,
 } from '@/lib/auth-helpers';
 import { getAllAffiliates } from '@/services/affiliate-service';
+import { logger } from '@/lib/logger';
 
 async function tryGetWalletBalance(): Promise<number | null> {
   try {
@@ -105,7 +106,7 @@ export async function GET(request: NextRequest) {
     if (error instanceof AuthError) {
       return errorResponse(error.message, error.statusCode);
     }
-    console.error('Failed to fetch admin stats:', error);
+    logger.errorWithException('Failed to fetch admin stats', error);
     return errorResponse('Failed to fetch stats', 500);
   }
 }

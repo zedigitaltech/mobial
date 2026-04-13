@@ -19,6 +19,7 @@ import {
 import { encrypt } from "@/lib/encryption";
 import { logAuditWithContext } from "@/lib/audit";
 import { db } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 // Validation schema
 const verifySchema = z.object({
@@ -63,10 +64,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const setupData = JSON.parse(config.value) as {
-      secret: string;
-      createdAt: string;
-    };
+    let setupData: { secret: string; createdAt: string } | null = null;
+    try {
+      setupData = JSON.parse(config.value) as { secret: string; createdAt: string };
+    } catch {
+      await db.systemConfig.delete({ where: { key: `2fa_setup_${user.id}` } });
+      return errorResponse('2FA setup data is corrupted. Please start the setup again.', 400);
+    }
+
+    if (!setupData?.secret || !setupData?.createdAt) {
+      await db.systemConfig.delete({ where: { key: `2fa_setup_${user.id}` } });
+      return errorResponse('2FA setup data is invalid. Please start the setup again.', 400);
+    }
 
     // Check if setup has expired (10 minutes)
     const setupTime = new Date(setupData.createdAt);
@@ -127,7 +136,7 @@ export async function POST(request: NextRequest) {
       const authError = error as Error & { statusCode?: number };
       return errorResponse(authError.message, authError.statusCode || 500);
     }
-    console.error("2FA verify error:", error);
+    logger.errorWithException("2FA verify error", error);
     return errorResponse("An error occurred", 500);
   }
 }

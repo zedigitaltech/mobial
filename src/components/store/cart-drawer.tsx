@@ -30,6 +30,7 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer"
 import { useCart, CartItem } from "@/contexts/cart-context"
+import { useCurrency } from "@/contexts/currency-context"
 import { useIsMobile } from "@/hooks/use-is-mobile"
 import { useTranslations } from "next-intl"
 
@@ -42,6 +43,7 @@ interface CartDrawerProps {
 function CartItemCard({ item }: { item: CartItem }) {
   const t = useTranslations("cart")
   const { removeItem, updateQuantity, getItemQuantity } = useCart()
+  const { formatPrice } = useCurrency()
   const quantity = getItemQuantity(item.productId)
 
   const formatData = () => {
@@ -105,6 +107,7 @@ function CartItemCard({ item }: { item: CartItem }) {
               size="icon"
               className="h-7 w-7"
               onClick={() => updateQuantity(item.productId, quantity - 1)}
+              aria-label="Decrease quantity"
             >
               <Minus className="h-3 w-3" />
             </Button>
@@ -114,15 +117,16 @@ function CartItemCard({ item }: { item: CartItem }) {
               size="icon"
               className="h-7 w-7"
               onClick={() => updateQuantity(item.productId, quantity + 1)}
+              aria-label="Increase quantity"
             >
               <Plus className="h-3 w-3" />
             </Button>
           </div>
           <div className="text-right">
-            <p className="text-sm font-semibold">${(item.price * quantity).toFixed(2)}</p>
+            <p className="text-sm font-semibold">{formatPrice(item.price * quantity)}</p>
             {item.originalPrice && (
               <p className="text-xs text-muted-foreground line-through">
-                ${(item.originalPrice * quantity).toFixed(2)}
+                {formatPrice(item.originalPrice * quantity)}
               </p>
             )}
           </div>
@@ -135,7 +139,8 @@ function CartItemCard({ item }: { item: CartItem }) {
 function CartBody({ onClose }: { onClose?: () => void }) {
   const t = useTranslations("cart")
   const router = useRouter()
-  const { items, total, itemCount, clearCart } = useCart()
+  const { items, total, clearCart } = useCart()
+  const { formatPrice } = useCurrency()
 
   const handleCheckout = () => {
     onClose?.()
@@ -173,16 +178,16 @@ function CartBody({ onClose }: { onClose?: () => void }) {
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">{t("subtotal")}</span>
-            <span>${total.toFixed(2)}</span>
+            <span>{formatPrice(total)}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">{t("tax")}</span>
-            <span>$0.00</span>
+            <span>{formatPrice(0)}</span>
           </div>
           <Separator />
           <div className="flex justify-between font-semibold">
             <span>{t("total")}</span>
-            <span className="text-primary">${total.toFixed(2)}</span>
+            <span className="text-primary">{formatPrice(total)}</span>
           </div>
         </div>
 

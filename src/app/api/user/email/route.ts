@@ -15,6 +15,7 @@ import {
   getClientIP,
   isValidEmail,
 } from '@/lib/auth-helpers';
+import { logger } from '@/lib/logger';
 
 const emailChangeSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
@@ -131,7 +132,7 @@ export async function PUT(request: NextRequest) {
     if (error instanceof AuthError) {
       return errorResponse(error.message, error.statusCode);
     }
-    console.error('Email change error:', error);
+    logger.errorWithException('Email change error', error);
     return errorResponse('Failed to process email change', 500);
   }
 }

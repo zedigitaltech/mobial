@@ -1,10 +1,9 @@
 import { sendEmail } from "@/lib/email";
 import { escapeHtml } from "@/lib/sanitize";
 import { logger } from "@/lib/logger";
+import { BASE_URL, SUPPORT_EMAIL } from "@/lib/env";
 
 const log = logger.child("email-service");
-
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
 interface OrderItem {
   productName: string;
@@ -587,7 +586,7 @@ export async function sendOrderFailed(
 
       <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.6;">
         Questions? Reply to this email or contact us at
-        <a href="mailto:support@mobialo.eu" style="color:#4da6e8;text-decoration:none;">support@mobialo.eu</a>.
+        <a href="mailto:${SUPPORT_EMAIL}" style="color:#4da6e8;text-decoration:none;">${SUPPORT_EMAIL}</a>.
       </p>
     `);
 

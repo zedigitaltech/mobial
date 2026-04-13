@@ -13,7 +13,6 @@ import {
   Settings,
   Shield,
   Menu,
-  X,
   LogOut,
   ChevronRight,
   Activity,
@@ -23,15 +22,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
-import { toast } from "sonner"
 import { useAuth } from "@/components/providers/auth-provider"
-
-interface AdminUser {
-  id: string
-  name: string | null
-  email: string
-  role: string
-}
 
 const navItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },

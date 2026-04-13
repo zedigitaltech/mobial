@@ -1,11 +1,11 @@
 import { NextRequest } from "next/server"
+import { timingSafeEqual } from "crypto"
 import { db } from "@/lib/db"
 import { sendCartRecovery } from "@/services/email-service"
 import { logger } from "@/lib/logger"
+import { BASE_URL } from "@/lib/env"
 
 const log = logger.child("cron:cart-recovery")
-
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://mobialo.eu"
 
 export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization")
   const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null
 
-  if (token !== cronSecret) {
+  if (!token || token.length !== cronSecret.length || !timingSafeEqual(Buffer.from(token), Buffer.from(cronSecret))) {
     return Response.json(
       { success: false, error: "Unauthorized" },
       { status: 401 }

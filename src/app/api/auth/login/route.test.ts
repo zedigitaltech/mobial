@@ -9,6 +9,7 @@ import { verifyTOTPCode } from '@/lib/two-factor'
 // Mock password verification
 vi.mock('@/lib/password', () => ({
   verifyPassword: vi.fn().mockResolvedValue(true),
+  isBcryptHash: vi.fn().mockReturnValue(true),
 }))
 
 // Mock JWT token generation
@@ -157,7 +158,12 @@ describe('POST /api/auth/login', () => {
     expect(response.status).toBe(200)
     expect(json.success).toBe(true)
     expect(json.data.tokens.accessToken).toBe('mock-access-token')
-    expect(json.data.tokens.refreshToken).toBe('mock-refresh-token')
+    // Refresh token is intentionally NOT returned in the body —
+    // it lives in the HttpOnly `mobial_refresh` cookie.
+    expect(json.data.tokens.refreshToken).toBeUndefined()
+    const setCookie = response.headers.get('set-cookie') || ''
+    expect(setCookie).toContain('mobial_refresh=mock-refresh-token')
+    expect(setCookie).toContain('HttpOnly')
     expect(json.data.user).toBeDefined()
     // Should not contain sensitive fields
     expect(json.data.user.passwordHash).toBeUndefined()

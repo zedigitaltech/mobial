@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server';
+import { z } from 'zod';
 import {
   requireAdmin,
   successResponse,
@@ -6,6 +7,12 @@ import {
   AuthError,
 } from '@/lib/auth-helpers';
 import { getErrorStats, resolveError } from '@/services/monitoring-service';
+import { logger } from '@/lib/logger';
+
+const resolveSchema = z.object({
+  errorId: z.string().min(1),
+  action: z.enum(['resolve']),
+});
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,7 +30,7 @@ export async function GET(request: NextRequest) {
     if (err instanceof AuthError) {
       return errorResponse(err.message, err.statusCode);
     }
-    console.error('[api/admin/monitoring/errors] GET failed:', err);
+    logger.errorWithException('[api/admin/monitoring/errors] GET failed', err);
     return errorResponse('Failed to fetch error stats', 500);
   }
 }
@@ -31,14 +38,17 @@ export async function GET(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     const admin = await requireAdmin(request);
-    const body = await request.json();
+    const raw = await request.json();
 
-    if (!body.errorId || typeof body.errorId !== 'string') {
-      return errorResponse('Missing required field: errorId');
+    const parsed = resolveSchema.safeParse(raw);
+    if (!parsed.success) {
+      return errorResponse(`Validation error: ${parsed.error.issues.map((e) => e.message).join(', ')}`);
     }
 
-    if (body.action === 'resolve') {
-      await resolveError(body.errorId, admin.id);
+    const { errorId, action } = parsed.data;
+
+    if (action === 'resolve') {
+      await resolveError(errorId, admin.id);
       return successResponse({ resolved: true });
     }
 
@@ -47,7 +57,7 @@ export async function PATCH(request: NextRequest) {
     if (err instanceof AuthError) {
       return errorResponse(err.message, err.statusCode);
     }
-    console.error('[api/admin/monitoring/errors] PATCH failed:', err);
+    logger.errorWithException('[api/admin/monitoring/errors] PATCH failed', err);
     return errorResponse('Failed to update error', 500);
   }
 }

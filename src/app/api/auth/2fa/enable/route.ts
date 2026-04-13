@@ -5,7 +5,9 @@
 
 import { NextRequest } from 'next/server';
 import { requireAuth, successResponse, errorResponse } from '@/lib/auth-helpers';
+import { db } from '@/lib/db';
 import { generateTOTPSecret, generateOTPAuthURL } from '@/lib/two-factor';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -22,10 +24,6 @@ export async function POST(request: NextRequest) {
     
     // Generate OTP auth URL for QR code
     const otpAuthUrl = generateOTPAuthURL(secret, user.email);
-    
-    // Store the secret temporarily (user needs to verify before it's actually enabled)
-    // We'll use a temporary config key
-    const { db } = await import('@/lib/db');
     
     await db.systemConfig.upsert({
       where: { key: `2fa_setup_${user.id}` },
@@ -55,7 +53,7 @@ export async function POST(request: NextRequest) {
       const authError = error as Error & { statusCode?: number };
       return errorResponse(authError.message, authError.statusCode || 500);
     }
-    console.error('2FA enable error:', error);
+    logger.errorWithException('2FA enable error', error);
     return errorResponse('An error occurred', 500);
   }
 }

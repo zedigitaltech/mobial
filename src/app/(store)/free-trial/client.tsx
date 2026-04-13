@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { motion, AnimatePresence } from "framer-motion"
 import {
   Globe,
@@ -30,6 +31,7 @@ const DESTINATIONS = [
 ]
 
 export function FreeTrialForm() {
+  const t = useTranslations("freeTrial")
   const [step, setStep] = useState<"destination" | "email" | "success">("destination")
   const [selectedDestination, setSelectedDestination] = useState<string | null>(null)
   const [email, setEmail] = useState("")
@@ -41,7 +43,7 @@ export function FreeTrialForm() {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
-      toast.error("Please enter a valid email address")
+      toast.error(t("invalidEmail"))
       return
     }
 
@@ -56,15 +58,15 @@ export function FreeTrialForm() {
 
       if (data.success) {
         setStep("success")
-        toast.success("Free trial claimed!")
+        toast.success(t("claimed"))
         posthog?.capture("free_trial_claimed", {
           destination: selectedDestination,
         })
       } else {
-        toast.error(data.error || "Failed to claim trial")
+        toast.error(data.error || t("claimFailed"))
       }
     } catch {
-      toast.error("Something went wrong. Please try again.")
+      toast.error(t("claimError"))
     } finally {
       setSubmitting(false)
     }
@@ -84,7 +86,7 @@ export function FreeTrialForm() {
             >
               <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground">
                 <Globe className="h-4 w-4" />
-                Step 1 of 2 — Choose Your Destination
+                {t("step1")}
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -92,7 +94,7 @@ export function FreeTrialForm() {
                   <button
                     key={dest.country}
                     onClick={() => setSelectedDestination(dest.country)}
-                    className={`p-4 rounded-xl border text-left transition-all ${
+                    className={`relative p-4 rounded-xl border text-left transition-all ${
                       selectedDestination === dest.country
                         ? "border-primary bg-primary/5 ring-1 ring-primary"
                         : "border-border/50 hover:border-primary/30 hover:bg-muted/50"
@@ -118,7 +120,7 @@ export function FreeTrialForm() {
                 disabled={!selectedDestination}
                 onClick={() => setStep("email")}
               >
-                Continue
+                {t("continue")}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </motion.div>
@@ -134,7 +136,7 @@ export function FreeTrialForm() {
             >
               <div className="flex items-center gap-2 text-sm font-bold text-muted-foreground">
                 <Mail className="h-4 w-4" />
-                Step 2 of 2 — Enter Your Email
+                {t("step2")}
               </div>
 
               <div className="p-4 rounded-xl bg-muted/50 border border-border/50">
@@ -146,13 +148,13 @@ export function FreeTrialForm() {
                     <p className="font-bold text-sm">
                       {DESTINATIONS.find((d) => d.country === selectedDestination)?.name}
                     </p>
-                    <p className="text-xs text-muted-foreground">Free trial eSIM</p>
+                    <p className="text-xs text-muted-foreground">{t("freeTrialEsim")}</p>
                   </div>
                   <button
                     onClick={() => setStep("destination")}
                     className="ml-auto text-xs text-primary font-bold hover:underline"
                   >
-                    Change
+                    {t("change")}
                   </button>
                 </div>
               </div>
@@ -167,7 +169,7 @@ export function FreeTrialForm() {
                   onKeyDown={(e) => e.key === "Enter" && handleClaim()}
                 />
                 <p className="text-xs text-muted-foreground">
-                  We&apos;ll send your eSIM QR code and activation instructions here.
+                  {t("emailInstructions")}
                 </p>
               </div>
 
@@ -180,11 +182,11 @@ export function FreeTrialForm() {
                 {submitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Claiming...
+                    {t("claiming")}
                   </>
                 ) : (
                   <>
-                    Claim Free Trial
+                    {t("claimFreeTrial")}
                     <Sparkles className="ml-2 h-4 w-4" />
                   </>
                 )}
@@ -204,32 +206,29 @@ export function FreeTrialForm() {
               </div>
 
               <div className="space-y-2">
-                <h2 className="text-2xl font-black">Trial Claimed!</h2>
+                <h2 className="text-2xl font-black">{t("trialClaimed")}</h2>
                 <p className="text-muted-foreground">
-                  We&apos;re preparing your free eSIM for{" "}
-                  <span className="font-bold text-foreground">
-                    {DESTINATIONS.find((d) => d.country === selectedDestination)?.name}
-                  </span>
-                  . Check your email at{" "}
-                  <span className="font-bold text-foreground">{email}</span>{" "}
-                  for activation instructions.
+                  {t("preparingEsim", {
+                    destination: DESTINATIONS.find((d) => d.country === selectedDestination)?.name ?? "",
+                    email,
+                  })}
                 </p>
               </div>
 
               <Badge className="bg-primary/10 text-primary border-0 px-4 py-1.5 text-xs font-bold">
-                You have 7 days to activate your trial
+                {t("activationDays")}
               </Badge>
 
               <div className="pt-4 space-y-3">
                 <Link href="/esim" className="block">
                   <Button variant="outline" className="w-full font-bold">
-                    Browse Full eSIM Plans
+                    {t("browseFullPlans")}
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
                 <Link href="/guides/installation" className="block">
                   <Button variant="ghost" className="w-full text-sm">
-                    How to Install an eSIM
+                    {t("howToInstall")}
                   </Button>
                 </Link>
               </div>

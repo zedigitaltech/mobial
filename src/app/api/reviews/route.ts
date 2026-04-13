@@ -1,18 +1,32 @@
 import { NextRequest } from "next/server";
-import { successResponse, errorResponse } from "@/lib/auth-helpers";
+import { z } from "zod";
+import { successResponse, errorResponse, parseJsonBody } from "@/lib/auth-helpers";
+import { logger } from "@/lib/logger";
 import {
   createReview,
   getApprovedReviews,
   getReviewStats,
 } from "@/services/review-service";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { db } from "@/lib/db";
+
+const reviewSchema = z.object({
+  orderId: z.string().optional(),
+  name: z.string().min(1, "Name is required").max(100),
+  email: z.string().email("Valid email is required"),
+  rating: z.number().int().min(1).max(5),
+  title: z.string().min(1, "Title is required").max(200),
+  text: z.string().min(1, "Review text is required").max(2000),
+  destination: z.string().optional(),
+  countryCode: z.string().optional(),
+});
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const destination = searchParams.get("destination") || undefined;
-    const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 50);
-    const offset = parseInt(searchParams.get("offset") || "0");
+    const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "20", 10) || 20, 1), 50);
+    const offset = Math.min(Math.max(parseInt(searchParams.get("offset") || "0", 10) || 0, 0), 10000);
     const statsOnly = searchParams.get("stats") === "true";
 
     if (statsOnly) {
@@ -33,7 +47,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Error fetching reviews:", error);
+    logger.errorWithException("Error fetching reviews", error);
     return errorResponse("Failed to fetch reviews", 500);
   }
 }
@@ -50,7 +64,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.json();
+    const body = await parseJsonBody(request);
+    const validation = reviewSchema.safeParse(body);
+
+    if (!validation.success) {
+      return errorResponse(validation.error.issues[0].message, 400);
+    }
+
     const {
       orderId,
       name,
@@ -60,23 +80,17 @@ export async function POST(request: NextRequest) {
       text,
       destination,
       countryCode,
-    } = body;
+    } = validation.data;
 
-    // Validation
-    if (!name || !email || !rating || !title || !text) {
-      return errorResponse(
-        "Name, email, rating, title, and text are required",
-        400,
-      );
-    }
-    if (rating < 1 || rating > 5) {
-      return errorResponse("Rating must be between 1 and 5", 400);
-    }
-    if (title.length > 200) {
-      return errorResponse("Title must be 200 characters or less", 400);
-    }
-    if (text.length > 2000) {
-      return errorResponse("Review text must be 2000 characters or less", 400);
+    // Verify order ownership if orderId is provided
+    if (orderId) {
+      const order = await db.order.findUnique({
+        where: { id: orderId },
+        select: { email: true },
+      });
+      if (!order || order.email?.toLowerCase() !== email.toLowerCase()) {
+        return errorResponse("Order not found or email does not match", 403);
+      }
     }
 
     const review = await createReview({
@@ -95,7 +109,7 @@ export async function POST(request: NextRequest) {
       message: "Review submitted successfully. It will appear after approval.",
     });
   } catch (error) {
-    console.error("Error creating review:", error);
+    logger.errorWithException("Error creating review", error);
     return errorResponse("Failed to submit review", 500);
   }
 }

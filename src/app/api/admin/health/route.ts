@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { requireAdmin, successResponse, errorResponse } from '@/lib/auth-helpers';
 import { db } from '@/lib/db';
 import { testConnection } from '@/lib/mobimatter';
+import { logger } from '@/lib/logger';
 
 const startTime = Date.now();
 
@@ -102,7 +103,7 @@ export async function GET(request: NextRequest) {
       const authError = error as { statusCode: number; message: string };
       return errorResponse(authError.message, authError.statusCode);
     }
-    console.error('Error in health check:', error);
+    logger.errorWithException('Error in health check', error);
     return errorResponse('Health check failed', 500);
   }
 }

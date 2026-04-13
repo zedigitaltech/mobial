@@ -12,6 +12,7 @@ import {
 } from '@/lib/auth-helpers';
 import { getOrderById, getOrderByNumber, userOwnsOrder } from '@/services/order-service';
 import { getESIMDetails } from '@/services/esim-service';
+import { logger } from '@/lib/logger';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -64,14 +65,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       const email = request.nextUrl.searchParams.get('email');
 
       if (!email) {
-        return successResponse({
-          order: {
-            orderNumber: order.orderNumber,
-            status: order.status,
-            paymentStatus: order.paymentStatus,
-            createdAt: order.createdAt,
-          },
-        });
+        return errorResponse('Email is required for guest order lookup', 401);
       }
 
       if (email.toLowerCase() !== order.email?.toLowerCase()) {
@@ -112,10 +106,13 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
             dataAmount: item.product.dataAmount,
             dataUnit: item.product.dataUnit,
             validityDays: item.product.validityDays,
-            countries: item.product.countries ? JSON.parse(item.product.countries) : [],
+            countries: (() => { try { return item.product.countries ? JSON.parse(item.product.countries) : []; } catch { return []; } })(),
           } : null,
         })),
-        user: order.user,
+        user: user ? {
+          id: order.user?.id,
+          name: order.user?.name,
+        } : undefined,
         esim: esimDetails ? {
           qrCode: esimDetails.qrCode,
           activationCode: esimDetails.activationCode,
@@ -127,7 +124,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return successResponse(response);
   } catch (error) {
-    console.error('Get order error:', error);
+    logger.errorWithException('Get order error', error);
     return errorResponse('Failed to retrieve order', 500);
   }
 }

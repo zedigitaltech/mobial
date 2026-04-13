@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useRef } from "react"
+import { useTranslations } from "next-intl"
 import { motion } from "framer-motion"
-import { Star, ChevronLeft, ChevronRight, BadgeCheck, Quote } from "lucide-react"
+import { Star, ChevronLeft, ChevronRight, BadgeCheck } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { reviews, REVIEW_STATS } from "@/lib/reviews"
@@ -35,6 +36,7 @@ function StarRating({ rating, size = "sm" }: { rating: number; size?: "sm" | "lg
 }
 
 function ReviewCard({ review }: { review: Review }) {
+  const t = useTranslations("reviews")
   return (
     <Card className="h-full border-white/5 bg-white/[0.03] backdrop-blur-2xl hover:border-white/10 transition-all duration-300 flex-shrink-0 w-[340px] md:w-[380px]">
       <CardContent className="p-6 flex flex-col gap-4 h-full">
@@ -66,9 +68,9 @@ function ReviewCard({ review }: { review: Review }) {
         </div>
 
         <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 border-t border-white/5 pt-3">
-          <span>Used in {review.destination}</span>
+          <span>{t("usedIn", { destination: review.destination })}</span>
           <span>
-            {review.verified ? "Verified Purchase" : ""}
+            {review.verified ? t("verifiedPurchase") : ""}
           </span>
         </div>
       </CardContent>
@@ -77,6 +79,7 @@ function ReviewCard({ review }: { review: Review }) {
 }
 
 export function ReviewsSection() {
+  const t = useTranslations("reviews")
   const scrollRef = useRef<HTMLDivElement>(null)
 
   function scroll(direction: "left" | "right") {
@@ -100,11 +103,11 @@ export function ReviewsSection() {
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-8">
             <div className="space-y-4">
               <h2 className="text-3xl md:text-4xl font-black tracking-tight">
-                Trusted by{" "}
-                <span className="text-primary italic">Travelers Worldwide</span>
+                {t("trustedBy")}{" "}
+                <span className="text-primary italic">{t("travelersWorldwide")}</span>
               </h2>
               <p className="text-muted-foreground max-w-lg">
-                Join thousands of happy customers who stay connected with MobiaL.
+                {t("joinThousands")}
               </p>
             </div>
 
@@ -115,9 +118,9 @@ export function ReviewsSection() {
               </div>
               <div className="h-12 w-px bg-border/50" />
               <div className="text-sm">
-                <p className="font-bold">{REVIEW_STATS.totalReviews.toLocaleString()} reviews</p>
+                <p className="font-bold">{t("reviewsCount", { count: REVIEW_STATS.totalReviews.toLocaleString() })}</p>
                 <p className="text-muted-foreground text-xs mt-1">
-                  {REVIEW_STATS.fiveStarPercent}% five-star ratings
+                  {t("fiveStarPercent", { percent: REVIEW_STATS.fiveStarPercent })}
                 </p>
               </div>
             </div>

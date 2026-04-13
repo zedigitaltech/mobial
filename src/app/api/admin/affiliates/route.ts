@@ -6,6 +6,7 @@ import {
   AuthError,
 } from '@/lib/auth-helpers';
 import { getAllAffiliates } from '@/services/affiliate-service';
+import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   try {
@@ -25,7 +26,7 @@ export async function GET(request: NextRequest) {
     if (error instanceof AuthError) {
       return errorResponse(error.message, error.statusCode);
     }
-    console.error('Get affiliates error:', error);
+    logger.errorWithException('Get affiliates error', error);
     return errorResponse('Failed to fetch affiliates', 500);
   }
 }

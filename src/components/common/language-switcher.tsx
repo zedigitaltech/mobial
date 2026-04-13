@@ -41,8 +41,6 @@ export function LanguageSwitcher({ triggerClassName }: LanguageSwitcherProps = {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
-  const currentLanguage = languages.find((l) => l.code === locale) ?? languages[0]
-
   async function handleLocaleChange(newLocale: string) {
     try {
       const res = await fetch("/api/locale", {

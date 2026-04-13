@@ -1,5 +1,6 @@
 "use client"
 
+import { getAccessToken } from "@/lib/auth-token"
 import { useState, useEffect } from "react"
 import { useTranslations } from "next-intl"
 import { motion } from "framer-motion"
@@ -45,7 +46,7 @@ type TwoFAStep = "idle" | "loading" | "qr" | "verifying" | "backup_codes"
 
 export default function SettingsPage() {
   const t = useTranslations("settings")
-  const { user, isLoading: authLoading, openAuthModal, refresh } = useAuth()
+  const { user, isLoading: authLoading, openAuthModal, refresh, logout } = useAuth()
 
   // Profile editing
   const [editingProfile, setEditingProfile] = useState(false)
@@ -61,6 +62,10 @@ export default function SettingsPage() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [changingPassword, setChangingPassword] = useState(false)
 
+  // Delete account
+  const [deletePassword, setDeletePassword] = useState("")
+  const [deletingAccount, setDeletingAccount] = useState(false)
+
   // 2FA setup
   const [twoFAStep, setTwoFAStep] = useState<TwoFAStep>("idle")
   const [twoFASecret, setTwoFASecret] = useState("")
@@ -68,6 +73,8 @@ export default function SettingsPage() {
   const [totpCode, setTotpCode] = useState("")
   const [backupCodes, setBackupCodes] = useState<string[]>([])
   const [disabling2FA, setDisabling2FA] = useState(false)
+  const [disable2FAOpen, setDisable2FAOpen] = useState(false)
+  const [disable2FAPassword, setDisable2FAPassword] = useState("")
 
   // Initialize edit name when user loads
   useEffect(() => {
@@ -76,7 +83,7 @@ export default function SettingsPage() {
     }
   }, [user?.name])
 
-  const getToken = () => localStorage.getItem("token")
+  const getToken = () => getAccessToken()
 
   // Profile save
   const handleSaveProfile = async () => {
@@ -229,27 +236,27 @@ export default function SettingsPage() {
 
   // 2FA: Disable
   const handleDisable2FA = async () => {
+    if (!disable2FAPassword) {
+      toast.error(t("fillAllFields"))
+      return
+    }
     setDisabling2FA(true)
     try {
-      const password = prompt(t("enterPasswordToDisable"))
-      if (!password) {
-        setDisabling2FA(false)
-        return
-      }
-
       const res = await fetch("/api/auth/2fa/disable", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${getToken()}`,
         },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ password: disable2FAPassword }),
       })
 
       const data = await res.json()
 
       if (res.ok && data.success) {
         toast.success(t("twoFADisabledToast"))
+        setDisable2FAOpen(false)
+        setDisable2FAPassword("")
         await refresh()
       } else {
         toast.error(data?.message || t("failedDisable2FA"))
@@ -271,13 +278,43 @@ export default function SettingsPage() {
   }
 
   // Copy backup codes to clipboard
-  const handleCopyBackupCodes = () => {
-    navigator.clipboard.writeText(backupCodes.join("\n"))
-    toast.success(t("backupCodesCopied"))
+  const handleCopyBackupCodes = async () => {
+    try {
+      await navigator.clipboard.writeText(backupCodes.join("\n"))
+      toast.success(t("backupCodesCopied"))
+    } catch {
+      toast.error("Failed to copy")
+    }
   }
 
-  const handleDeleteAccount = () => {
-    toast.info(t("accountDeletionRequested"))
+  const handleDeleteAccount = async () => {
+    if (!deletePassword) {
+      toast.error(t("fillAllFields"))
+      return
+    }
+    setDeletingAccount(true)
+    try {
+      const res = await fetch("/api/user/delete-account", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`,
+        },
+        body: JSON.stringify({ password: deletePassword }),
+      })
+      const data = await res.json().catch(() => null)
+      if (res.ok) {
+        toast.success(t("accountDeletionRequested"))
+        await logout()
+      } else {
+        toast.error(data?.error || t("somethingWentWrong"))
+      }
+    } catch {
+      toast.error(t("somethingWentWrong"))
+    } finally {
+      setDeletingAccount(false)
+      setDeletePassword("")
+    }
   }
 
   if (authLoading) {
@@ -613,8 +650,11 @@ export default function SettingsPage() {
                               variant="outline"
                               size="sm"
                               onClick={() => {
-                                navigator.clipboard.writeText(twoFASecret)
-                                toast.success(t("secretCopied"))
+                                navigator.clipboard.writeText(twoFASecret).then(() => {
+                                  toast.success(t("secretCopied"))
+                                }).catch(() => {
+                                  toast.error("Failed to copy")
+                                })
                               }}
                             >
                               <Copy className="h-3 w-3" />
@@ -714,21 +754,55 @@ export default function SettingsPage() {
                     )}
 
                     {user.twoFactorEnabled && twoFAStep === "idle" && (
-                      <Button
-                        variant="outline"
-                        className="rounded-xl font-bold text-red-500 hover:text-red-600 hover:border-red-500/50"
-                        onClick={handleDisable2FA}
-                        disabled={disabling2FA}
-                      >
-                        {disabling2FA ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            {t("disabling")}
-                          </>
-                        ) : (
-                          t("disable2FA")
-                        )}
-                      </Button>
+                      <AlertDialog open={disable2FAOpen} onOpenChange={setDisable2FAOpen}>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className="rounded-xl font-bold text-red-500 hover:text-red-600 hover:border-red-500/50"
+                          >
+                            {t("disable2FA")}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="rounded-2xl">
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>{t("disable2FA")}</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {t("enterPasswordToDisable")}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <div className="px-1 py-2">
+                            <Label htmlFor="disable-2fa-password" className="text-sm font-medium">
+                              {t("currentPassword")}
+                            </Label>
+                            <Input
+                              id="disable-2fa-password"
+                              type="password"
+                              className="mt-1.5 rounded-xl"
+                              value={disable2FAPassword}
+                              onChange={(e) => setDisable2FAPassword(e.target.value)}
+                            />
+                          </div>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel
+                              className="rounded-xl font-bold"
+                              onClick={() => setDisable2FAPassword("")}
+                            >
+                              {t("cancel")}
+                            </AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={handleDisable2FA}
+                              disabled={disabling2FA}
+                              className="rounded-xl font-bold bg-red-500 hover:bg-red-600"
+                            >
+                              {disabling2FA ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                t("disable2FA")
+                              )}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     )}
                   </div>
                 </CardContent>
@@ -774,15 +848,35 @@ export default function SettingsPage() {
                             {t("deleteConfirmDesc")}
                           </AlertDialogDescription>
                         </AlertDialogHeader>
+                        <div className="px-1 py-2">
+                          <Label htmlFor="delete-password" className="text-sm font-medium">
+                            {t("currentPassword")}
+                          </Label>
+                          <Input
+                            id="delete-password"
+                            type="password"
+                            className="mt-1.5 rounded-xl"
+                            value={deletePassword}
+                            onChange={(e) => setDeletePassword(e.target.value)}
+                          />
+                        </div>
                         <AlertDialogFooter>
-                          <AlertDialogCancel className="rounded-xl font-bold">
+                          <AlertDialogCancel
+                            className="rounded-xl font-bold"
+                            onClick={() => setDeletePassword("")}
+                          >
                             {t("cancel")}
                           </AlertDialogCancel>
                           <AlertDialogAction
                             onClick={handleDeleteAccount}
+                            disabled={deletingAccount}
                             className="rounded-xl font-bold bg-red-500 hover:bg-red-600"
                           >
-                            {t("yesDelete")}
+                            {deletingAccount ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              t("yesDelete")
+                            )}
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>

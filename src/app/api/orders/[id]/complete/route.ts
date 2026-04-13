@@ -11,6 +11,7 @@ import {
   requireAdmin,
 } from '@/lib/auth-helpers';
 import { completeOrder, getOrderById } from '@/services/order-service';
+import { logger } from '@/lib/logger';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       'Order completed successfully'
     );
   } catch (error) {
-    console.error('Complete order error:', error);
+    logger.errorWithException('Complete order error', error);
     
     const errorMessage = error instanceof Error ? error.message : 'Failed to complete order';
     

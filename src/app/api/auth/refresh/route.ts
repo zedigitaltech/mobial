@@ -3,40 +3,37 @@
  * Refresh access token using refresh token
  */
 
-import { NextRequest } from 'next/server';
-import { z } from 'zod';
+import { NextRequest, NextResponse } from 'next/server';
 import { verifyToken } from '@/lib/jwt';
 import { generateTokenPair } from '@/lib/jwt';
-import { logAuditWithContext as _logAuditWithContext } from '@/lib/audit';
 import { db } from '@/lib/db';
-import { 
-  successResponse, 
-  errorResponse, 
-  parseJsonBody 
+import {
+  errorResponse,
+  parseJsonBody,
 } from '@/lib/auth-helpers';
-
-// Validation schema
-const refreshSchema = z.object({
-  refreshToken: z.string().min(1, 'Refresh token is required'),
-});
+import { readRefreshCookie, setAuthCookies } from '@/lib/auth-cookies';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
-    // Parse and validate input
-    const body = await parseJsonBody(request);
-    
-    if (!body) {
-      return errorResponse('Invalid request body', 400);
+    // CSRF protection: validate Origin header
+    const origin = request.headers.get('origin');
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+    if (origin && origin !== baseUrl) {
+      return errorResponse('Invalid origin', 403);
     }
-    
-    const validationResult = refreshSchema.safeParse(body);
 
-    if (!validationResult.success) {
-      const firstError = validationResult.error.issues[0];
-      return errorResponse(firstError?.message || 'Invalid input', 400);
+    // Prefer HttpOnly cookie (XSS-proof) over body for the refresh token.
+    // Body is still accepted for backward compatibility with older clients.
+    let refreshToken = readRefreshCookie(request);
+    if (!refreshToken) {
+      const body = await parseJsonBody<{ refreshToken?: string }>(request);
+      refreshToken = body?.refreshToken ?? null;
     }
-    
-    const { refreshToken } = validationResult.data;
+
+    if (!refreshToken) {
+      return errorResponse('Refresh token is required', 400);
+    }
     
     // Verify refresh token
     const payload = verifyToken(refreshToken);
@@ -93,14 +90,19 @@ export async function POST(request: NextRequest) {
     //   newValues: { action: 'token_refresh' },
     // });
     
-    return successResponse({
-      accessToken: tokens.accessToken,
-      refreshToken: tokens.refreshToken,
-      expiresIn: tokens.expiresIn,
-    }, 'Token refreshed successfully');
-    
+    const response = NextResponse.json({
+      success: true,
+      data: {
+        accessToken: tokens.accessToken,
+        expiresIn: tokens.expiresIn,
+      },
+      message: 'Token refreshed successfully',
+    }, { status: 200 });
+    setAuthCookies(response, tokens.refreshToken);
+    return response;
+
   } catch (error) {
-    console.error('Token refresh error:', error);
+    logger.errorWithException('Token refresh error', error);
     return errorResponse('An error occurred during token refresh', 500);
   }
 }

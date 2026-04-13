@@ -1,5 +1,6 @@
 "use client";
 
+import { getAccessToken } from "@/lib/auth-token";
 import { useState, useEffect } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
@@ -24,6 +25,7 @@ import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useCurrency } from "@/contexts/currency-context";
+import { cn } from "@/lib/utils";
 
 // Types
 interface OrderItem {
@@ -70,20 +72,22 @@ function UsageIndicator({ orderId }: { orderId: string }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchUsage = async () => {
+    // Stagger requests to avoid fan-out of N simultaneous API calls
+    const delay = Math.random() * 2000;
+    const timer = setTimeout(async () => {
       try {
         const res = await fetch(`/api/orders/${orderId}/usage`);
         if (res.ok) {
           const data = await res.json();
           setUsage(data.data);
         }
-      } catch (err) {
-        console.error(err);
+      } catch {
+        // Usage data is non-critical; fail silently
       } finally {
         setLoading(false);
       }
-    };
-    fetchUsage();
+    }, delay);
+    return () => clearTimeout(timer);
   }, [orderId]);
 
   if (loading)
@@ -117,11 +121,15 @@ function OrderDetails({ order }: { order: Order }) {
   const t = useTranslations("orders");
   const [copied, setCopied] = useState<string | null>(null);
 
-  const copyToClipboard = (text: string, key: string) => {
-    navigator.clipboard.writeText(text);
-    setCopied(key);
-    toast.success(t("copiedToClipboard"));
-    setTimeout(() => setCopied(null), 2000);
+  const copyToClipboard = async (text: string, key: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(key);
+      toast.success(t("copiedToClipboard"));
+      setTimeout(() => setCopied(null), 2000);
+    } catch {
+      toast.error("Failed to copy");
+    }
   };
 
   return (
@@ -384,10 +392,6 @@ function GuestOrderLookup() {
   );
 }
 
-function cn(...classes: any[]) {
-  return classes.filter(Boolean).join(" ");
-}
-
 export default function OrdersPage() {
   const t = useTranslations("orders");
   const { user, isLoading: authLoading, openAuthModal } = useAuth();
@@ -406,7 +410,10 @@ export default function OrdersPage() {
   const loadOrders = async (offset = 0) => {
     try {
       setLoading(true);
-      const res = await fetch(`/api/orders?limit=20&offset=${offset}`);
+      const token = getAccessToken();
+      const res = await fetch(`/api/orders?limit=20&offset=${offset}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (res.ok) {
         const data = await res.json();
         if (offset === 0) {
@@ -416,8 +423,8 @@ export default function OrdersPage() {
         }
         setHasMore(data.data.pagination.hasMore);
       }
-    } catch (error) {
-      console.error(error);
+    } catch {
+      toast.error(t("searchFailed"));
     } finally {
       setLoading(false);
     }

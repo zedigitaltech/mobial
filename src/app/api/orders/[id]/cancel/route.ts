@@ -13,6 +13,8 @@ import {
   getAuthUser,
 } from '@/lib/auth-helpers';
 import { cancelOrder, getOrderById } from '@/services/order-service';
+import { logger } from '@/lib/logger';
+import { checkRateLimit } from '@/lib/rate-limit';
 
 interface RouteParams {
   params: Promise<{ id: string }>;
@@ -36,6 +38,12 @@ const cancelOrderSchema = z.object({
  */
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const rateLimit = await checkRateLimit(ip, 'api:write');
+    if (!rateLimit.success) {
+      return errorResponse('Too many requests', 429);
+    }
+
     const { id } = await params;
 
     if (!id) {
@@ -103,7 +111,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       'Order cancelled'
     );
   } catch (error) {
-    console.error('Cancel order error:', error);
+    logger.errorWithException('Cancel order error', error);
     
     const errorMessage = error instanceof Error ? error.message : 'Failed to cancel order';
     

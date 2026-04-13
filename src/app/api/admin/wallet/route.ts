@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import { requireAdmin, successResponse, errorResponse } from '@/lib/auth-helpers';
 import { getWalletBalance } from '@/lib/mobimatter';
+import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
       const authError = error as { statusCode: number; message: string };
       return errorResponse(authError.message, authError.statusCode);
     }
-    console.error('Error fetching wallet balance:', error);
+    logger.errorWithException('Error fetching wallet balance', error);
     return errorResponse('Failed to fetch wallet balance', 500);
   }
 }

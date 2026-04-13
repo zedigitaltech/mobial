@@ -14,6 +14,7 @@ import { encryptEsimField } from "@/lib/esim-encryption";
 import { getPostHogClient } from "@/lib/posthog-server";
 import { sendPushNotification } from "@/lib/push-notifications";
 import { logger } from "@/lib/logger";
+import { CASHBACK_PERCENT } from "@/lib/env";
 
 const log = logger.child("webhook:stripe");
 
@@ -25,14 +26,16 @@ export async function POST(request: NextRequest) {
     return new NextResponse("Missing signature", { status: 400 });
   }
 
+  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    log.error("STRIPE_WEBHOOK_SECRET is not configured");
+    return new NextResponse("Webhook not configured", { status: 503 });
+  }
+
   let event;
 
   try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      process.env.STRIPE_WEBHOOK_SECRET!,
-    );
+    event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
   } catch (err) {
     log.errorWithException("Webhook signature verification failed", err);
     return new NextResponse("Webhook processing failed", { status: 400 });
@@ -52,29 +55,65 @@ export async function POST(request: NextRequest) {
         // ── Wallet top-up flow ──
         if (isWalletTopup) {
           const walletUserId = session.metadata?.userId;
-          const walletAmount = parseFloat(
-            session.metadata?.walletAmount ?? "0",
-          );
-          if (walletUserId && walletAmount > 0) {
-            await db.wallet.upsert({
-              where: { userId: walletUserId },
-              create: {
-                userId: walletUserId,
-                balance: walletAmount,
-              },
-              update: {
-                balance: { increment: walletAmount },
-              },
-            });
-            await logAudit({
-              action: "stripe_payment_success",
-              entity: "wallet",
-              entityId: walletUserId,
-              newValues: {
-                sessionId: session.id,
-                walletAmount,
-                type: "topup",
-              },
+          // Use Stripe-verified payment amount, not client-supplied metadata
+          const walletAmount = (session.amount_total ?? 0) / 100;
+
+          if (walletUserId && walletAmount > 0 && walletAmount < 10000) {
+            await db.$transaction(async (tx) => {
+              // Idempotency: check if this Stripe session was already processed.
+              // Look for an existing audit log with action stripe_payment_success
+              // and entity wallet where entityId is the userId AND newValues
+              // contains the session ID. This is more reliable than a string
+              // contains check on a non-indexed field.
+              const existingTopup = await tx.auditLog.findFirst({
+                where: {
+                  action: "stripe_payment_success",
+                  entity: "wallet",
+                  entityId: walletUserId,
+                  newValues: { contains: session.id },
+                },
+              });
+
+              if (existingTopup) {
+                log.info(`Wallet top-up already processed, skipping duplicate: ${session.id}`);
+                return;
+              }
+
+              const wallet = await tx.wallet.upsert({
+                where: { userId: walletUserId },
+                create: {
+                  userId: walletUserId,
+                  balance: walletAmount,
+                },
+                update: {
+                  balance: { increment: walletAmount },
+                },
+              });
+
+              // Ledger entry mirrors the balance change.
+              await tx.walletTransaction.create({
+                data: {
+                  walletId: wallet.id,
+                  userId: walletUserId,
+                  type: "credit",
+                  amount: walletAmount,
+                  description: `Stripe top-up ${session.id}`,
+                },
+              });
+
+              // Inline audit log so it participates in the same transaction
+              await tx.auditLog.create({
+                data: {
+                  action: "stripe_payment_success",
+                  entity: "wallet",
+                  entityId: walletUserId,
+                  newValues: JSON.stringify({
+                    sessionId: session.id,
+                    walletAmount,
+                    type: "topup",
+                  }),
+                },
+              });
             });
           }
           break;
@@ -318,41 +357,56 @@ export async function POST(request: NextRequest) {
 
           // ── Cashback reward (10% of order total) ──
           if (fulfillment.success && order?.userId) {
-            const cashbackAmount = Math.round(order.total * 0.1 * 100) / 100;
+            const cashbackAmount = Math.round(order.total * CASHBACK_PERCENT * 100) / 100;
             if (cashbackAmount > 0) {
-              await db.reward
-                .create({
-                  data: {
-                    userId: order.userId,
-                    type: "cashback",
-                    amount: cashbackAmount,
-                    orderId: order.id,
-                    description: `10% cashback on order ${order.orderNumber}`,
-                  },
-                })
-                .catch((err: unknown) => {
-                  log.errorWithException("Failed to create cashback reward", err, {
-                    metadata: { orderId: order.id },
+              try {
+                await db.$transaction(async (tx) => {
+                  // Idempotency: skip if cashback already exists for this order
+                  const existingReward = await tx.reward.findFirst({
+                    where: { orderId: order.id, type: "cashback" },
                   });
-                });
+                  if (existingReward) {
+                    log.info(`Cashback already issued for order ${order.id}, skipping duplicate`);
+                    return;
+                  }
 
-              // Credit wallet
-              await db.wallet
-                .upsert({
-                  where: { userId: order.userId },
-                  create: {
-                    userId: order.userId,
-                    balance: cashbackAmount,
-                  },
-                  update: {
-                    balance: { increment: cashbackAmount },
-                  },
-                })
-                .catch((err: unknown) => {
-                  log.errorWithException("Failed to credit wallet cashback", err, {
-                    metadata: { orderId: order.id },
+                  await tx.reward.create({
+                    data: {
+                      userId: order.userId!,
+                      type: "cashback",
+                      amount: cashbackAmount,
+                      orderId: order.id,
+                      description: `${Math.round(CASHBACK_PERCENT * 100)}% cashback on order ${order.orderNumber}`,
+                    },
+                  });
+
+                  // Credit wallet + ledger entry atomically with reward creation
+                  const wallet = await tx.wallet.upsert({
+                    where: { userId: order.userId! },
+                    create: {
+                      userId: order.userId!,
+                      balance: cashbackAmount,
+                    },
+                    update: {
+                      balance: { increment: cashbackAmount },
+                    },
+                  });
+                  await tx.walletTransaction.create({
+                    data: {
+                      walletId: wallet.id,
+                      userId: order.userId!,
+                      type: "credit",
+                      amount: cashbackAmount,
+                      orderId: order.id,
+                      description: `Cashback on order ${order.orderNumber}`,
+                    },
                   });
                 });
+              } catch (err: unknown) {
+                log.errorWithException("Failed to create cashback reward and credit wallet", err, {
+                  metadata: { orderId: order.id },
+                });
+              }
             }
           }
         }

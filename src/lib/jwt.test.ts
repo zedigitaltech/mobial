@@ -127,16 +127,11 @@ describe('jwt', () => {
       delete process.env.JWT_SECRET
       setNodeEnv('development')
 
-      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
-
       const token = generateToken('user-1', 'a@b.com', 'user')
       const payload = verifyToken(token)
 
       expect(payload).not.toBeNull()
       expect(payload!.sub).toBe('user-1')
-      expect(warnSpy).toHaveBeenCalled()
-
-      warnSpy.mockRestore()
     })
 
     it('should throw in production when JWT_SECRET is not set', () => {
@@ -144,7 +139,7 @@ describe('jwt', () => {
       setNodeEnv('production')
 
       expect(() => generateToken('user-1', 'a@b.com', 'user')).toThrow(
-        'JWT_SECRET environment variable is required in production'
+        'JWT_SECRET environment variable is required in non-development environments'
       )
     })
   })

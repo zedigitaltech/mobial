@@ -1,8 +1,10 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { useTranslations } from "next-intl"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
+import { setAccessToken } from "@/lib/auth-token"
 
 declare global {
   interface Window {
@@ -37,6 +39,7 @@ interface GoogleSignInProps {
 }
 
 export function GoogleSignIn({ onSuccess, text = "continue_with" }: GoogleSignInProps) {
+  const t = useTranslations("auth")
   const buttonRef = useRef<HTMLDivElement>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
@@ -93,16 +96,16 @@ export function GoogleSignIn({ onSuccess, text = "continue_with" }: GoogleSignIn
         throw new Error(data.error || "Google sign-in failed")
       }
 
+      // Access token in-memory only; refresh token in HttpOnly cookie.
       if (data.data?.tokens) {
-        localStorage.setItem("token", data.data.tokens.accessToken)
-        localStorage.setItem("refreshToken", data.data.tokens.refreshToken)
+        setAccessToken(data.data.tokens.accessToken)
       }
 
-      toast.success("Welcome!")
+      toast.success(t("welcome"))
       onSuccess?.()
       router.refresh()
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Google sign-in failed")
+      toast.error(error instanceof Error ? error.message : t("googleSignInFailed"))
     } finally {
       setIsLoading(false)
     }

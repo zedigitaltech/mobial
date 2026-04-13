@@ -7,6 +7,7 @@ import { z } from "zod"
 import { motion } from "framer-motion"
 import { Loader2, Mail, Lock, Eye, EyeOff, User } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { setAccessToken } from "@/lib/auth-token"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -84,10 +85,10 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
         throw new Error(result.error || "Registration failed")
       }
 
-      // Store tokens
+      // Access token lives in an in-memory store (not localStorage).
+      // Refresh token is an HttpOnly cookie set by the server.
       if (result.data?.tokens) {
-        localStorage.setItem("token", result.data.tokens.accessToken)
-        localStorage.setItem("refreshToken", result.data.tokens.refreshToken)
+        setAccessToken(result.data.tokens.accessToken)
       }
 
       toast.success(t("accountCreated"))

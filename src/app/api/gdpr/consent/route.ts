@@ -9,8 +9,8 @@ import {
   getClientIP,
   getUserAgent,
 } from "@/lib/auth-helpers";
+import { createHmac } from "crypto";
 import { checkRateLimit, createRateLimitHeaders } from "@/lib/rate-limit";
-import { hash } from "@/lib/encryption";
 import { logAuditWithContext } from "@/lib/audit";
 import { logger } from "@/lib/logger";
 
@@ -79,7 +79,13 @@ export async function POST(request: NextRequest) {
     } else {
       // Guest user — store consent with hashed IP as identifier
       // GDPR requires demonstrable consent records even for anonymous users
-      const guestIdentifier = hash(`guest:${ipAddress}:${userAgent || ""}`);
+      // HMAC with server-side salt so the guest identifier is not
+      // reversible via rainbow tables against common IP/UA combinations.
+      const salt = process.env.GUEST_ID_SALT || process.env.ENCRYPTION_KEY || "dev-fallback-salt";
+      const hmacHex = (input: string) =>
+        createHmac("sha256", salt).update(input).digest("hex");
+      const guestIdentifier = hmacHex(`guest:${ipAddress}:${userAgent || ""}`);
+      const ipHash = hmacHex(`ip:${ipAddress}`);
 
       await db.systemConfig.upsert({
         where: { key: `gdpr_guest_${guestIdentifier}` },
@@ -89,7 +95,7 @@ export async function POST(request: NextRequest) {
             analytics,
             marketing,
             thirdParty,
-            ipHash: hash(ipAddress),
+            ipHash,
             consentedAt: new Date().toISOString(),
           }),
           description: "Guest GDPR consent record",
@@ -99,7 +105,7 @@ export async function POST(request: NextRequest) {
             analytics,
             marketing,
             thirdParty,
-            ipHash: hash(ipAddress),
+            ipHash,
             consentedAt: new Date().toISOString(),
           }),
         },

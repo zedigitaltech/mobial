@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import { useRouter } from "next/navigation"
 import {
   Search,
@@ -188,6 +189,7 @@ function SearchResults({
   search: ReturnType<typeof useSearchLogic>
   onClose: () => void
 }) {
+  const t = useTranslations("search")
   const {
     query, recentSearches, refreshRecents,
     countryMatches, regionMatches, results, topDestinations,
@@ -205,7 +207,7 @@ function SearchResults({
             <div className="mb-4">
               <div className="flex items-center justify-between px-4 py-2">
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 flex items-center gap-1.5">
-                  <Clock className="h-3 w-3" /> Recent Searches
+                  <Clock className="h-3 w-3" /> {t("recentSearches")}
                 </p>
                 <button
                   className="text-[10px] font-bold text-muted-foreground/40 hover:text-primary transition-colors"
@@ -214,7 +216,7 @@ function SearchResults({
                     refreshRecents()
                   }}
                 >
-                  Clear
+                  {t("clear")}
                 </button>
               </div>
               <div className="flex flex-wrap gap-2 px-4">
@@ -232,7 +234,7 @@ function SearchResults({
           )}
           <div>
             <p className="px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 flex items-center gap-1.5">
-              <TrendingUp className="h-3 w-3 text-primary" /> Top Destinations
+              <TrendingUp className="h-3 w-3 text-primary" /> {t("topDestinations")}
             </p>
             <div className="grid gap-1">
               {topDestinations.map((dest) => (
@@ -260,7 +262,7 @@ function SearchResults({
           {countryMatches.length > 0 && (
             <div className="mb-3">
               <p className="px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 flex items-center gap-1.5">
-                <MapPin className="h-3 w-3" /> Countries
+                <MapPin className="h-3 w-3" /> {t("countries")}
               </p>
               <div className="grid gap-1">
                 {countryMatches.map((c) => (
@@ -288,7 +290,7 @@ function SearchResults({
           {regionMatches.length > 0 && (
             <div className="mb-3">
               <p className="px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 flex items-center gap-1.5">
-                <Globe className="h-3 w-3" /> Regions
+                <Globe className="h-3 w-3" /> {t("regions")}
               </p>
               <div className="grid gap-1">
                 {regionMatches.map((r) => (
@@ -303,7 +305,7 @@ function SearchResults({
                       <Globe className="h-6 w-6 text-primary" />
                       <div>
                         <p className="font-bold text-lg">{r.name}</p>
-                        <p className="text-xs text-muted-foreground/60">{r.countryCount}+ countries</p>
+                        <p className="text-xs text-muted-foreground/60">{t("countriesCount", { count: r.countryCount })}</p>
                       </div>
                     </div>
                     <ChevronRight className="h-5 w-5 text-muted-foreground/20 group-hover/item:text-primary group-hover/item:translate-x-1 transition-all" />
@@ -316,7 +318,7 @@ function SearchResults({
           {results.length > 0 && (
             <div>
               <p className="px-4 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 flex items-center gap-1.5">
-                <Search className="h-3 w-3" /> Plans
+                <Search className="h-3 w-3" /> {t("plans")}
               </p>
               <div className="grid gap-1">
                 {results.map((product) => (
@@ -351,8 +353,8 @@ function SearchResults({
 
           {!isSearching && !hasResults && query.length >= 2 && (
             <div className="text-center py-8">
-              <p className="text-muted-foreground font-medium">No results for &ldquo;{query}&rdquo;</p>
-              <p className="text-xs text-muted-foreground/60 mt-1">Try a different country or region name</p>
+              <p className="text-muted-foreground font-medium">{t("noResults", { query })}</p>
+              <p className="text-xs text-muted-foreground/60 mt-1">{t("noResultsHint")}</p>
             </div>
           )}
         </>
@@ -362,6 +364,7 @@ function SearchResults({
 }
 
 function MobileSearch() {
+  const t = useTranslations("search")
   const [open, setOpen] = React.useState(false)
   const search = useSearchLogic()
   const inputRef = React.useRef<HTMLInputElement>(null)
@@ -371,7 +374,6 @@ function MobileSearch() {
       search.refreshRecents()
       setTimeout(() => inputRef.current?.focus(), 100)
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
   const handleClose = () => {
@@ -388,7 +390,7 @@ function MobileSearch() {
           className="w-full flex items-center gap-3 px-6 py-4 rounded-[28px] border border-white/10 bg-black/40 backdrop-blur-3xl ring-1 ring-inset ring-white/5 shadow-2xl text-left"
         >
           <Search className="h-5 w-5 text-muted-foreground/60" />
-          <span className="text-lg font-medium text-muted-foreground/40">Search country or plan...</span>
+          <span className="text-lg font-medium text-muted-foreground/40">{t("searchPlaceholder")}</span>
         </button>
       </div>
 
@@ -410,7 +412,7 @@ function MobileSearch() {
               <div className="flex-1 relative">
                 <input
                   ref={inputRef}
-                  placeholder="Search country, region, or plan..."
+                  placeholder={t("searchPlaceholder")}
                   className="w-full h-12 bg-muted/50 rounded-xl px-4 pr-10 border-0 text-base font-medium placeholder:text-muted-foreground/40 outline-none focus:ring-2 focus:ring-primary/30"
                   value={search.query}
                   onChange={(e) => search.setQuery(e.target.value)}
@@ -445,13 +447,13 @@ function MobileSearch() {
 }
 
 function DesktopSearch() {
+  const t = useTranslations("search")
   const [open, setOpen] = React.useState(false)
   const search = useSearchLogic()
   const inputRef = React.useRef<HTMLInputElement>(null)
 
   React.useEffect(() => {
     if (open) search.refreshRecents()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
   const handleClose = () => {
@@ -467,7 +469,7 @@ function DesktopSearch() {
           <div className="flex-1">
             <input
               ref={inputRef}
-              placeholder="Search country, region, or plan..."
+              placeholder={t("searchPlaceholder")}
               className="w-full h-14 bg-transparent border-0 focus:ring-0 text-xl font-medium placeholder:text-muted-foreground/40 outline-none"
               value={search.query}
               onChange={(e) => search.setQuery(e.target.value)}
@@ -488,7 +490,7 @@ function DesktopSearch() {
             className="rounded-2xl h-12 px-6 font-bold bg-primary hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-primary/20"
             onClick={() => search.handleSearchSubmit(handleClose)}
           >
-            Find Plans
+            {t("findPlans")}
           </Button>
         </div>
 
@@ -508,7 +510,7 @@ function DesktopSearch() {
               <div className="p-4 bg-white/5 border-t border-white/10 flex items-center justify-between">
                 <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
                   <TrendingUp className="h-3 w-3 text-primary" />
-                  190+ destinations available
+                  {t("destinationsAvailable")}
                 </div>
                 <Button
                   variant="ghost"
@@ -516,7 +518,7 @@ function DesktopSearch() {
                   className="text-xs font-bold h-8 rounded-full"
                   onClick={() => setOpen(false)}
                 >
-                  Close
+                  {t("close")}
                 </Button>
               </div>
             </motion.div>

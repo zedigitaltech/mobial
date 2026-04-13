@@ -3,19 +3,31 @@
  * GET /api/products - List all active products with filtering and pagination
  * Uses local database for production-ready, filtered data.
  *
- * Performance: No rate limiting on this read-only endpoint — it's protected
- * by CDN caching (s-maxage=600) and Vercel's built-in DDoS protection.
- * Removing the rate limit DB call saves ~500ms on cold starts.
+ * Protected by CDN caching (s-maxage=600) AND a defense-in-depth rate limit
+ * that catches origin-direct traffic bypassing the CDN.
  */
 
 import { NextRequest } from "next/server";
 import { db } from "@/lib/db";
 import { errorResponse } from "@/lib/auth-helpers";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { Prisma } from "@prisma/client";
 import { countries } from "@/lib/countries";
+import { logger } from "@/lib/logger";
 
 export async function GET(request: NextRequest) {
   try {
+    // Defense-in-depth: catches origin-direct traffic that bypasses CDN.
+    // Generous limit so it doesn't impact normal CDN-miss traffic.
+    const ip =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      request.headers.get("x-real-ip") ||
+      "unknown";
+    const rateLimit = await checkRateLimit(ip, "api:general");
+    if (!rateLimit.success) {
+      return errorResponse("Too many requests", 429);
+    }
+
     const { searchParams } = new URL(request.url);
 
     // Parse parameters
@@ -34,8 +46,8 @@ export async function GET(request: NextRequest) {
     const supportsHotspot = searchParams.get("supportsHotspot");
     const isUnlimited = searchParams.get("isUnlimited");
     const sortBy = searchParams.get("sortBy") || "price_asc";
-    const limit = Math.min(parseInt(searchParams.get("limit") || "20"), 50);
-    const offset = parseInt(searchParams.get("offset") || "0");
+    const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "20", 10) || 20, 1), 100);
+    const offset = Math.min(Math.max(parseInt(searchParams.get("offset") || "0", 10) || 0, 0), 10000);
 
     // Build Where Clause
     const where: Prisma.ProductWhereInput = {
@@ -153,11 +165,21 @@ export async function GET(request: NextRequest) {
       db.product.count({ where }),
     ]);
 
+    // Safe JSON parse helper
+    const safeJsonParse = <T>(value: string | null, fallback: T): T => {
+      if (!value) return fallback;
+      try {
+        return JSON.parse(value) as T;
+      } catch {
+        return fallback;
+      }
+    };
+
     // Format products (parse JSON strings)
     const formattedProducts = products.map((p) => ({
       ...p,
-      countries: p.countries ? JSON.parse(p.countries) : [],
-      regions: p.regions ? JSON.parse(p.regions) : [],
+      countries: safeJsonParse<string[]>(p.countries, []),
+      regions: safeJsonParse<string[]>(p.regions, []),
     }));
 
     return new Response(
@@ -182,7 +204,7 @@ export async function GET(request: NextRequest) {
       },
     );
   } catch (error) {
-    console.error("Error fetching products from DB:", error);
+    logger.errorWithException("Error fetching products from DB", error);
     return errorResponse("Failed to fetch products", 500);
   }
 }

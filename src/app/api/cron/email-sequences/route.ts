@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server"
+import { timingSafeEqual } from "crypto"
 import { db } from "@/lib/db"
 import {
   sendInstallationReminder,
@@ -21,7 +22,7 @@ export async function GET(request: NextRequest) {
   const authHeader = request.headers.get("authorization")
   const token = authHeader?.startsWith("Bearer ") ? authHeader.slice(7) : null
 
-  if (token !== cronSecret) {
+  if (!token || token.length !== cronSecret.length || !timingSafeEqual(Buffer.from(token), Buffer.from(cronSecret))) {
     return Response.json(
       { success: false, error: "Unauthorized" },
       { status: 401 }

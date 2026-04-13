@@ -30,9 +30,11 @@ export function CookieConsent() {
       return () => clearTimeout(timer);
     }
 
-    // Load existing preferences when re-opening
+    // Load existing preferences from storage — setState here is intentional,
+    // syncing React state from an external system (localStorage) on mount.
     try {
       const prefs = JSON.parse(stored) as CookiePreferences;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setAnalytics(prefs.analytics);
       setMarketing(prefs.marketing);
       setThirdParty(prefs.thirdParty);

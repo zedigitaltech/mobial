@@ -6,6 +6,7 @@ import {
   AuthError,
 } from '@/lib/auth-helpers';
 import { getAnalyticsOverview, getPageViewTimeSeries } from '@/services/monitoring-service';
+import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   try {
@@ -29,7 +30,7 @@ export async function GET(request: NextRequest) {
     if (err instanceof AuthError) {
       return errorResponse(err.message, err.statusCode);
     }
-    console.error('[api/admin/monitoring/analytics] GET failed:', err);
+    logger.errorWithException('[api/admin/monitoring/analytics] GET failed', err);
     return errorResponse('Failed to fetch analytics', 500);
   }
 }

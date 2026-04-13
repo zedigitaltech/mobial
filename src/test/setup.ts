@@ -36,9 +36,11 @@ function createModelMock() {
     findUnique: vi.fn().mockResolvedValue(null),
     findFirst: vi.fn().mockResolvedValue(null),
     findMany: vi.fn().mockResolvedValue([]),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
+    create: vi.fn().mockResolvedValue({}),
+    update: vi.fn().mockResolvedValue({}),
+    upsert: vi.fn().mockResolvedValue({}),
+    delete: vi.fn().mockResolvedValue({}),
+    deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
     count: vi.fn().mockResolvedValue(0),
   }
 }
@@ -68,6 +70,9 @@ vi.mock("@/lib/db", () => ({
       delete: vi.fn(),
       count: vi.fn().mockResolvedValue(0),
     },
+    wallet: createModelMock(),
+    walletTransaction: createModelMock(),
+    reward: createModelMock(),
     $transaction: vi.fn((fn: (tx: unknown) => unknown) => fn({
       order: {
         create: vi.fn(),

@@ -9,6 +9,8 @@ import { requireAuth, successResponse, errorResponse, parseJsonBody } from '@/li
 import { verifyPassword } from '@/lib/password';
 import { logAuditWithContext } from '@/lib/audit';
 import { db } from '@/lib/db';
+import { DELETED_USER_EMAIL_DOMAIN } from '@/lib/env';
+import { logger } from '@/lib/logger';
 
 // Validation schema
 const deleteAccountSchema = z.object({
@@ -63,60 +65,61 @@ export async function POST(request: NextRequest) {
       return errorResponse('Invalid password', 401);
     }
     
-    // Check for pending orders
-    const pendingOrders = await db.order.count({
-      where: {
-        userId: user.id,
-        status: { in: ['PENDING', 'PROCESSING'] },
-      },
-    });
-    
-    if (pendingOrders > 0) {
-      return errorResponse(
-        `You have ${pendingOrders} pending order(s). Please complete or cancel them before deleting your account.`,
-        400
-      );
+    // Atomic: check for pending orders, then mark user as DELETED in a single transaction
+    // to prevent TOCTOU where a new order is created between the check and the soft-delete.
+    let deletionRequest;
+    try {
+      deletionRequest = await db.$transaction(async (tx) => {
+        const pendingOrders = await tx.order.count({
+          where: {
+            userId: user.id,
+            status: { in: ['PENDING', 'PROCESSING'] },
+          },
+        });
+
+        if (pendingOrders > 0) {
+          throw Object.assign(
+            new Error(`You have ${pendingOrders} pending order(s). Please complete or cancel them before deleting your account.`),
+            { statusCode: 400 }
+          );
+        }
+
+        const req = await tx.dataDeletionRequest.create({
+          data: {
+            userId: user.id,
+            userEmail: fullUser.email,
+            status: 'PROCESSING',
+            reason,
+            processedAt: new Date(),
+          },
+        });
+
+        await tx.user.update({
+          where: { id: user.id },
+          data: {
+            status: 'DELETED',
+            deletedAt: new Date(),
+            email: `deleted_${user.id}_${Date.now()}@${DELETED_USER_EMAIL_DOMAIN}`,
+            name: 'Deleted User',
+            phone: null,
+            avatar: null,
+            twoFactorEnabled: false,
+            twoFactorSecret: null,
+            twoFactorBackupCodes: null,
+          },
+        });
+
+        await tx.session.deleteMany({ where: { userId: user.id } });
+
+        return req;
+      });
+    } catch (txError: unknown) {
+      if (txError && typeof txError === 'object' && 'statusCode' in txError) {
+        const e = txError as Error & { statusCode: number };
+        return errorResponse(e.message, e.statusCode);
+      }
+      throw txError;
     }
-    
-    // Create deletion request
-    const deletionRequest = await db.dataDeletionRequest.create({
-      data: {
-        userId: user.id,
-        userEmail: fullUser.email,
-        status: 'PENDING',
-        reason,
-      },
-    });
-    
-    // Soft delete the user (GDPR compliant - can be permanently deleted after retention period)
-    await db.user.update({
-      where: { id: user.id },
-      data: {
-        status: 'DELETED',
-        deletedAt: new Date(),
-        email: `deleted_${user.id}_${Date.now()}@deleted.mobialo.eu`, // Anonymize email
-        name: 'Deleted User',
-        phone: null,
-        avatar: null,
-        twoFactorEnabled: false,
-        twoFactorSecret: null,
-        twoFactorBackupCodes: null,
-      },
-    });
-    
-    // Delete all sessions
-    await db.session.deleteMany({
-      where: { userId: user.id },
-    });
-    
-    // Update deletion request status
-    await db.dataDeletionRequest.update({
-      where: { id: deletionRequest.id },
-      data: {
-        status: 'PROCESSING',
-        processedAt: new Date(),
-      },
-    });
     
     // Log audit event
     await logAuditWithContext({
@@ -145,7 +148,7 @@ export async function POST(request: NextRequest) {
       const authError = error as Error & { statusCode?: number };
       return errorResponse(authError.message, authError.statusCode || 500);
     }
-    console.error('Account deletion error:', error);
+    logger.errorWithException('Account deletion error', error);
     return errorResponse('An error occurred', 500);
   }
 }

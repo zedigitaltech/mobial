@@ -2,6 +2,7 @@ import { NextRequest } from "next/server"
 import { claimTrial, hasClaimedTrial } from "@/services/trial-service"
 import { logger } from "@/lib/logger"
 import { checkRateLimit, createRateLimitHeaders } from "@/lib/rate-limit"
+import { getAuthUser } from "@/lib/auth-helpers"
 
 const log = logger.child("api:free-trial")
 
@@ -42,6 +43,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Secondary rate limit by email to prevent email enumeration
+    const emailRateCheck = await checkRateLimit(email, "free-trial-email")
+    if (!emailRateCheck.success) {
+      return Response.json(
+        { success: false, error: "Too many requests. Please try again later." },
+        { status: 429, headers: createRateLimitHeaders(emailRateCheck) }
+      )
+    }
+
     const result = await claimTrial({ email, destination })
 
     if (!result.success) {
@@ -62,12 +72,28 @@ export async function POST(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  const email = request.nextUrl.searchParams.get("email")
+  // Require authentication to prevent email enumeration.
+  // Users can only check claim status for their own email.
+  const authUser = await getAuthUser(request)
+  if (!authUser) {
+    return Response.json(
+      { success: false, error: "Authentication required" },
+      { status: 401 }
+    )
+  }
 
+  const email = request.nextUrl.searchParams.get("email")
   if (!email) {
     return Response.json(
       { success: false, error: "Email parameter required" },
       { status: 400 }
+    )
+  }
+
+  if (email.toLowerCase() !== authUser.email.toLowerCase()) {
+    return Response.json(
+      { success: false, error: "Access denied" },
+      { status: 403 }
     )
   }
 

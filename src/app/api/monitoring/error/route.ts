@@ -1,7 +1,9 @@
 import { NextRequest } from 'next/server';
 import { createResponse, createErrorResponse, createServerErrorResponse } from '@/lib/api-response';
+import { getAuthUser } from '@/lib/auth-helpers';
 import { logError } from '@/services/monitoring-service';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
@@ -20,6 +22,9 @@ export async function POST(request: NextRequest) {
       return createErrorResponse('Missing required field: message');
     }
 
+    // Derive userId from verified JWT only — ignore client-supplied userId
+    const authUser = await getAuthUser(request);
+
     await logError({
       level: body.level || 'ERROR',
       source: 'CLIENT',
@@ -28,7 +33,7 @@ export async function POST(request: NextRequest) {
       digest: typeof body.digest === 'string' ? body.digest : undefined,
       path: typeof body.path === 'string' ? body.path : undefined,
       statusCode: typeof body.statusCode === 'number' ? body.statusCode : undefined,
-      userId: typeof body.userId === 'string' ? body.userId : undefined,
+      userId: authUser?.id,
       ipAddress: ip,
       userAgent: request.headers.get('user-agent') || undefined,
       metadata: typeof body.metadata === 'object' ? body.metadata : undefined,
@@ -36,7 +41,7 @@ export async function POST(request: NextRequest) {
 
     return createResponse({ logged: true }, { status: 201 });
   } catch (err) {
-    console.error('[api/monitoring/error] Failed:', err);
+    logger.errorWithException('[api/monitoring/error] Failed', err);
     return createServerErrorResponse();
   }
 }

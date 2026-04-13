@@ -65,6 +65,16 @@ const OPTIONAL_VARS = [
   'NEXT_PUBLIC_AFFILIATE_CODE',
 ] as const;
 
+// Centralized runtime constants — import these instead of inlining process.env
+export const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || '';
+export const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'support@mobialo.eu';
+export const REFERRAL_CREDIT_USD = Number(process.env.REFERRAL_CREDIT_USD) || 3;
+export const CASHBACK_PERCENT = Number(process.env.CASHBACK_PERCENT) || 0.1;
+
+// Domain used for anonymized email addresses on soft-delete. Internal only —
+// never delivered. Configurable so self-hosting deployments can set their own.
+export const DELETED_USER_EMAIL_DOMAIN = process.env.DELETED_USER_EMAIL_DOMAIN || 'deleted.invalid';
+
 export function validateEnv(): void {
   const schema = isProduction ? productionSchema : developmentSchema;
 

@@ -32,6 +32,22 @@ vi.mock('@/services/email-service', () => ({
   sendWelcome: vi.fn().mockResolvedValue(undefined),
 }))
 
+// Mock rate limiting — allow all requests by default
+vi.mock('@/lib/rate-limit', () => ({
+  checkRateLimit: vi.fn().mockResolvedValue({
+    success: true,
+    limit: 3,
+    remaining: 2,
+    resetAt: new Date(Date.now() + 60000),
+  }),
+  createRateLimitHeaders: vi.fn().mockReturnValue(new Headers()),
+}))
+
+// Mock PostHog — return null (no env vars in test)
+vi.mock('@/lib/posthog-server', () => ({
+  getPostHogClient: vi.fn().mockReturnValue(null),
+}))
+
 const mockCheckPasswordStrength = vi.mocked(checkPasswordStrength)
 const mockSendEmailVerification = vi.mocked(sendEmailVerification)
 const mockSendWelcome = vi.mocked(sendWelcome)
@@ -176,7 +192,11 @@ describe('POST /api/auth/register', () => {
     expect(response.status).toBe(200)
     expect(json.success).toBe(true)
     expect(json.data.tokens.accessToken).toBe('mock-access-token')
-    expect(json.data.tokens.refreshToken).toBe('mock-refresh-token')
+    // Refresh token lives in an HttpOnly cookie, not the response body.
+    expect(json.data.tokens.refreshToken).toBeUndefined()
+    const setCookie = response.headers.get('set-cookie') || ''
+    expect(setCookie).toContain('mobial_refresh=mock-refresh-token')
+    expect(setCookie).toContain('HttpOnly')
     expect(json.data.user).toBeDefined()
     expect(json.data.user.passwordHash).toBeUndefined()
   })

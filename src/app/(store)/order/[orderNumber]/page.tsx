@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { useTranslations } from "next-intl"
-import { motion, AnimatePresence } from "framer-motion"
 import {
   Wifi,
   Check,
@@ -13,12 +12,10 @@ import {
   ShieldCheck,
   Zap,
   Loader2,
-  Clock,
   ArrowLeft
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { UsageTracker } from "@/components/store/usage-tracker"
 import { toast } from "sonner"
@@ -133,11 +130,15 @@ export default function OrderSuccessPage() {
     fetchOrder()
   }, [orderNumber])
 
-  const copy = (text: string, key: string) => {
-    navigator.clipboard.writeText(text)
-    setCopied(key)
-    toast.success(t("copiedToClipboard"))
-    setTimeout(() => setCopied(null), 2000)
+  const copy = async (text: string, key: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(key)
+      toast.success(t("copiedToClipboard"))
+      setTimeout(() => setCopied(null), 2000)
+    } catch {
+      toast.error("Failed to copy")
+    }
   }
 
   if (loading) return (

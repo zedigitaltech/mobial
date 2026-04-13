@@ -3,11 +3,12 @@
  * Request a data export (GDPR compliance)
  */
 
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { requireAuth, successResponse, errorResponse, parseJsonBody } from '@/lib/auth-helpers';
+import { requireAuth, errorResponse, parseJsonBody } from '@/lib/auth-helpers';
 import { logAuditWithContext } from '@/lib/audit';
 import { db } from '@/lib/db';
+import { logger } from '@/lib/logger';
 
 // Validation schema
 const exportRequestSchema = z.object({
@@ -85,23 +86,19 @@ export async function POST(request: NextRequest) {
         contentType = 'text/csv';
       }
       
-      // In production, you'd upload this to a secure storage (S3, etc.)
-      // and provide a download URL
-      // For now, we'll store it in SystemConfig
-      const downloadUrl = `data:${contentType};base64,${Buffer.from(exportContent).toString('base64')}`;
-      
-      // Update request as completed
-      const completedRequest = await db.dataExportRequest.update({
+      // Mark request complete WITHOUT storing the payload in the DB.
+      // The export is streamed directly in the response body — PII never
+      // lands in our primary database or any logs. For downloadable-later
+      // UX, move this to object storage with a signed URL.
+      await db.dataExportRequest.update({
         where: { id: exportRequest.id },
         data: {
           status: 'COMPLETED',
-          downloadUrl,
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
           completedAt: new Date(),
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         },
       });
-      
-      // Log completion
+
       await logAuditWithContext({
         userId: user.id,
         action: 'data_export',
@@ -109,14 +106,17 @@ export async function POST(request: NextRequest) {
         entityId: exportRequest.id,
         newValues: { status: 'COMPLETED' },
       });
-      
-      return successResponse({
-        requestId: exportRequest.id,
-        status: 'COMPLETED',
-        downloadUrl: completedRequest.downloadUrl,
-        expiresAt: completedRequest.expiresAt,
-        format,
-      }, 'Data export completed');
+
+      const filename = `mobial-data-export-${user.id}-${Date.now()}.${format === 'JSON' ? 'json' : 'csv'}`;
+      return new NextResponse(exportContent, {
+        status: 200,
+        headers: {
+          'Content-Type': contentType,
+          'Content-Disposition': `attachment; filename="${filename}"`,
+          'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+          'X-Export-Request-Id': exportRequest.id,
+        },
+      });
       
     } catch (exportError) {
       // Update status to failed
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
       const authError = error as Error & { statusCode?: number };
       return errorResponse(authError.message, authError.statusCode || 500);
     }
-    console.error('Data export error:', error);
+    logger.errorWithException('Data export error', error);
     return errorResponse('An error occurred during data export', 500);
   }
 }

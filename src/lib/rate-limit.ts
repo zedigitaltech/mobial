@@ -26,6 +26,12 @@ const DEFAULT_CONFIGS: Record<string, RateLimitConfig> = {
   'auth:password-reset': { windowMs: 60 * 60 * 1000, maxRequests: 3 }, // 3 per hour
   'auth:verify': { windowMs: 60 * 60 * 1000, maxRequests: 10 }, // 10 per hour
   
+  // Email verification
+  'email-verify': { windowMs: 15 * 60 * 1000, maxRequests: 10 }, // 10 per 15 min
+
+  // Free trial (per-email secondary limit)
+  'free-trial-email': { windowMs: 24 * 60 * 60 * 1000, maxRequests: 3 }, // 3 per day per email
+
   // API endpoints
   'api:general': { windowMs: 60 * 1000, maxRequests: 60 }, // 60 per minute
   'api:write': { windowMs: 60 * 1000, maxRequests: 20 }, // 20 per minute
@@ -57,10 +63,21 @@ async function getClientIP(): Promise<string> {
   }
 }
 
+// Endpoints where the `identifier` is itself the subject of the limit
+// (e.g. email) and the IP must NOT be mixed in — otherwise rotating IPs
+// weakens the per-identifier cap.
+const IDENTIFIER_ONLY_ENDPOINTS = new Set([
+  'free-trial-email',
+  'auth:password-reset',
+]);
+
 /**
  * Generate rate limit key
  */
 async function generateKey(identifier: string, endpoint: string): Promise<string> {
+  if (IDENTIFIER_ONLY_ENDPOINTS.has(endpoint)) {
+    return `${identifier}:${endpoint}`;
+  }
   const ip = await getClientIP();
   return `${identifier}:${ip}:${endpoint}`;
 }
@@ -77,63 +94,63 @@ async function checkRateLimitDB(
   const now = new Date();
   const windowStart = new Date(now.getTime() - config.windowMs);
   
-  // Clean up old entries
-  await db.rateLimitLog.deleteMany({
-    where: {
-      windowStart: { lt: windowStart },
-    },
-  });
-  
-  // Get or create log entry
-  let log = await db.rateLimitLog.findFirst({
-    where: {
-      identifier: key,
-      endpoint,
-      windowStart: { gte: windowStart },
-    },
-  });
-  
-  if (!log) {
-    log = await db.rateLimitLog.create({
-      data: {
+  // Clean up old entries (fire and forget, don't block the check)
+  db.rateLimitLog.deleteMany({
+    where: { windowStart: { lt: windowStart } },
+  }).catch(() => {}); // non-critical cleanup
+
+  // Atomic: use a transaction to prevent TOCTOU race where concurrent
+  // requests both see null and both create new entries, bypassing the limit.
+  return db.$transaction(async (tx) => {
+    const log = await tx.rateLimitLog.findFirst({
+      where: {
         identifier: key,
         endpoint,
-        requestCount: 1,
-        windowStart: now,
+        windowStart: { gte: windowStart },
       },
     });
-    
+
+    if (!log) {
+      await tx.rateLimitLog.create({
+        data: {
+          identifier: key,
+          endpoint,
+          requestCount: 1,
+          windowStart: now,
+        },
+      });
+
+      return {
+        success: true,
+        limit: config.maxRequests,
+        remaining: config.maxRequests - 1,
+        resetAt: new Date(now.getTime() + config.windowMs),
+      };
+    }
+
+    if (log.requestCount >= config.maxRequests) {
+      const resetAt = new Date(log.windowStart.getTime() + config.windowMs);
+      return {
+        success: false,
+        limit: config.maxRequests,
+        remaining: 0,
+        resetAt,
+        retryAfter: Math.ceil((resetAt.getTime() - now.getTime()) / 1000),
+      };
+    }
+
+    await tx.rateLimitLog.update({
+      where: { id: log.id },
+      data: { requestCount: { increment: 1 } },
+    });
+
     return {
       success: true,
       limit: config.maxRequests,
-      remaining: config.maxRequests - 1,
+      remaining: config.maxRequests - log.requestCount - 1,
       resetAt: new Date(log.windowStart.getTime() + config.windowMs),
     };
-  }
-  
-  if (log.requestCount >= config.maxRequests) {
-    const resetAt = new Date(log.windowStart.getTime() + config.windowMs);
-    return {
-      success: false,
-      limit: config.maxRequests,
-      remaining: 0,
-      resetAt,
-      retryAfter: Math.ceil((resetAt.getTime() - now.getTime()) / 1000),
-    };
-  }
-  
-  // Increment count
-  await db.rateLimitLog.update({
-    where: { id: log.id },
-    data: { requestCount: { increment: 1 } },
   });
-  
-  return {
-    success: true,
-    limit: config.maxRequests,
-    remaining: config.maxRequests - log.requestCount - 1,
-    resetAt: new Date(log.windowStart.getTime() + config.windowMs),
-  };
 }
 
 /**
@@ -191,10 +208,19 @@ export async function checkRateLimit(
   endpoint: string,
   customConfig?: Partial<RateLimitConfig>
 ): Promise<RateLimitResult> {
+  const baseConfig = DEFAULT_CONFIGS[endpoint];
   const config = {
-    ...DEFAULT_CONFIGS[endpoint],
+    ...baseConfig,
     ...customConfig,
   } as RateLimitConfig;
+
+  // Guard against unknown endpoints with no config: without this,
+  // config.maxRequests would be undefined and `count >= undefined` is
+  // always false, meaning the rate limiter would never block.
+  if (!config.maxRequests || !config.windowMs) {
+    config.maxRequests = config.maxRequests || 30;
+    config.windowMs = config.windowMs || 60 * 1000; // 1 minute
+  }
   
   // Use memory cache in development for speed
   if (process.env.NODE_ENV !== 'production') {

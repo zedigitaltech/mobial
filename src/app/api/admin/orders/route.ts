@@ -7,6 +7,7 @@ import { NextRequest } from 'next/server';
 import { requireAdmin, errorResponse, successResponse } from '@/lib/auth-helpers';
 import { db } from '@/lib/db';
 import { OrderStatus, PaymentStatus } from '@prisma/client';
+import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,8 +20,8 @@ export async function GET(request: NextRequest) {
     const search = url.searchParams.get('search') as string | null;
     const startDate = url.searchParams.get('startDate') as string | null;
     const endDate = url.searchParams.get('endDate') as string | null;
-    const limit = Math.min(parseInt(url.searchParams.get('limit') || '20', 10), 200);
-    const offset = parseInt(url.searchParams.get('offset') || '0', 10);
+    const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') || '20', 10) || 20, 1), 200);
+    const offset = Math.min(Math.max(parseInt(url.searchParams.get('offset') || '0', 10) || 0, 0), 10000);
 
     // Validate status
     const validStatuses: OrderStatus[] = ['PENDING', 'PROCESSING', 'COMPLETED', 'CANCELLED', 'REFUNDED', 'FAILED'];
@@ -95,13 +96,13 @@ export async function GET(request: NextRequest) {
         take: limit,
         skip: offset,
         include: {
-          user: true,
+          user: { select: { id: true, email: true, name: true, role: true, createdAt: true } },
           items: true,
           commission: {
             include: {
               affiliate: {
                 include: {
-                  user: true,
+                  user: { select: { id: true, email: true, name: true } },
                 },
               },
             },
@@ -155,7 +156,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Admin orders error:', error);
+    logger.errorWithException('Admin orders error', error);
     if (error instanceof Error) {
       if (error.message === 'Authentication required') {
         return errorResponse(error.message, 401);

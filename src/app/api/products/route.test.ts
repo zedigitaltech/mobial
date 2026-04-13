@@ -2,20 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { NextRequest } from 'next/server'
 import { GET } from './route'
 import { db } from '@/lib/db'
-import { checkRateLimit } from '@/lib/rate-limit'
-
-// Mock rate limiting
-vi.mock('@/lib/rate-limit', () => ({
-  checkRateLimit: vi.fn().mockResolvedValue({
-    success: true,
-    limit: 100,
-    remaining: 99,
-    resetAt: new Date(Date.now() + 60000),
-  }),
-  createRateLimitHeaders: vi.fn().mockReturnValue(new Headers()),
-}))
-
-const mockCheckRateLimit = vi.mocked(checkRateLimit)
 
 function createProductsRequest(params: Record<string, string> = {}): NextRequest {
   const url = new URL('http://localhost/api/products')
@@ -60,13 +46,6 @@ async function parseResponse(response: Response) {
 describe('GET /api/products', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-
-    mockCheckRateLimit.mockResolvedValue({
-      success: true,
-      limit: 100,
-      remaining: 99,
-      resetAt: new Date(Date.now() + 60000),
-    })
   })
 
   it('should return products list with pagination', async () => {
@@ -108,7 +87,7 @@ describe('GET /api/products', () => {
     expect(db.product.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          countries: { array_contains: ['US'] },
+          countries: { contains: 'US', mode: 'insensitive' },
         }),
       })
     )
@@ -124,7 +103,7 @@ describe('GET /api/products', () => {
     expect(db.product.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: expect.objectContaining({
-          regions: { array_contains: ['Europe'] },
+          regions: { contains: 'Europe', mode: 'insensitive' },
         }),
       })
     )
@@ -149,20 +128,14 @@ describe('GET /api/products', () => {
     expect(json.data.pagination.hasMore).toBe(true)
   })
 
-  it('should return 429 when rate limited', async () => {
-    mockCheckRateLimit.mockResolvedValue({
-      success: false,
-      limit: 100,
-      remaining: 0,
-      resetAt: new Date(Date.now() + 60000),
-      retryAfter: 60,
-    })
+  it('should return 500 when database throws an error', async () => {
+    vi.mocked(db.product.findMany).mockRejectedValue(new Error('DB connection error'))
 
     const req = createProductsRequest()
     const response = await GET(req)
     const json = await parseResponse(response)
 
-    expect(response.status).toBe(429)
-    expect(json.error).toContain('Too many requests')
+    expect(response.status).toBe(500)
+    expect(json.error).toBeTruthy()
   })
 })

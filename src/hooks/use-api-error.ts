@@ -2,11 +2,6 @@
 
 import { toast } from "sonner"
 
-interface ApiError {
-  message: string
-  status?: number
-}
-
 /**
  * Handle API errors with user-friendly toast notifications
  */

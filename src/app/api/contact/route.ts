@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sendEmail } from '@/lib/email';
 import { checkRateLimit, createRateLimitHeaders } from '@/lib/rate-limit';
+import { logger } from '@/lib/logger';
+import { SUPPORT_EMAIL } from '@/lib/env';
 
-const CONTACT_EMAIL = process.env.CONTACT_EMAIL || 'support@mobialo.eu';
+const CONTACT_EMAIL = process.env.CONTACT_EMAIL || SUPPORT_EMAIL;
 
 export async function POST(request: NextRequest) {
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
@@ -62,7 +64,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!result.success) {
-      console.error('[Contact] Email send failed:', result.error);
+      logger.error(`[Contact] Email send failed: ${result.error}`);
       return NextResponse.json(
         { success: false, error: 'Failed to send message. Please try again.' },
         { status: 500 }

@@ -1,31 +1,14 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { Suspense, useState, useMemo, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { useQuery } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "framer-motion";
-import {
-  Search,
-  SlidersHorizontal,
-  X,
-  MapPin,
-  Wifi,
-  Loader2,
-  Calendar,
-  Zap,
-  ShieldCheck,
-  TrendingUp,
-} from "lucide-react";
-import { CartDrawer } from "@/components/store/cart-drawer";
-import { ProductCard } from "@/components/common/product-card";
+import { Search, X, Loader2, Calendar } from "lucide-react";
+import { PlanCard } from "@/components/common/plan-card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { useSearchParams } from "next/navigation";
-import { useCart } from "@/contexts/cart-context";
-import { ErrorBoundary } from "@/components/common/error-boundary";
 import { cn } from "@/lib/utils";
 
 import { DisplayProduct } from "@/types/product";
@@ -45,7 +28,6 @@ interface ProductsResponse {
   };
 }
 
-// Fetch products
 async function fetchProducts(params: {
   country?: string;
   region?: string;
@@ -77,12 +59,10 @@ async function fetchProducts(params: {
   return response.json();
 }
 
-export default function ProductsPage() {
+function ProductsContent() {
   const t = useTranslations("products");
-  const { addItem, isInCart } = useCart();
   const searchParams = useSearchParams();
 
-  // Trip Planner State
   const [duration, setDuration] = useState(7);
   const [usageType, setUsageType] = useState<"light" | "balanced" | "heavy">(
     "balanced",
@@ -97,7 +77,6 @@ export default function ProductsPage() {
   const country = searchParams.get("country");
   const region = searchParams.get("region");
 
-  // Derive data range from usage type for server-side filtering
   const dataRange = useMemo(() => {
     if (usageType === "light") return { maxData: 5 };
     if (usageType === "balanced") return { minData: 5, maxData: 20 };
@@ -105,8 +84,11 @@ export default function ProductsPage() {
     return {};
   }, [usageType]);
 
-  // Queries
-  const { data: productsData, isLoading, isError, error } = useQuery({
+  const {
+    data: productsData,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: [
       "products",
       debouncedSearch,
@@ -133,38 +115,24 @@ export default function ProductsPage() {
 
   const products = productsData?.data?.products || [];
 
-  // THE TRIP FIT ENGINE LOGIC
   const rankedProducts = useMemo(() => {
     if (!products.length) return [];
 
     return products
       .map((p) => {
         let score = 0;
-        let reason = p.bestFitReason || "";
 
-        // Rule 1: Validity check
         if ((p.validityDays || 0) < duration) score -= 50;
 
-        // Rule 2: Usage Match
         const gb = p.dataAmount || 0;
-        if (usageType === "light" && gb <= 5 && gb > 0) {
-          score += 30;
-          if (!reason) reason = "Perfect for casual use";
-        }
-        if (usageType === "balanced" && gb > 5 && gb <= 20) {
-          score += 35;
-          if (!reason) reason = "Balanced for everyday use";
-        }
-        if (usageType === "heavy" && (gb >= 20 || p.isUnlimited)) {
-          score += 40;
-          if (!reason) reason = "Best for Hotspot/Video";
-        }
+        if (usageType === "light" && gb <= 5 && gb > 0) score += 30;
+        if (usageType === "balanced" && gb > 5 && gb <= 20) score += 35;
+        if (usageType === "heavy" && (gb >= 20 || p.isUnlimited)) score += 40;
 
-        // Rule 3: Price Efficiency
         const pricePerDay = p.price / duration;
         if (pricePerDay < 1) score += 20;
 
-        return { ...p, score, displayReason: reason };
+        return { ...p, score };
       })
       .filter((p) => {
         if (show5GOnly && !p.is5G) return false;
@@ -182,32 +150,16 @@ export default function ProductsPage() {
     showCallsOnly,
   ]);
 
-  const handleBuy = (productId: string) => {
-    const product = products.find((p) => p.id === productId);
-    if (product && !isInCart(product.id)) {
-      addItem({
-        productId: product.id,
-        name: product.name,
-        provider: product.provider,
-        price: product.price,
-        originalPrice: product.originalPrice,
-        dataAmount: product.dataAmount,
-        dataUnit: product.dataUnit,
-        validityDays: product.validityDays,
-      });
-    }
-  };
-
   return (
     <>
-      {/* Sticky Trip Planner Rail */}
-      <div className="sticky top-16 z-40 w-full border-b bg-background/80 backdrop-blur-2xl px-4 py-4">
-        <div className="container mx-auto flex flex-col lg:flex-row items-center justify-between gap-6">
+      {/* Sticky Filter Rail */}
+      <div className="sticky top-16 z-40 w-full border-b bg-background/80 backdrop-blur-2xl px-4 py-3">
+        <div className="max-w-5xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4 w-full lg:w-auto">
-            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-              <Calendar className="h-5 w-5 text-primary" />
+            <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+              <Calendar className="h-4 w-4 text-primary" />
             </div>
-            <div className="flex-1 lg:w-64">
+            <div className="flex-1 lg:w-56">
               <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">
                 {t("tripDuration", { days: duration })}
               </p>
@@ -227,7 +179,7 @@ export default function ProductsPage() {
                 key={type}
                 onClick={() => setUsageType(type)}
                 className={cn(
-                  "flex-1 px-6 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all",
+                  "flex-1 px-5 py-2 rounded-lg text-xs font-black uppercase tracking-widest transition-all",
                   usageType === type
                     ? "bg-card text-primary shadow-lg"
                     : "text-muted-foreground hover:text-foreground",
@@ -238,17 +190,21 @@ export default function ProductsPage() {
             ))}
           </div>
 
-          <div className="relative w-full lg:w-72 group">
+          <div className="relative w-full lg:w-64 group">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
             <input
               placeholder={t("filterCountry")}
-              className="w-full h-11 bg-muted/50 border-0 rounded-xl pl-10 text-sm font-medium outline-none focus:ring-2 ring-primary/20 transition-all"
+              className="w-full h-10 bg-muted/50 border-0 rounded-xl pl-9 text-sm font-medium outline-none focus:ring-2 ring-primary/20 transition-all"
               value={search}
               onChange={(e) => {
                 const val = e.target.value;
                 setSearch(val);
-                if (debounceRef.current) clearTimeout(debounceRef.current);
-                debounceRef.current = setTimeout(() => setDebouncedSearch(val), 300);
+                if (debounceRef.current)
+                  clearTimeout(debounceRef.current);
+                debounceRef.current = setTimeout(
+                  () => setDebouncedSearch(val),
+                  300,
+                );
               }}
             />
           </div>
@@ -274,6 +230,7 @@ export default function ProductsPage() {
               <button
                 key={key}
                 onClick={toggle}
+                aria-pressed={active}
                 className={cn(
                   "px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all",
                   active
@@ -288,82 +245,84 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-12">
+      <div className="max-w-5xl mx-auto px-6 py-10">
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-32 space-y-4">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <div className="flex flex-col items-center justify-center py-24 space-y-4">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
             <p className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground">
               {t("analyzingFits")}
             </p>
           </div>
         ) : isError ? (
-          <div className="text-center py-32 bg-card rounded-[3rem] border border-dashed border-destructive/30">
-            <div className="w-20 h-20 bg-destructive/10 rounded-[2rem] flex items-center justify-center mx-auto mb-6">
-              <X className="h-10 w-10 text-destructive" />
+          <div className="text-center py-24 bg-card rounded-2xl border border-dashed border-destructive/30">
+            <div className="w-16 h-16 bg-destructive/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <X className="h-8 w-8 text-destructive" />
             </div>
-            <h3 className="text-2xl font-black">{t("noMatchingPlans")}</h3>
-            <p className="text-muted-foreground mt-2 max-w-md mx-auto">
-              Something went wrong loading plans. Please try again.
+            <h3 className="text-xl font-black">
+              {t("noMatchingPlans")}
+            </h3>
+            <p className="text-muted-foreground mt-2 max-w-md mx-auto text-sm">
+              {t("errorLoadingPlans")}
             </p>
             <Button
               variant="outline"
-              className="mt-6"
+              className="mt-4"
               onClick={() => window.location.reload()}
             >
-              Retry
+              {t("retry")}
             </Button>
           </div>
         ) : (
-          <div className="space-y-12">
+          <div className="space-y-8">
             <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-3xl font-black tracking-tight">
+                <h2 className="text-2xl font-black tracking-tight">
                   {t("recommendedPlans")}
                 </h2>
-                <p className="text-muted-foreground font-medium">
+                <p className="text-muted-foreground text-sm font-medium">
                   {t("rankedBy")}
                 </p>
               </div>
               <Badge
                 variant="outline"
-                className="h-8 rounded-full border-primary/20 text-primary font-bold"
+                className="h-7 rounded-full border-primary/20 text-primary font-bold text-xs"
               >
-                {t("plansAvailable", { count: rankedProducts.length })}
+                {t("plansAvailable", {
+                  count: rankedProducts.length,
+                })}
               </Badge>
             </div>
 
             {rankedProducts.length === 0 ? (
-              <div className="text-center py-32 bg-card rounded-[3rem] border border-dashed border-border/50">
-                <div className="w-20 h-20 bg-muted rounded-[2rem] flex items-center justify-center mx-auto mb-6">
-                  <X className="h-10 w-10 text-muted-foreground" />
+              <div className="text-center py-24 bg-card rounded-2xl border border-dashed border-border/30">
+                <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <X className="h-8 w-8 text-muted-foreground" />
                 </div>
-                <h3 className="text-2xl font-black">{t("noMatchingPlans")}</h3>
-                <p className="text-muted-foreground">{t("adjustFilters")}</p>
+                <h3 className="text-xl font-black">
+                  {t("noMatchingPlans")}
+                </h3>
+                <p className="text-muted-foreground text-sm">
+                  {t("adjustFilters")}
+                </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {rankedProducts.map((product, index) => (
-                  <motion.div
-                    key={product.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                  >
-                    <ProductCard
-                      product={{
-                        ...product,
-                        bestFitReason: product.displayReason,
-                      }}
-                      onBuy={handleBuy}
-                    />
-                  </motion.div>
+              <div className="space-y-3">
+                {rankedProducts.map((product) => (
+                  <PlanCard key={product.id} product={product} />
                 ))}
               </div>
             )}
           </div>
         )}
       </div>
-      <CartDrawer />
     </>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<div className="flex-1 flex items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+      <ProductsContent />
+    </Suspense>
   );
 }

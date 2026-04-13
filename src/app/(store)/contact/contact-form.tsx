@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, FormEvent } from "react"
+import { useTranslations } from "next-intl"
 import { Send } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
 
 export function ContactForm() {
+  const t = useTranslations("contactForm")
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
@@ -33,18 +35,18 @@ export function ContactForm() {
       const result = await res.json()
 
       if (res.ok && result.success) {
-        toast.success("Message sent!", {
-          description: "We'll get back to you within 24 hours.",
+        toast.success(t("messageSent"), {
+          description: t("messageReply"),
         })
         ;(e.target as HTMLFormElement).reset()
       } else {
-        toast.error("Failed to send message", {
-          description: result.error || "Please try again later.",
+        toast.error(t("sendFailed"), {
+          description: result.error || t("tryLater"),
         })
       }
     } catch {
-      toast.error("Failed to send message", {
-        description: "Please check your connection and try again.",
+      toast.error(t("sendFailed"), {
+        description: t("checkConnection"),
       })
     } finally {
       setIsSubmitting(false)
@@ -54,30 +56,30 @@ export function ContactForm() {
   return (
     <Card className="border-border/50">
       <CardContent className="p-8">
-        <h2 className="text-2xl font-bold mb-6">Send us a message</h2>
+        <h2 className="text-2xl font-bold mb-6">{t("sendMessage")}</h2>
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid sm:grid-cols-2 gap-5">
             <div className="space-y-2">
               <label htmlFor="name" className="text-sm font-medium">
-                Name
+                {t("name")}
               </label>
               <Input
                 id="name"
                 name="name"
-                placeholder="Your name"
+                placeholder={t("namePlaceholder")}
                 required
                 className="h-12 rounded-xl bg-muted/30"
               />
             </div>
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium">
-                Email
+                {t("email")}
               </label>
               <Input
                 id="email"
                 name="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder={t("emailPlaceholder")}
                 required
                 className="h-12 rounded-xl bg-muted/30"
               />
@@ -85,24 +87,24 @@ export function ContactForm() {
           </div>
           <div className="space-y-2">
             <label htmlFor="subject" className="text-sm font-medium">
-              Subject
+              {t("subject")}
             </label>
             <Input
               id="subject"
               name="subject"
-              placeholder="What is this about?"
+              placeholder={t("subjectPlaceholder")}
               required
               className="h-12 rounded-xl bg-muted/30"
             />
           </div>
           <div className="space-y-2">
             <label htmlFor="message" className="text-sm font-medium">
-              Message
+              {t("message")}
             </label>
             <Textarea
               id="message"
               name="message"
-              placeholder="Tell us how we can help..."
+              placeholder={t("messagePlaceholder")}
               required
               className="min-h-[150px] rounded-xl bg-muted/30"
             />
@@ -114,10 +116,10 @@ export function ContactForm() {
             disabled={isSubmitting}
           >
             {isSubmitting ? (
-              "Sending..."
+              t("sending")
             ) : (
               <>
-                Send Message <Send className="ml-2 h-5 w-5" />
+                {t("sendBtn")} <Send className="ml-2 h-5 w-5" />
               </>
             )}
           </Button>

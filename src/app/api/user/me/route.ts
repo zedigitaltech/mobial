@@ -6,14 +6,15 @@
 
 import { NextRequest } from 'next/server';
 import { z } from 'zod';
-import { 
-  requireAuth, 
-  successResponse, 
-  errorResponse, 
-  parseJsonBody 
+import {
+  requireAuth,
+  successResponse,
+  errorResponse,
+  parseJsonBody
 } from '@/lib/auth-helpers';
 import { logAuditWithContext } from '@/lib/audit';
 import { db } from '@/lib/db';
+import { logger } from '@/lib/logger';
 
 // Validation schema for profile update
 const updateProfileSchema = z.object({
@@ -73,7 +74,7 @@ export async function GET(request: NextRequest) {
       const authError = error as Error & { statusCode?: number };
       return errorResponse(authError.message, authError.statusCode || 500);
     }
-    console.error('Get user error:', error);
+    logger.errorWithException('Get user error', error);
     return errorResponse('An error occurred', 500);
   }
 }
@@ -151,7 +152,7 @@ export async function PATCH(request: NextRequest) {
       const authError = error as Error & { statusCode?: number };
       return errorResponse(authError.message, authError.statusCode || 500);
     }
-    console.error('Update user error:', error);
+    logger.errorWithException('Update user error', error);
     return errorResponse('An error occurred', 500);
   }
 }

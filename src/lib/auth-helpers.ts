@@ -6,6 +6,7 @@ import { NextRequest } from 'next/server';
 import { verifyToken, extractToken } from './jwt';
 import { db } from './db';
 import { User, UserRole } from '@prisma/client';
+import { logger } from './logger';
 
 // Types
 export interface AuthUser {
@@ -71,7 +72,7 @@ export async function getAuthUser(request: NextRequest): Promise<AuthUser | null
       twoFactorEnabled: user.twoFactorEnabled,
     };
   } catch (error) {
-    console.error('Auth error:', error);
+    logger.errorWithException('Auth error', error);
     return null;
   }
 }
@@ -191,6 +192,7 @@ export function isValidEmail(email: string): boolean {
  * Sanitize user data for response (remove sensitive fields)
  */
 export function sanitizeUser(user: User): Omit<User, 'passwordHash' | 'twoFactorSecret' | 'twoFactorBackupCodes'> {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { passwordHash: _pw, twoFactorSecret: _ts, twoFactorBackupCodes: _bc, ...safeUser } = user;
   return safeUser;
 }

@@ -1,24 +1,17 @@
 "use client"
 
+import { getAccessToken } from "@/lib/auth-token"
 import { useEffect, useState, useCallback } from "react"
-import { motion } from "framer-motion"
 import {
-  Settings,
   Globe,
   Save,
   Loader2,
   RefreshCw,
   DollarSign,
   Wifi,
-  WifiOff,
   CreditCard,
   Mail,
   Send,
-  Eye,
-  EyeOff,
-  CheckCircle2,
-  XCircle,
-  AlertCircle,
 } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -85,9 +78,8 @@ export default function AdminSettingsPage() {
   const [stripeStatus, setStripeStatus] = useState<"healthy" | "not_configured" | "loading">("loading")
   const [resendStatus, setResendStatus] = useState<"healthy" | "not_configured" | "loading">("loading")
 
-  const [healthData, setHealthData] = useState<Record<string, any> | null>(null)
 
-  const getToken = () => localStorage.getItem("token")
+  const getToken = () => getAccessToken()
 
   const fetchSettings = useCallback(async () => {
     try {
@@ -127,7 +119,6 @@ export default function AdminSettingsPage() {
 
       const data = await res.json()
       const health = data.data || {}
-      setHealthData(health)
 
       const checks = health.checks || {}
       setMobimatterStatus(checks.mobimatter?.status === "healthy" ? "healthy" : "down")

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
+import { useTranslations } from "next-intl"
 import { X, Download, Smartphone } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { usePWA } from "@/hooks/use-pwa"
@@ -15,6 +16,7 @@ function isDismissedInStorage(): boolean {
 }
 
 export function InstallPrompt() {
+  const t = useTranslations("installPrompt")
   const { canInstall, isPWA, promptInstall } = usePWA()
   const { items: compareItems } = useCompare()
   const [visible, setVisible] = useState(false)
@@ -58,9 +60,9 @@ export function InstallPrompt() {
               <Smartphone className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="font-bold text-sm">Add MobiaL to Home Screen</p>
+              <p className="font-bold text-sm">{t("addToHome")}</p>
               <p className="text-xs text-muted-foreground">
-                Quick access, offline browsing, instant eSIM management
+                {t("addDesc")}
               </p>
             </div>
           </div>
@@ -78,7 +80,7 @@ export function InstallPrompt() {
           className="w-full font-bold text-xs"
         >
           <Download className="mr-2 h-3.5 w-3.5" />
-          Install App
+          {t("install")}
         </Button>
       </div>
     </div>

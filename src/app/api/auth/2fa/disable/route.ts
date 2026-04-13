@@ -16,6 +16,7 @@ import { verifyPassword } from "@/lib/password";
 import { decrypt } from "@/lib/encryption";
 import { logAuditWithContext } from "@/lib/audit";
 import { db } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 // Validation schema
 const disableSchema = z
@@ -91,7 +92,13 @@ export async function POST(request: NextRequest) {
 
     // Verify backup code if provided and not already verified
     if (!verified && backupCode && fullUser.twoFactorBackupCodes) {
-      const backupCodes = JSON.parse(fullUser.twoFactorBackupCodes) as string[];
+      let backupCodes: string[] = [];
+      try {
+        const parsed: unknown = JSON.parse(fullUser.twoFactorBackupCodes);
+        if (Array.isArray(parsed)) backupCodes = parsed as string[];
+      } catch {
+        backupCodes = [];
+      }
       const { valid, remainingCodes } = verifyBackupCode(
         backupCode,
         backupCodes,
@@ -142,7 +149,7 @@ export async function POST(request: NextRequest) {
         return errorResponse(authError.message, authError.statusCode || 500);
       }
     }
-    console.error("2FA disable error:", error);
+    logger.errorWithException("2FA disable error", error);
     return errorResponse("An error occurred", 500);
   }
 }

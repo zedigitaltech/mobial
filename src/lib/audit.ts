@@ -4,6 +4,7 @@
 
 import { db } from './db';
 import { headers } from 'next/headers';
+import { logger } from './logger';
 
 export type AuditAction =
   | 'login'
@@ -74,7 +75,7 @@ export async function logAudit(data: AuditLogData): Promise<void> {
       },
     });
   } catch (error) {
-    console.error('Failed to create audit log:', error);
+    logger.errorWithException('Failed to create audit log', error);
     // Don't throw - audit logging should not break the main flow
   }
 }
@@ -98,7 +99,7 @@ export async function logAuditWithContext(
       userAgent,
     });
   } catch (error) {
-    console.error('Failed to create audit log with context:', error);
+    logger.errorWithException('Failed to create audit log with context', error);
   }
 }
 

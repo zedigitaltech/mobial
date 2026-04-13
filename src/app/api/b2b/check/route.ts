@@ -27,8 +27,6 @@ export async function GET(_request: NextRequest) {
       success: true,
       message: 'Credentials are configured',
       configured: true,
-      merchantId: merchantId,
-      apiKeyPrefix: apiKey.substring(0, 8) + '...',
       note: 'To test API connection, ensure your wallet is funded and you have API access enabled in the partner portal.',
     });
   } catch (error: unknown) {

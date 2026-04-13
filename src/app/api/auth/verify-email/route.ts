@@ -10,9 +10,18 @@ import {
   successResponse,
   errorResponse,
 } from '@/lib/auth-helpers';
+import { checkRateLimit } from '@/lib/rate-limit';
+import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
   try {
+    const ip =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const rateCheck = await checkRateLimit(ip, 'email-verify');
+    if (!rateCheck.success) {
+      return errorResponse('Too many requests', 429);
+    }
+
     const { searchParams } = new URL(request.url);
     const token = searchParams.get('token');
 
@@ -20,26 +29,27 @@ export async function GET(request: NextRequest) {
       return errorResponse('Verification token is required', 400);
     }
 
-    // Find the verification token across SystemConfig entries
-    const configs = await db.systemConfig.findMany({
+    // Find the verification token using an indexed prefix scan + value search
+    // This avoids loading all tokens into memory (N+1 pattern)
+    const config = await db.systemConfig.findFirst({
       where: {
         key: { startsWith: 'verify_token:' },
+        value: { contains: token },
       },
     });
 
     let userId: string | null = null;
     let tokenData: { token: string; expiresAt: string } | null = null;
 
-    for (const config of configs) {
+    if (config) {
       try {
         const data = JSON.parse(config.value) as { token: string; expiresAt: string };
         if (data.token === token) {
           userId = config.key.replace('verify_token:', '');
           tokenData = data;
-          break;
         }
       } catch {
-        // Skip invalid entries
+        // Corrupted entry — fall through to invalid token response
       }
     }
 
@@ -92,7 +102,7 @@ export async function GET(request: NextRequest) {
 
     return successResponse(null, 'Email verified successfully. You can now log in.');
   } catch (error) {
-    console.error('Email verification error:', error);
+    logger.errorWithException('Email verification error', error);
     return errorResponse('An error occurred', 500);
   }
 }

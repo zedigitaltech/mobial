@@ -71,9 +71,6 @@ export function FAQClient({ categories, ui }: FAQClientProps) {
 
   const hasResults = filteredCategories.some((c) => c.questions.length > 0)
   const displayCategories = searchQuery ? filteredCategories : categories
-  const displayActiveCategory = searchQuery
-    ? displayCategories.find((c) => c.questions.length > 0)?.id || categories[0]?.id
-    : activeCategory
 
   return (
     <>

@@ -37,13 +37,25 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // Find orders that were paid but failed (or partially fulfilled), created within last 72 hours
+    // Find orders that were paid but failed (or partially fulfilled), created within last 72 hours.
+    // Also pick up PROCESSING orders stuck >10 minutes — these indicate a process crash
+    // after payment was confirmed but before fulfillment completed.
     const failedOrders = await db.order.findMany({
       where: {
-        status: { in: ["FAILED", "PARTIALLY_FULFILLED"] },
-        paymentStatus: "PAID",
-        createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) },
-        retryCount: { lt: MAX_RETRIES },
+        OR: [
+          {
+            status: { in: ["FAILED", "PARTIALLY_FULFILLED"] },
+            paymentStatus: "PAID",
+            createdAt: { gte: new Date(Date.now() - 72 * 60 * 60 * 1000) },
+            retryCount: { lt: MAX_RETRIES },
+          },
+          {
+            status: "PROCESSING",
+            paymentStatus: "PAID",
+            updatedAt: { lt: new Date(Date.now() - 10 * 60 * 1000) }, // stuck >10 min
+            retryCount: { lt: MAX_RETRIES },
+          },
+        ],
       },
       select: {
         id: true,
@@ -142,7 +154,19 @@ export async function GET(request: NextRequest) {
         // Find the Stripe payment intent from the checkout session
         const session = await stripe.checkout.sessions.retrieve(order.paymentReference!);
         if (session.payment_intent && typeof session.payment_intent === "string") {
-          await stripe.refunds.create({ payment_intent: session.payment_intent });
+          // Idempotency: check Stripe for existing refunds on this payment intent
+          // before creating a new one. Prevents double-refund if prior cron run
+          // succeeded at refund but failed at DB update.
+          const existingRefunds = await stripe.refunds.list({
+            payment_intent: session.payment_intent,
+            limit: 1,
+          });
+          if (existingRefunds.data.length === 0) {
+            await stripe.refunds.create(
+              { payment_intent: session.payment_intent },
+              { idempotencyKey: `auto-refund:${order.id}` },
+            );
+          }
 
           await db.order.update({
             where: { id: order.id },

@@ -11,6 +11,14 @@
     {
       "path": "/api/cron/gdpr-cleanup",
       "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/cart-recovery",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/email-sequences",
+      "schedule": "0 9 * * *"
     }
   ]
 }

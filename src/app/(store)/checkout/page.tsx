@@ -96,7 +96,7 @@ function CartSummaryItem({ item }: { item: CartItem }) {
 export default function CheckoutPage() {
   const t = useTranslations("checkout");
   const router = useRouter();
-  const { items, total, clearCart, isHydrated } = useCart();
+  const { items, total, isHydrated } = useCart();
   const { formatPrice } = useCurrency();
 
   const [email, setEmail] = useState("");
@@ -114,7 +114,7 @@ export default function CheckoutPage() {
     if (items.length === 0) {
       router.push("/products");
     } else {
-      posthog.capture("checkout_started", {
+      posthog?.capture("checkout_started", {
         item_count: items.length,
         total,
       });

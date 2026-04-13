@@ -34,6 +34,7 @@ yarn-error.log*
 .env
 .env.local
 .env.*.local
+.env.local.vercel
 
 # vercel
 .vercel
@@ -56,5 +57,11 @@ dev.db
 
 # Skills directory
 /skills/
+package-lock.json
+
 # Sentry Config File
 .env.sentry-build-plugin
+
+# Playwright
+/playwright-report/
+/test-results/

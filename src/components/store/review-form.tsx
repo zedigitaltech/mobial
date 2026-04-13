@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { Star, Send, Loader2, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,6 +16,7 @@ interface ReviewFormProps {
 }
 
 export function ReviewForm({ destination, countryCode, orderId }: ReviewFormProps) {
+  const t = useTranslations("reviewForm")
   const [rating, setRating] = useState(0)
   const [hoveredRating, setHoveredRating] = useState(0)
   const [name, setName] = useState("")
@@ -28,7 +30,7 @@ export function ReviewForm({ destination, countryCode, orderId }: ReviewFormProp
     e.preventDefault()
 
     if (rating === 0) {
-      toast.error("Please select a rating")
+      toast.error(t("selectRating"))
       return
     }
 
@@ -52,12 +54,12 @@ export function ReviewForm({ destination, countryCode, orderId }: ReviewFormProp
       const data = await res.json()
       if (data.success) {
         setSubmitted(true)
-        toast.success("Review submitted! It will appear after approval.")
+        toast.success(t("submitted"))
       } else {
-        toast.error(data.error || "Failed to submit review")
+        toast.error(data.error || t("submitFailed"))
       }
     } catch {
-      toast.error("Something went wrong. Please try again.")
+      toast.error(t("submitError"))
     } finally {
       setIsSubmitting(false)
     }
@@ -70,9 +72,9 @@ export function ReviewForm({ destination, countryCode, orderId }: ReviewFormProp
           <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
             <Check className="h-7 w-7 text-primary" />
           </div>
-          <h3 className="text-xl font-bold">Thank you for your review!</h3>
+          <h3 className="text-xl font-bold">{t("thankYou")}</h3>
           <p className="text-muted-foreground">
-            Your review has been submitted and will be visible after approval.
+            {t("afterApproval")}
           </p>
         </CardContent>
       </Card>
@@ -82,13 +84,13 @@ export function ReviewForm({ destination, countryCode, orderId }: ReviewFormProp
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Write a Review</CardTitle>
+        <CardTitle className="text-lg">{t("writeReview")}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Star Rating */}
           <div>
-            <label className="text-sm font-medium mb-2 block">Rating</label>
+            <label className="text-sm font-medium mb-2 block">{t("rating")}</label>
             <div className="flex gap-1">
               {[1, 2, 3, 4, 5].map((i) => (
                 <button
@@ -113,19 +115,19 @@ export function ReviewForm({ destination, countryCode, orderId }: ReviewFormProp
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium mb-1 block">Name</label>
+              <label className="text-sm font-medium mb-1 block">{t("name")}</label>
               <Input
-                placeholder="Your name"
+                placeholder={t("namePlaceholder")}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 required
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Email</label>
+              <label className="text-sm font-medium mb-1 block">{t("email")}</label>
               <Input
                 type="email"
-                placeholder="your@email.com"
+                placeholder={t("emailPlaceholder")}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -134,9 +136,9 @@ export function ReviewForm({ destination, countryCode, orderId }: ReviewFormProp
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-1 block">Title</label>
+            <label className="text-sm font-medium mb-1 block">{t("title")}</label>
             <Input
-              placeholder="Sum up your experience"
+              placeholder={t("titlePlaceholder")}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               maxLength={200}
@@ -145,9 +147,9 @@ export function ReviewForm({ destination, countryCode, orderId }: ReviewFormProp
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-1 block">Your Review</label>
+            <label className="text-sm font-medium mb-1 block">{t("yourReview")}</label>
             <Textarea
-              placeholder="Tell us about your experience..."
+              placeholder={t("reviewPlaceholder")}
               value={text}
               onChange={(e) => setText(e.target.value)}
               maxLength={2000}
@@ -160,11 +162,11 @@ export function ReviewForm({ destination, countryCode, orderId }: ReviewFormProp
           <Button type="submit" disabled={isSubmitting} className="w-full">
             {isSubmitting ? (
               <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Submitting...
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("submitting")}
               </>
             ) : (
               <>
-                <Send className="mr-2 h-4 w-4" /> Submit Review
+                <Send className="mr-2 h-4 w-4" /> {t("submitReview")}
               </>
             )}
           </Button>

@@ -3,7 +3,8 @@
  * Register a new user account
  */
 
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { setAuthCookies } from '@/lib/auth-cookies';
 import { z } from 'zod';
 import { hashPassword, checkPasswordStrength } from '@/lib/password';
 import { generateTokenPair, generateEmailVerificationToken } from '@/lib/jwt';
@@ -11,7 +12,6 @@ import { logAuditWithContext } from '@/lib/audit';
 import { db } from '@/lib/db';
 import { sendEmailVerification, sendWelcome } from '@/services/email-service';
 import {
-  successResponse,
   errorResponse,
   parseJsonBody,
   getClientIP,
@@ -19,6 +19,7 @@ import {
 } from '@/lib/auth-helpers';
 import { checkRateLimit, createRateLimitHeaders } from '@/lib/rate-limit';
 import { getPostHogClient } from '@/lib/posthog-server';
+import { logger } from '@/lib/logger';
 
 // Validation schema
 const registerSchema = z.object({
@@ -132,7 +133,7 @@ export async function POST(request: NextRequest) {
 
     // Fire-and-forget welcome email
     sendWelcome(user.email, user.name ?? '').catch((err) =>
-      console.error('[Register] Failed to send welcome email:', err)
+      logger.errorWithException('[Register] Failed to send welcome email', err)
     );
 
     // Track signup in PostHog
@@ -157,19 +158,25 @@ export async function POST(request: NextRequest) {
     });
 
     // Return user and tokens (exclude sensitive fields)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { passwordHash: _pw, ...safeUser } = user;
     
-    return successResponse({
-      user: safeUser,
-      tokens: {
-        accessToken: tokens.accessToken,
-        refreshToken: tokens.refreshToken,
-        expiresIn: tokens.expiresIn,
+    const response = NextResponse.json({
+      success: true,
+      data: {
+        user: safeUser,
+        tokens: {
+          accessToken: tokens.accessToken,
+          expiresIn: tokens.expiresIn,
+        },
       },
-    }, 'Account created successfully');
-    
+      message: 'Account created successfully',
+    }, { status: 200 });
+    setAuthCookies(response, tokens.refreshToken);
+    return response;
+
   } catch (error) {
-    console.error('Registration error:', error);
+    logger.errorWithException('Registration error', error);
     return errorResponse('An error occurred during registration', 500);
   }
 }

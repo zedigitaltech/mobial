@@ -8,6 +8,7 @@ import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { logAudit } from '@/lib/audit';
 import { secureCompare } from '@/lib/encryption';
+import { DELETED_USER_EMAIL_DOMAIN } from '@/lib/env';
 import { logger } from '@/lib/logger';
 
 const log = logger.child('cron:gdpr-cleanup');
@@ -57,7 +58,7 @@ export async function GET(request: NextRequest) {
         await db.order.updateMany({
           where: { userId: request.userId },
           data: {
-            email: `anonymized_${request.userId}@deleted.mobialo.eu`,
+            email: `anonymized_${request.userId}@${DELETED_USER_EMAIL_DOMAIN}`,
             phone: null,
             ipAddress: null,
             userAgent: null,
@@ -120,12 +121,38 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    log.info(`GDPR cleanup completed: ${processed}/${pendingDeletions.length} processed`);
+    // Sweep stale 2FA setup records (older than 1 hour).
+    // The 2FA flow already deletes on verify/expire, but abandoned setups
+    // could otherwise accumulate. The setup itself is already invalid after
+    // 10 minutes (enforced in verify), so a 1-hour sweep is ample.
+    const staleCutoff = new Date(Date.now() - 60 * 60 * 1000);
+    const stale2fa = await db.systemConfig.deleteMany({
+      where: {
+        key: { startsWith: '2fa_setup_' },
+        updatedAt: { lt: staleCutoff },
+      },
+    }).catch(() => ({ count: 0 }));
+
+    // Sweep stale MobiMatter webhook dedup markers (older than 10 minutes).
+    // These exist only to block short-window replays and can be purged.
+    const dedupCutoff = new Date(Date.now() - 10 * 60 * 1000);
+    const staleDedup = await db.systemConfig.deleteMany({
+      where: {
+        key: { startsWith: 'mobimatter_webhook:' },
+        updatedAt: { lt: dedupCutoff },
+      },
+    }).catch(() => ({ count: 0 }));
+
+    log.info(
+      `GDPR cleanup completed: ${processed}/${pendingDeletions.length} processed, ${stale2fa.count} stale 2FA setups, ${staleDedup.count} stale webhook dedup markers`
+    );
 
     return Response.json({
       success: true,
       processed,
       total: pendingDeletions.length,
+      stale2faSweeped: stale2fa.count,
+      staleDedupSweeped: staleDedup.count,
     });
   } catch (error) {
     log.errorWithException('GDPR cleanup cron failed', error);

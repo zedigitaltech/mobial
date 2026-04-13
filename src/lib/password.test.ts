@@ -1,10 +1,24 @@
 import { describe, it, expect } from 'vitest'
+import crypto from 'crypto'
 import {
   hashPassword,
   verifyPassword,
+  isBcryptHash,
   generateSecurePassword,
   checkPasswordStrength,
 } from './password'
+
+/** Helper: create a legacy PBKDF2 hash (salt:iterations:hash) for migration tests */
+function createLegacyHash(password: string): Promise<string> {
+  const salt = crypto.randomBytes(32).toString('hex')
+  const iterations = 100000
+  return new Promise((resolve, reject) => {
+    crypto.pbkdf2(password, salt, iterations, 64, 'sha512', (err, key) => {
+      if (err) return reject(err)
+      resolve(`${salt}:${iterations}:${key.toString('hex')}`)
+    })
+  })
+}
 
 describe('password', () => {
   describe('hashPassword / verifyPassword roundtrip', () => {
@@ -16,14 +30,11 @@ describe('password', () => {
       expect(isValid).toBe(true)
     })
 
-    it('should produce hash in salt:iterations:hash format', async () => {
+    it('should produce a bcrypt hash', async () => {
       const hashed = await hashPassword('test')
-      const parts = hashed.split(':')
 
-      expect(parts.length).toBe(3)
-      expect(parts[0].length).toBe(64) // 32 bytes hex salt
-      expect(parts[1]).toBe('100000') // iterations
-      expect(parts[2].length).toBe(128) // 64 bytes hex key
+      expect(isBcryptHash(hashed)).toBe(true)
+      expect(hashed).toMatch(/^\$2[ab]\$12\$/)
     })
   })
 
@@ -59,6 +70,29 @@ describe('password', () => {
       // But both should verify correctly
       expect(await verifyPassword('samePassword', hash1)).toBe(true)
       expect(await verifyPassword('samePassword', hash2)).toBe(true)
+    })
+  })
+
+  describe('legacy PBKDF2 backward compatibility', () => {
+    it('should verify a legacy PBKDF2 hash', async () => {
+      const password = 'LegacyPassword123!'
+      const legacyHash = await createLegacyHash(password)
+
+      expect(isBcryptHash(legacyHash)).toBe(false)
+      expect(await verifyPassword(password, legacyHash)).toBe(true)
+    })
+
+    it('should reject wrong password against legacy hash', async () => {
+      const legacyHash = await createLegacyHash('correctPassword')
+
+      expect(await verifyPassword('wrongPassword', legacyHash)).toBe(false)
+    })
+
+    it('should detect bcrypt vs legacy hashes correctly', () => {
+      expect(isBcryptHash('$2a$12$someHashContent')).toBe(true)
+      expect(isBcryptHash('$2b$12$someHashContent')).toBe(true)
+      expect(isBcryptHash('abcdef123456:100000:deadbeef')).toBe(false)
+      expect(isBcryptHash('')).toBe(false)
     })
   })
 

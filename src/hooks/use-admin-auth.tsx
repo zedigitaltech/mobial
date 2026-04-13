@@ -1,5 +1,6 @@
 "use client"
 
+import { getAccessToken } from "@/lib/auth-token"
 import { useState, useEffect, createContext, useContext, ReactNode } from "react"
 import { useRouter, usePathname } from "next/navigation"
 
@@ -29,7 +30,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
   const fetchAuth = async () => {
     try {
-      const token = localStorage.getItem("token")
+      const token = getAccessToken()
       if (!token) {
         setUser(null)
         return
@@ -78,7 +79,7 @@ export function AdminAuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async () => {
     try {
-      const token = localStorage.getItem("token")
+      const token = getAccessToken()
       if (token) {
         await fetch("/api/auth/logout", {
           method: "POST",

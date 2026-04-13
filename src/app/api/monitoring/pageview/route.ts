@@ -2,6 +2,8 @@ import { NextRequest } from 'next/server';
 import { createResponse } from '@/lib/api-response';
 import { trackPageView } from '@/services/monitoring-service';
 import { checkRateLimit } from '@/lib/rate-limit';
+import { getAuthUser } from '@/lib/auth-helpers';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
   try {
@@ -20,11 +22,14 @@ export async function POST(request: NextRequest) {
       return createResponse({ tracked: false }, { status: 200 });
     }
 
+    // Derive userId from verified JWT — never trust body.userId (spoofable).
+    const authUser = await getAuthUser(request);
+
     await trackPageView({
       path: body.path,
       referrer: typeof body.referrer === 'string' ? body.referrer : undefined,
       sessionId: body.sessionId,
-      userId: typeof body.userId === 'string' ? body.userId : undefined,
+      userId: authUser?.id,
       ipAddress: ip,
       userAgent: request.headers.get('user-agent') || undefined,
       device: typeof body.device === 'string' ? body.device : undefined,
@@ -36,7 +41,7 @@ export async function POST(request: NextRequest) {
 
     return createResponse({ tracked: true }, { status: 201 });
   } catch (err) {
-    console.error('[api/monitoring/pageview] Failed:', err);
+    logger.errorWithException('[api/monitoring/pageview] Failed', err);
     return createResponse({ tracked: false }, { status: 200 });
   }
 }

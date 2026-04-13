@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from "react"
-import { DEFAULT_CURRENCY, formatPrice as formatPriceFn, type Currency, getCurrency } from "@/lib/currency"
+import { DEFAULT_CURRENCY, formatPrice as formatPriceFn } from "@/lib/currency"
 
 interface CurrencyContextType {
   currency: string

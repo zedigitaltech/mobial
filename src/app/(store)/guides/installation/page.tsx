@@ -4,16 +4,9 @@ import { motion } from "framer-motion"
 import {
   Smartphone,
   Wifi,
-  QrCode,
-  Settings,
   AlertTriangle,
-  CheckCircle2,
-  Clock,
   Shield,
-  Plane,
-  ChevronRight,
   Apple,
-  Monitor,
   Keyboard,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"

@@ -10,7 +10,20 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createHmac } from 'crypto';
 import { trackClick, getAffiliateByCode } from '@/services/affiliate-service';
+import { logger } from '@/lib/logger';
+import { BASE_URL } from '@/lib/env';
+
+// Hash device identifiers with a server-side salt so the stored value
+// isn't reversible back to raw user-agent / IP / accept-language.
+function hashDeviceId(ipAddress: string, userAgent: string, acceptLanguage: string): string {
+  const salt = process.env.DEVICE_ID_SALT || process.env.ENCRYPTION_KEY || 'dev-fallback-salt';
+  return createHmac('sha256', salt)
+    .update(`${ipAddress}|${userAgent}|${acceptLanguage}`)
+    .digest('hex')
+    .slice(0, 40);
+}
 
 interface RouteParams {
   params: Promise<{ code: string }>;
@@ -31,16 +44,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     if (!affiliateCode) {
       // If no affiliate code, just redirect to home
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://mobialo.eu';
-      return NextResponse.redirect(baseUrl, 302);
+      return NextResponse.redirect(BASE_URL, 302);
     }
 
     // Validate affiliate code
     const profile = await getAffiliateByCode(affiliateCode.toUpperCase());
     if (!profile || profile.status !== 'ACTIVE') {
       // Invalid affiliate, redirect without tracking
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://mobialo.eu';
-      return NextResponse.redirect(baseUrl, 302);
+      return NextResponse.redirect(BASE_URL, 302);
     }
 
     // Gather tracking data
@@ -52,8 +63,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     const referrer = request.headers.get('referer') || undefined;
     const acceptLanguage = request.headers.get('accept-language') || '';
 
-    // Generate device fingerprint (simplified)
-    const deviceFingerprint = `${userAgent}-${acceptLanguage}`.slice(0, 100);
+    // Generate device fingerprint — HMAC-SHA256 of (ip|ua|lang) with server-side salt
+    const deviceFingerprint = hashDeviceId(ipAddress, userAgent, acceptLanguage);
 
     // Try to get country from headers (could be set by Cloudflare, etc.)
     const country = request.headers.get('cf-ipcountry')
@@ -92,10 +103,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     return response;
   } catch (error) {
-    console.error('Track click error:', error);
+    logger.errorWithException('Track click error', error);
 
     // On error, still redirect to home page to not break user experience
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://mobialo.eu';
-    return NextResponse.redirect(baseUrl, 302);
+    return NextResponse.redirect(BASE_URL, 302);
   }
 }

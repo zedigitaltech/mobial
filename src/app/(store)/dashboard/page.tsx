@@ -1,5 +1,6 @@
 "use client"
 
+import { getAccessToken } from "@/lib/auth-token"
 import { useTranslations } from "next-intl"
 import { motion } from "framer-motion"
 import { useQuery } from "@tanstack/react-query"
@@ -20,6 +21,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from "@/components/providers/auth-provider"
+import { useCurrency } from "@/contexts/currency-context"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 
@@ -51,7 +53,7 @@ interface OrdersResponse {
 }
 
 async function fetchOrders(): Promise<OrdersResponse> {
-  const token = localStorage.getItem("token")
+  const token = getAccessToken()
   if (!token) throw new Error("No auth token")
 
   const res = await fetch("/api/orders", {
@@ -72,6 +74,7 @@ const statusColors: Record<string, string> = {
 export default function DashboardPage() {
   const t = useTranslations("dashboard")
   const { user, isLoading: authLoading, openAuthModal } = useAuth()
+  const { formatPrice } = useCurrency()
 
   const { data: ordersData, isLoading: ordersLoading } = useQuery({
     queryKey: ["dashboard-orders"],
@@ -289,7 +292,7 @@ export default function DashboardPage() {
                             </span>
                             <span className="flex items-center gap-1">
                               <Zap className="h-3.5 w-3.5 text-amber-500" />
-                              ${order.total.toFixed(2)}
+                              {formatPrice(order.total)}
                             </span>
                           </div>
                         </div>

@@ -6,6 +6,7 @@
 import { NextRequest } from 'next/server';
 import { getProductById } from '@/services/product-service';
 import { errorResponse } from '@/lib/auth-helpers';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/products/[id]
@@ -32,7 +33,8 @@ export async function GET(
     }
 
     // Strip wholesale pricing fields from public response
-    const { originalPrice: _op, ...publicProduct } = product;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { originalPrice, ...publicProduct } = product;
 
     return new Response(
       JSON.stringify({ success: true, data: { product: publicProduct } }),
@@ -45,7 +47,7 @@ export async function GET(
       }
     );
   } catch (error) {
-    console.error('Error fetching product:', error);
+    logger.errorWithException('Error fetching product', error);
     return errorResponse('Failed to fetch product', 500);
   }
 }

@@ -3,23 +3,23 @@
  * Get MobiMatter wallet balance
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getWalletBalance } from '@/lib/mobimatter';
+import { successResponse, errorResponse, requireAdmin } from '@/lib/auth-helpers';
+import { logger } from '@/lib/logger';
 
-export async function GET(_request: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
+    await requireAdmin(request);
+
     const balance = await getWalletBalance();
-    
-    return NextResponse.json({
-      success: true,
-      data: balance,
-    });
-    
+
+    return successResponse({ balance });
   } catch (error) {
-    console.error('Wallet balance error:', error);
-    return NextResponse.json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to fetch wallet balance',
-    }, { status: 500 });
+    if (error instanceof Error && error.message.includes('denied')) {
+      return errorResponse('Access denied', 403);
+    }
+    logger.errorWithException('Wallet balance error', error);
+    return errorResponse('Failed to fetch wallet balance', 500);
   }
 }

@@ -9,6 +9,7 @@ import { requireAdmin, successResponse, errorResponse, getClientIP, getUserAgent
 import { logAudit } from '@/lib/audit';
 import { checkRateLimit, createRateLimitHeaders } from '@/lib/rate-limit';
 import { db } from '@/lib/db';
+import { logger } from '@/lib/logger';
 
 /**
  * POST /api/products/sync
@@ -97,15 +98,21 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (!result.success) {
+    // Return 207-style partial success: if any products were created/updated,
+    // the sync produced real value even with errors. Only fail (500) when
+    // nothing was processed successfully.
+    const processedCount = result.created + result.updated;
+    if (!result.success && processedCount === 0) {
       return errorResponse(
-        `Sync completed with errors: ${result.errors.join('; ')}`,
+        `Sync failed: ${result.errors.join('; ')}`,
         500
       );
     }
 
     return successResponse({
-      message: 'Products synced successfully',
+      message: result.success
+        ? 'Products synced successfully'
+        : `Products synced with ${result.errors.length} error(s)`,
       stats: {
         created: result.created,
         updated: result.updated,
@@ -121,10 +128,7 @@ export async function POST(request: NextRequest) {
       return errorResponse(authError.message, authError.statusCode);
     }
 
-    console.error('Error syncing products:', error);
-    return errorResponse(
-      error instanceof Error ? error.message : 'Failed to sync products',
-      500
-    );
+    logger.errorWithException('Error syncing products', error);
+    return errorResponse('Failed to sync products', 500);
   }
 }
