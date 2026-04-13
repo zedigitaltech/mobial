@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     url: `${BASE_URL}/products`,
     images: [
       {
-        url: `${BASE_URL}/og-esim.png`,
+        url: `${BASE_URL}/og-image.png`,
         width: 1200,
         height: 630,
         alt: "MobiaL eSIM Plans — 190+ Countries",
