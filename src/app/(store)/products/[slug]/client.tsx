@@ -449,7 +449,7 @@ export function ProductDetailClient({
                   </div>
                   {product.validityDays && product.validityDays > 0 && (
                     <p className="text-primary font-semibold mt-1">
-                      {formatPrice(product.price / product.validityDays)}/day
+                      {formatPrice(Math.round((product.price / product.validityDays) * 100) / 100)}/day
                     </p>
                   )}
                   <p className="text-sm text-muted-foreground mt-1">

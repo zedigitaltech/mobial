@@ -8,6 +8,7 @@ import {
 import { ProductDetailClient } from "./client";
 import { ProductJsonLd, BreadcrumbJsonLd } from "@/components/common/json-ld";
 import { db } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://mobialo.eu";
 
@@ -116,7 +117,7 @@ export default async function ProductPage({
       .filter((p) => p.id !== product.id && p.provider !== product.provider)
       .slice(0, 3);
   } catch (error) {
-    console.error("[ProductPage] Failed to fetch related products:", error);
+    logger.warn("[ProductPage] Failed to fetch related products", { metadata: { slug, error: error instanceof Error ? error.message : "unknown" } });
   }
 
   return (
