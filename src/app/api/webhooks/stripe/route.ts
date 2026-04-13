@@ -219,17 +219,23 @@ export async function POST(request: NextRequest) {
             });
 
             if (order) {
-              await sendOrderConfirmation(
-                order.email,
-                order.orderNumber,
-                order.items.map((item) => ({
-                  productName: `Top-Up: ${item.productName}`,
-                  quantity: item.quantity,
-                  unitPrice: item.unitPrice,
-                  totalPrice: item.totalPrice,
-                })),
-                order.total,
-              );
+              try {
+                await sendOrderConfirmation(
+                  order.email,
+                  order.orderNumber,
+                  order.items.map((item) => ({
+                    productName: `Top-Up: ${item.productName}`,
+                    quantity: item.quantity,
+                    unitPrice: item.unitPrice,
+                    totalPrice: item.totalPrice,
+                  })),
+                  order.total,
+                );
+              } catch (emailErr) {
+                log.errorWithException('Failed to send top-up confirmation email', emailErr, {
+                  metadata: { orderId, orderNumber: order.orderNumber },
+                });
+              }
 
               if (order.userId) {
                 sendPushNotification(
@@ -261,6 +267,25 @@ export async function POST(request: NextRequest) {
               data: { status: "FAILED", mobimatterStatus: "FAILED" },
             });
 
+            // Auto-refund: user paid but top-up was not delivered
+            if (session.payment_intent) {
+              try {
+                await stripe.refunds.create({
+                  payment_intent: session.payment_intent as string,
+                  reason: 'fraudulent', // closest Stripe reason for "service not delivered"
+                });
+                log.info('Auto-refund issued for failed top-up', { metadata: { orderId } });
+                await db.order.update({
+                  where: { id: orderId },
+                  data: { status: 'REFUNDED' },
+                });
+              } catch (refundErr) {
+                log.errorWithException('Auto-refund failed for top-up — manual intervention required', refundErr, {
+                  metadata: { orderId, paymentIntent: session.payment_intent as string },
+                });
+              }
+            }
+
             await logAudit({
               action: "topup_payment_failed",
               entity: "order",
@@ -288,24 +313,50 @@ export async function POST(request: NextRequest) {
               metadata: { orderId, error: fulfillment.error },
             });
             if (order) {
-              sendOrderFailed(order.email, order.orderNumber).catch((err) => {
-                log.errorWithException("Failed to send failure email", err, {
-                  metadata: { orderId },
+              try {
+                await sendOrderFailed(order.email, order.orderNumber);
+              } catch (emailErr) {
+                log.errorWithException("Failed to send failure email", emailErr, {
+                  metadata: { orderId, orderNumber: order.orderNumber },
                 });
-              });
+              }
+            }
+            // Auto-refund: user paid but eSIM was not delivered
+            if (order && session.payment_intent) {
+              try {
+                await stripe.refunds.create({
+                  payment_intent: session.payment_intent as string,
+                  reason: 'fraudulent', // closest Stripe reason for "service not delivered"
+                });
+                log.info('Auto-refund issued for failed fulfillment', { metadata: { orderId } });
+                await db.order.update({
+                  where: { id: orderId },
+                  data: { status: 'REFUNDED' },
+                });
+              } catch (refundErr) {
+                log.errorWithException('Auto-refund failed — manual intervention required', refundErr, {
+                  metadata: { orderId, paymentIntent: session.payment_intent as string },
+                });
+              }
             }
           } else if (order) {
-            await sendOrderConfirmation(
-              order.email,
-              order.orderNumber,
-              order.items.map((item) => ({
-                productName: item.productName,
-                quantity: item.quantity,
-                unitPrice: item.unitPrice,
-                totalPrice: item.totalPrice,
-              })),
-              order.total,
-            );
+            try {
+              await sendOrderConfirmation(
+                order.email,
+                order.orderNumber,
+                order.items.map((item) => ({
+                  productName: item.productName,
+                  quantity: item.quantity,
+                  unitPrice: item.unitPrice,
+                  totalPrice: item.totalPrice,
+                })),
+                order.total,
+              );
+            } catch (emailErr) {
+              log.errorWithException('Failed to send order confirmation email', emailErr, {
+                metadata: { orderId, orderNumber: order.orderNumber },
+              });
+            }
 
             if (order.userId) {
               sendPushNotification(

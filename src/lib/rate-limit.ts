@@ -22,7 +22,7 @@ interface RateLimitResult {
 const DEFAULT_CONFIGS: Record<string, RateLimitConfig> = {
   // Authentication endpoints
   'auth:login': { windowMs: 15 * 60 * 1000, maxRequests: 5 }, // 5 per 15 min
-  'auth:register': { windowMs: 60 * 60 * 1000, maxRequests: 3 }, // 3 per hour
+  'auth:register': { windowMs: 60 * 60 * 1000, maxRequests: 10 }, // 10 per hour
   'auth:password-reset': { windowMs: 60 * 60 * 1000, maxRequests: 3 }, // 3 per hour
   'auth:verify': { windowMs: 60 * 60 * 1000, maxRequests: 10 }, // 10 per hour
   
