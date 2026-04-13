@@ -153,14 +153,14 @@ describe('rate-limit', () => {
     })
 
     it('should return error when rate limited', async () => {
-      // 'auth:register' has maxRequests: 3 per hour
+      // 'auth:register' has maxRequests: 10 per hour
       const endpoint = 'auth:register'
       const id = 'wrl-block-user-unique'
 
-      // Exhaust the limit
-      await checkRateLimit(id, endpoint)
-      await checkRateLimit(id, endpoint)
-      await checkRateLimit(id, endpoint)
+      // Exhaust the limit (10 requests)
+      for (let i = 0; i < 10; i++) {
+        await checkRateLimit(id, endpoint)
+      }
 
       const handler = vi.fn().mockResolvedValue({ data: 'ok' })
       const result = await withRateLimit(id, endpoint, handler)
