@@ -7,7 +7,6 @@ import { toast } from "sonner"
  */
 export function useApiError() {
   const handleError = (error: unknown, customMessage?: string) => {
-    console.error("API Error:", error)
 
     let message = customMessage || "An unexpected error occurred"
     let status: number | undefined

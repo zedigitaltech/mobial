@@ -19,14 +19,28 @@ const REGION_EMOJI: Record<string, string> = {
 
 export const revalidate = 3600
 
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://mobialo.eu"
+
 export const metadata: Metadata = {
   title: "eSIM Plans by Country",
   description:
     "Browse eSIM data plans for 190+ countries. Find affordable prepaid travel data for your next destination with instant activation.",
+  alternates: {
+    canonical: `${BASE_URL}/esim`,
+  },
   openGraph: {
     title: "eSIM Plans by Country | MobiaL",
     description:
       "Browse eSIM data plans for 190+ countries. Instant activation, no roaming fees.",
+    url: `${BASE_URL}/esim`,
+    images: [
+      {
+        url: `${BASE_URL}/og-esim.png`,
+        width: 1200,
+        height: 630,
+        alt: "MobiaL eSIM Plans — 190+ Countries",
+      },
+    ],
   },
 }
 

@@ -65,3 +65,4 @@ package-lock.json
 # Playwright
 /playwright-report/
 /test-results/
+.gstack/

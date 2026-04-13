@@ -121,8 +121,8 @@ export default function OrderSuccessPage() {
             items: raw.items || [],
           })
         }
-      } catch (err) {
-        console.error(err)
+      } catch {
+        // order fetch failed — loading state will show retry UI
       } finally {
         setLoading(false)
       }
