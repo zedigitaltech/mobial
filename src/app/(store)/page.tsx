@@ -144,10 +144,6 @@ export default async function HomePage() {
             {t("heroDescription")}
           </p>
 
-          <p className="text-sm font-bold text-primary/80 -mt-4">
-            {t("heroJustLanded")}
-          </p>
-
           <DestinationSearch />
 
           <TrustBadges />
