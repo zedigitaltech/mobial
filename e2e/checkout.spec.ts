@@ -73,6 +73,20 @@ test.describe("Checkout Flow", () => {
     await page.goto("/checkout")
     await page.waitForLoadState("networkidle")
 
+    // Dismiss cookie consent if visible (blocks pointer events)
+    const cookieAccept = page.locator('[aria-label="Cookie consent"] button').first()
+    if (await cookieAccept.isVisible({ timeout: 2_000 }).catch(() => false)) {
+      await cookieAccept.click()
+      await page.waitForTimeout(300)
+    }
+
+    // Dismiss any auth modal backdrop by pressing Escape
+    const backdrop = page.locator('[aria-hidden="true"].fixed.inset-0')
+    if (await backdrop.isVisible({ timeout: 1_000 }).catch(() => false)) {
+      await page.keyboard.press("Escape")
+      await page.waitForTimeout(300)
+    }
+
     // If checkout page loaded (cart has items), test email validation
     const emailInput = page.locator('input[type="email"]')
     if (await emailInput.isVisible({ timeout: 5_000 }).catch(() => false)) {
