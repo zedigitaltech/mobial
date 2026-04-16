@@ -591,7 +591,7 @@ export async function processOrderWithMobimatter(
       const qrUrl = qrCodeValue.startsWith("http")
         ? qrCodeValue
         : `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/qr/${order.orderNumber}`;
-      sendEsimReady(order.email, order.orderNumber, qrUrl).catch((err) =>
+      await sendEsimReady(order.email, order.orderNumber, qrUrl).catch((err) =>
         log.errorWithException("Failed to send eSIM ready email", err),
       );
     }
