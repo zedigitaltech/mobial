@@ -1,3 +1,4 @@
+import QRCode from "qrcode";
 import { sendEmail } from "@/lib/email";
 import { escapeHtml } from "@/lib/sanitize";
 import { logger } from "@/lib/logger";
@@ -80,7 +81,11 @@ export async function sendOrderConfirmation(
   orderNumber: string,
   items: OrderItem[],
   total: number,
-  qrCodeUrl?: string,
+  esimData?: {
+    lpaString: string;       // raw LPA / activation string to encode as QR
+    activationCode?: string; // human-readable activation code
+    smdpAddress?: string;    // SM-DP+ address
+  },
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const itemRows = items
@@ -96,19 +101,68 @@ export async function sendOrderConfirmation(
       )
       .join("");
 
-    const qrSection = qrCodeUrl
-      ? `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
-          <tr>
-            <td align="center" style="padding:20px;background-color:rgba(77,166,232,0.08);border-radius:12px;border:1px solid rgba(77,166,232,0.15);">
-              <p style="margin:0 0 12px;font-size:13px;color:#9ca3af;font-weight:500;">Your eSIM QR Code</p>
-              <img src="${qrCodeUrl}" alt="eSIM QR Code" width="180" height="180" style="display:block;border-radius:8px;" />
-            </td>
-          </tr>
-        </table>`
-      : "";
+    // Generate QR code as base64 PNG — works in all email clients without external requests
+    let qrSection = "";
+    if (esimData?.lpaString) {
+      try {
+        const qrBase64 = await QRCode.toDataURL(esimData.lpaString, {
+          errorCorrectionLevel: "M",
+          width: 220,
+          margin: 2,
+          color: { dark: "#000000", light: "#ffffff" },
+        });
+
+        const activationDetails = esimData.activationCode
+          ? `<tr>
+              <td style="padding:8px 0 0;">
+                <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.08em;">Activation Code</p>
+                <p style="margin:0;font-size:12px;color:#d1d5db;font-family:monospace;word-break:break-all;">${escapeHtml(esimData.activationCode)}</p>
+              </td>
+            </tr>`
+          : "";
+
+        const smdpDetails = esimData.smdpAddress
+          ? `<tr>
+              <td style="padding:8px 0 0;">
+                <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:0.08em;">SM-DP+ Address</p>
+                <p style="margin:0;font-size:12px;color:#d1d5db;font-family:monospace;word-break:break-all;">${escapeHtml(esimData.smdpAddress)}</p>
+              </td>
+            </tr>`
+          : "";
+
+        qrSection = `
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;">
+            <tr>
+              <td style="padding:20px;background-color:rgba(77,166,232,0.06);border-radius:12px;border:1px solid rgba(77,166,232,0.15);">
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td align="center" style="padding-bottom:16px;">
+                      <p style="margin:0 0 12px;font-size:13px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.08em;">Your eSIM QR Code</p>
+                      <img src="${qrBase64}" alt="eSIM QR Code" width="220" height="220"
+                        style="display:block;border-radius:8px;background:#ffffff;padding:8px;" />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>
+                      <p style="margin:0 0 8px;font-size:12px;color:#9ca3af;text-align:center;line-height:1.5;">
+                        Scan this QR code in your phone's eSIM settings to install.<br/>
+                        <strong style="color:#d1d5db;">Settings → Cellular → Add eSIM → Scan QR Code</strong>
+                      </p>
+                    </td>
+                  </tr>
+                  ${activationDetails}
+                  ${smdpDetails}
+                </table>
+              </td>
+            </tr>
+          </table>`;
+      } catch (qrErr) {
+        log.error("Failed to generate QR code for email", { metadata: { orderNumber } });
+      }
+    }
 
     const html = layout(`
-      <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#ffffff;">Order Confirmed</h1>
+      <h1 style="margin:0 0 8px;font-size:22px;font-weight:700;color:#ffffff;">Your eSIM is Ready!</h1>
       <p style="margin:0 0 24px;font-size:14px;color:#9ca3af;">
         Order <span style="color:#4da6e8;font-weight:600;">#${escapeHtml(orderNumber)}</span>
       </p>
@@ -123,16 +177,17 @@ export async function sendOrderConfirmation(
 
       ${qrSection}
 
-      ${button(`${BASE_URL}/order/${orderNumber}`, "View Order")}
+      ${button(`${BASE_URL}/order/${orderNumber}`, "View Full Order Details")}
 
       <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.6;">
-        Thank you for choosing MobiaL. Your eSIM details are available in your order page.
+        Need help installing? Check our <a href="${BASE_URL}/guides/installation" style="color:#4da6e8;text-decoration:none;">installation guide</a>
+        or reply to this email.
       </p>
     `);
 
     const result = await sendEmail({
       to: email,
-      subject: `Your MobiaL eSIM Order #${escapeHtml(orderNumber)}`,
+      subject: `Your MobiaL eSIM is Ready — Order #${escapeHtml(orderNumber)}`,
       html,
     });
 

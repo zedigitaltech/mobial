@@ -12,7 +12,7 @@ import {
   getWalletBalance,
 } from "@/lib/mobimatter";
 import { encryptEsimField } from "@/lib/esim-encryption";
-import { sendEsimReady } from "@/services/email-service";
+// email sent by stripe webhook after fulfillment
 import { logger } from "@/lib/logger";
 import { Prisma, OrderStatus, PaymentStatus } from "@prisma/client";
 
@@ -587,14 +587,7 @@ export async function processOrderWithMobimatter(
       });
     }
 
-    if (finalStatus === "COMPLETED" && qrCodeValue) {
-      const qrUrl = qrCodeValue.startsWith("http")
-        ? qrCodeValue
-        : `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}/api/qr/${order.orderNumber}`;
-      await sendEsimReady(order.email, order.orderNumber, qrUrl).catch((err) =>
-        log.errorWithException("Failed to send eSIM ready email", err),
-      );
-    }
+    // Email is sent by the Stripe webhook after fulfillment, with the QR code included.
 
     return {
       success: failedItems.length === 0,

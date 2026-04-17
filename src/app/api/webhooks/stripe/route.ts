@@ -10,7 +10,7 @@ import {
   sendOrderConfirmation,
   sendOrderFailed,
 } from "@/services/email-service";
-import { encryptEsimField } from "@/lib/esim-encryption";
+import { encryptEsimField, decryptEsimField } from "@/lib/esim-encryption";
 import { getPostHogClient } from "@/lib/posthog-server";
 import { sendPushNotification } from "@/lib/push-notifications";
 import { logger } from "@/lib/logger";
@@ -220,6 +220,10 @@ export async function POST(request: NextRequest) {
 
             if (order) {
               try {
+                const lpaString = decryptEsimField(order.esimQrCode);
+                const activationCode = decryptEsimField(order.esimActivationCode);
+                const smdpAddress = decryptEsimField(order.esimSmdpAddress);
+
                 await sendOrderConfirmation(
                   order.email,
                   order.orderNumber,
@@ -230,6 +234,7 @@ export async function POST(request: NextRequest) {
                     totalPrice: item.totalPrice,
                   })),
                   order.total,
+                  lpaString ? { lpaString, activationCode, smdpAddress } : undefined,
                 );
               } catch (emailErr) {
                 log.errorWithException('Failed to send top-up confirmation email', emailErr, {
@@ -341,6 +346,11 @@ export async function POST(request: NextRequest) {
             }
           } else if (order) {
             try {
+              // Decrypt eSIM fields to include QR code in the email
+              const lpaString = decryptEsimField(order.esimQrCode);
+              const activationCode = decryptEsimField(order.esimActivationCode);
+              const smdpAddress = decryptEsimField(order.esimSmdpAddress);
+
               await sendOrderConfirmation(
                 order.email,
                 order.orderNumber,
@@ -351,6 +361,7 @@ export async function POST(request: NextRequest) {
                   totalPrice: item.totalPrice,
                 })),
                 order.total,
+                lpaString ? { lpaString, activationCode, smdpAddress } : undefined,
               );
             } catch (emailErr) {
               log.errorWithException('Failed to send order confirmation email', emailErr, {
