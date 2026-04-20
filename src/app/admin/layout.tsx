@@ -1,3 +1,4 @@
+import type { ReactNode } from "react"
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -19,12 +20,12 @@ const NAV_ITEMS = [
 export default function AdminLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: ReactNode
 }) {
   return (
     <div className="flex min-h-screen">
       {/* Sidebar — desktop only */}
-      <aside className="hidden md:flex w-56 flex-col border-r border-border bg-card shrink-0">
+      <aside aria-label="Admin navigation" className="hidden md:flex w-56 flex-col border-r border-border bg-card shrink-0">
         <div className="flex items-center gap-2 px-5 py-5 border-b border-border">
           <div
             className="w-7 h-7 rounded-lg flex items-center justify-center"
@@ -35,7 +36,7 @@ export default function AdminLayout({
           <span className="font-bold text-sm">Admin</span>
         </div>
 
-        <nav className="flex-1 p-3 space-y-1">
+        <nav aria-label="Admin sidebar" className="flex-1 p-3 space-y-1">
           {NAV_ITEMS.map(({ href, label, icon }) => (
             <AdminNavLink key={href} href={href} label={label} icon={icon} />
           ))}

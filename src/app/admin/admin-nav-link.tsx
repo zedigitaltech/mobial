@@ -1,5 +1,6 @@
 "use client"
 
+import type { ElementType } from "react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 
@@ -10,7 +11,7 @@ export function AdminNavLink({
 }: {
   href: string
   label: string
-  icon: React.ElementType
+  icon: ElementType
 }) {
   const pathname = usePathname()
   // Exact match for /admin (overview), prefix match for sub-routes
