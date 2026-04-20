@@ -55,7 +55,7 @@ function Button({
   const Comp = asChild ? Slot : "button"
 
   const brandStyle = variant === "brand"
-    ? { background: "var(--brand-gradient)", ...style }
+    ? { ...style, background: "var(--brand-gradient)" }
     : style
 
   return (

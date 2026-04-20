@@ -6,7 +6,7 @@ function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>)
       data-slot="skeleton"
       className={cn(
         "relative overflow-hidden rounded-md bg-muted",
-        "after:absolute after:inset-0 after:-translate-x-full",
+        "after:absolute after:inset-0 after:-translate-x-full after:content-['']",
         "after:animate-shimmer",
         "after:bg-gradient-to-r after:from-transparent after:via-white/5 after:to-transparent",
         className

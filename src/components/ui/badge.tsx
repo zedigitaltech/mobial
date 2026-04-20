@@ -48,14 +48,14 @@ function Badge({
   variant,
   style,
   ...props
-}: React.HTMLAttributes<HTMLDivElement> &
-  VariantProps<typeof badgeVariants> & { style?: React.CSSProperties }) {
+}: React.HTMLAttributes<HTMLSpanElement> &
+  VariantProps<typeof badgeVariants>) {
   const brandStyle = variant === "brand"
-    ? { background: "var(--brand-gradient)", ...style }
+    ? { ...style, background: "var(--brand-gradient)" }
     : style
 
   return (
-    <div
+    <span
       className={cn(badgeVariants({ variant }), className)}
       style={brandStyle}
       {...props}
