@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { shouldCheckCsrf, validateCsrf } from "@/lib/csrf";
 
 // UX-only auth detection: the presence of the `mobial_refresh` HttpOnly
 // cookie (set by login/register/refresh) or the `mobial_auth` marker cookie
@@ -64,33 +65,16 @@ export async function proxy(request: NextRequest) {
   response.headers.set("Cross-Origin-Opener-Policy", "same-origin");
   response.headers.set("Cross-Origin-Resource-Policy", "same-origin");
 
-  // Enforce same-origin for state-changing API calls. Preflighted CORS
-  // requests from third-party origins are rejected here; no `Access-Control-Allow-*`
-  // headers are emitted, which is the correct default for a first-party API.
-  // Webhook and cron endpoints are exempt — they authenticate via signature
-  // or bearer token and must accept cross-origin POSTs.
-  const isApi = pathname.startsWith("/api/");
-  const isMutating = ["POST", "PUT", "PATCH", "DELETE"].includes(request.method);
-  const isWebhookOrCron =
-    pathname.startsWith("/api/webhooks/") || pathname.startsWith("/api/cron/");
-  if (isApi && isMutating && !isWebhookOrCron) {
-    const origin = request.headers.get("origin");
-    const host = request.headers.get("host");
-    if (origin && host) {
-      try {
-        const originHost = new URL(origin).host;
-        if (originHost !== host) {
-          return NextResponse.json(
-            { success: false, error: "Cross-origin requests are not allowed" },
-            { status: 403 },
-          );
-        }
-      } catch {
-        return NextResponse.json(
-          { success: false, error: "Invalid origin" },
-          { status: 403 },
-        );
-      }
+  // CSRF protection for state-mutating API routes.
+  // shouldCheckCsrf selects only the mutation paths that need protection;
+  // validateCsrf enforces same-origin via Origin header + X-Requested-With.
+  // Webhooks, cron, auth open-endpoints, and admin routes are exempt (see csrf.ts).
+  if (shouldCheckCsrf(pathname, request.method)) {
+    if (!validateCsrf(request)) {
+      return NextResponse.json(
+        { success: false, error: "CSRF validation failed" },
+        { status: 403 },
+      );
     }
   }
   // X-XSS-Protection removed — deprecated and causes issues in older browsers. CSP provides better protection.
