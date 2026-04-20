@@ -33,6 +33,7 @@ interface SystemHealth {
   mobimatterApiUp: boolean;
   stripeWebhookLastReceived: string | null;
   emailServiceUp: boolean;
+  walletBalance: number | null;
 }
 
 function toDateString(d: Date): string {
@@ -114,17 +115,21 @@ async function buildOrderStats(
 async function buildSystemHealth(): Promise<SystemHealth> {
   const emailServiceUp = Boolean(process.env.RESEND_API_KEY);
 
-  // Real health ping — call getWalletBalance with a 3-second timeout
+  // Real health ping — call getWalletBalance with a 3-second timeout.
+  // Capture the result so we can reuse it for walletBalance (avoids a double call).
   let mobimatterApiUp = false;
+  let walletBalance: number | null = null;
+  let timerId: ReturnType<typeof setTimeout> | undefined;
   try {
     const { getWalletBalance } = await import('@/lib/mobimatter');
-    await Promise.race([
-      getWalletBalance(),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('timeout')), 3000),
-      ),
+    const wallet = await Promise.race([
+      getWalletBalance().finally(() => clearTimeout(timerId)),
+      new Promise<never>((_, reject) => {
+        timerId = setTimeout(() => reject(new Error('timeout')), 3000);
+      }),
     ]);
     mobimatterApiUp = true;
+    walletBalance = wallet.balance;
   } catch {
     mobimatterApiUp = false;
   }
@@ -144,18 +149,7 @@ async function buildSystemHealth(): Promise<SystemHealth> {
     stripeWebhookLastReceived = null;
   }
 
-  return { mobimatterApiUp, stripeWebhookLastReceived, emailServiceUp };
-}
-
-async function tryGetWalletBalance(): Promise<number | null> {
-  try {
-    const { getWalletBalance } = await import('@/lib/mobimatter');
-    if (typeof getWalletBalance === 'function') {
-      const wallet = await getWalletBalance();
-      return wallet.balance;
-    }
-  } catch {}
-  return null;
+  return { mobimatterApiUp, stripeWebhookLastReceived, emailServiceUp, walletBalance };
 }
 
 export async function GET(request: NextRequest) {
@@ -216,7 +210,7 @@ export async function GET(request: NextRequest) {
       }).catch(() => [] as { id: string; orderNumber: string; email: string; total: number; currency: string; createdAt: Date }[]),
     ]);
 
-    const totalRevenue = totalRevenueResult._sum.total || 0;
+    const totalRevenue = totalRevenueResult._sum.total ?? 0;
 
     let affiliateData = { totalAffiliates: 0, pendingAffiliates: 0, activeAffiliates: 0, totalClicks: 0, totalCommission: 0 };
     try {
@@ -228,9 +222,9 @@ export async function GET(request: NextRequest) {
         totalClicks: affiliates.reduce((sum, a) => sum + a.clicks, 0),
         totalCommission: affiliates.reduce((sum, a) => sum + a.commission, 0),
       };
-    } catch {}
-
-    const walletBalance = await tryGetWalletBalance();
+    } catch (error) {
+      logger.errorWithException('Failed to fetch affiliate stats', error);
+    }
 
     // New extended fields — wrapped in try/catch so failures don't break core stats
     let revenue: RevenueStats = { today: 0, week: 0, month: 0, chart: [] };
@@ -246,6 +240,7 @@ export async function GET(request: NextRequest) {
       mobimatterApiUp: false,
       stripeWebhookLastReceived: null,
       emailServiceUp: false,
+      walletBalance: null,
     };
 
     try {
@@ -294,7 +289,7 @@ export async function GET(request: NextRequest) {
       recentOrders,
       recentFailedOrders,
       ...affiliateData,
-      walletBalance,
+      walletBalance: systemHealth.walletBalance,
       conversionRate:
         affiliateData.totalClicks > 0
           ? (totalOrders / affiliateData.totalClicks) * 100

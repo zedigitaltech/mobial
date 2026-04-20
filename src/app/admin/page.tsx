@@ -215,6 +215,7 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [failedOrders, setFailedOrders] = useState<FailedOrder[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     void loadStats()
@@ -226,12 +227,16 @@ export default function AdminDashboardPage() {
       const res = await fetch("/api/admin/stats", {
         headers: { Authorization: `Bearer ${token}` },
       })
-      if (res.ok) {
-        const json: { data: DashboardStats & { recentOrders?: FailedOrder[]; ordersByStatus?: Record<string, number> } } = await res.json()
-        const data = json.data
-        setStats(data)
-        setFailedOrders(data.recentFailedOrders ?? [])
+      if (!res.ok) {
+        setError("Failed to load dashboard stats. Please refresh.")
+        return
       }
+      const json: { data: DashboardStats & { recentOrders?: FailedOrder[]; ordersByStatus?: Record<string, number> } } = await res.json()
+      const data = json.data
+      setStats(data)
+      setFailedOrders(data.recentFailedOrders ?? [])
+    } catch {
+      setError("Failed to load dashboard stats. Please refresh.")
     } finally {
       setLoading(false)
     }
@@ -281,6 +286,12 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div className="rounded-lg bg-destructive/10 text-destructive px-4 py-3 text-sm">
+          {error}
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-2xl font-bold tracking-tight">Overview</h2>
