@@ -1,3 +1,5 @@
+// NOTE: Tailwind v4 uses @theme inline in globals.css — this file is kept for
+// tooling compatibility only and is not read at build time.
 import type { Config } from "tailwindcss";
 import tailwindcssAnimate from "tailwindcss-animate";
 

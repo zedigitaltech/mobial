@@ -10,13 +10,13 @@
   --color-foreground: var(--foreground);
   --font-sans: "Inter", var(--font-geist-sans);
   --font-mono: "JetBrains Mono", var(--font-geist-mono);
-  
+
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
-  
+
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
-  
+
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
   --color-border: var(--border);
@@ -41,6 +41,8 @@
   --radius-md: calc(var(--radius));
   --radius-lg: calc(var(--radius) + 4px);
   --radius-xl: calc(var(--radius) + 12px);
+
+  --animate-shimmer: shimmer 1.8s linear infinite;
 }
 
 :root {
@@ -68,7 +70,7 @@
   --ring: oklch(0.52 0.24 280 / 0.4);
   --price-green: #16a34a;
 
-  /* Brand tokens */
+  /* Brand constants — dark-mode design tokens; override in .dark if light mode palette differs */
   --brand-primary: #6C4FFF;
   --brand-secondary: #00D9B8;
   --brand-gradient: linear-gradient(135deg, #6C4FFF 0%, #00D9B8 100%);
@@ -98,6 +100,14 @@
   --input: oklch(0.14 0.018 250);
   --ring: oklch(0.62 0.22 280 / 0.35);
   --price-green: #4ade80;
+
+  /* Brand constants (same values, explicitly dark-scoped) */
+  --brand-primary: #6C4FFF;
+  --brand-secondary: #00D9B8;
+  --brand-gradient: linear-gradient(135deg, #6C4FFF 0%, #00D9B8 100%);
+  --bg-base: #07090F;
+  --bg-surface: #0F1624;
+  --bg-elevated: #161F33;
 }
 
 @layer base {
@@ -140,11 +150,11 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
+}
 
-  @keyframes shimmer {
-    100% {
-      transform: translateX(100%);
-    }
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
   }
 }
 
