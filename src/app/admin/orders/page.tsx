@@ -49,6 +49,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { toast } from "sonner"
+import { OrderActions } from "./order-actions"
 
 interface OrderItem {
   id: string
@@ -337,6 +338,14 @@ export default function AdminOrdersPage() {
                       {formatDate(order.createdAt)}
                     </TableCell>
                     <TableCell className="text-right">
+                      <div className="flex items-center justify-end gap-2">
+                        <OrderActions
+                          orderId={order.id}
+                          orderNumber={order.orderNumber}
+                          status={order.status}
+                          paymentStatus={order.paymentStatus}
+                          onActionComplete={fetchOrders}
+                        />
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon">
@@ -377,6 +386,7 @@ export default function AdminOrdersPage() {
                           )}
                         </DropdownMenuContent>
                       </DropdownMenu>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
