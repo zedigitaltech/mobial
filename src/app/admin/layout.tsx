@@ -1,197 +1,82 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { motion } from "framer-motion"
-import { ErrorBoundary } from "@/components/common/error-boundary"
+import Link from "next/link"
 import {
   LayoutDashboard,
+  ShoppingCart,
   Users,
-  Package,
   Settings,
-  Shield,
-  Menu,
-  LogOut,
-  ChevronRight,
-  Activity,
+  BarChart3,
+  Zap,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Separator } from "@/components/ui/separator"
-import { useAuth } from "@/components/providers/auth-provider"
 
-const navItems = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+const NAV_ITEMS = [
+  { href: "/admin", label: "Overview", icon: LayoutDashboard },
+  { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
   { href: "/admin/affiliates", label: "Affiliates", icon: Users },
-  { href: "/admin/orders", label: "Orders", icon: Package },
-  { href: "/admin/monitoring", label: "Monitoring", icon: Activity },
+  { href: "/admin/monitoring", label: "Monitoring", icon: BarChart3 },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ]
 
-function NavItem({ href, label, IconComponent, active }: { href: string; label: string; IconComponent: React.ElementType; active: boolean }) {
+function AdminNavLink({
+  href,
+  label,
+  icon: Icon,
+}: {
+  href: string
+  label: string
+  icon: React.ElementType
+}) {
+  const pathname = usePathname()
+  // Exact match for /admin (overview), prefix match for sub-routes
+  const isActive =
+    href === "/admin" ? pathname === "/admin" : pathname.startsWith(href)
+
   return (
-    <Link href={href}>
-      <motion.div
-        whileHover={{ x: 4 }}
-        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-          active
-            ? "bg-primary text-primary-foreground"
-            : "text-muted-foreground hover:bg-muted hover:text-foreground"
-        }`}
-      >
-        <IconComponent className="h-5 w-5" />
-        <span className="font-medium">{label}</span>
-        {active && <ChevronRight className="h-4 w-4 ml-auto" />}
-      </motion.div>
+    <Link
+      href={href}
+      aria-current={isActive ? "page" : undefined}
+      className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
+        isActive
+          ? "bg-primary/10 text-primary font-medium"
+          : "text-muted-foreground hover:text-foreground hover:bg-accent"
+      }`}
+    >
+      <Icon className="size-4 shrink-0" />
+      {label}
     </Link>
   )
 }
 
-function SidebarContent({ activePath, onClose }: { activePath: string; onClose?: () => void }) {
+export default function AdminLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <div className="flex flex-col h-full">
-      {/* Logo */}
-      <div className="p-6">
-        <Link href="/admin" className="flex items-center gap-2" onClick={onClose}>
-          <img src="/logo.png" alt="MobiaL" className="h-10 w-auto" />
-        </Link>
-      </div>
+    <div className="flex min-h-screen">
+      {/* Sidebar — desktop only */}
+      <aside className="hidden md:flex w-56 flex-col border-r border-border bg-card shrink-0">
+        <div className="flex items-center gap-2 px-5 py-5 border-b border-border">
+          <div
+            className="w-7 h-7 rounded-lg flex items-center justify-center"
+            style={{ background: "var(--brand-gradient)" }}
+          >
+            <Zap className="size-4 text-white" />
+          </div>
+          <span className="font-bold text-sm">Admin</span>
+        </div>
 
-      <Separator />
-
-      {/* Navigation */}
-      <ScrollArea className="flex-1 px-3 py-4">
-        <nav className="space-y-1">
-          {navItems.map((item) => (
-            <div key={item.href} onClick={onClose}>
-              <NavItem
-                href={item.href}
-                label={item.label}
-                IconComponent={item.icon}
-                active={activePath === item.href}
-              />
-            </div>
+        <nav className="flex-1 p-3 space-y-1">
+          {NAV_ITEMS.map(({ href, label, icon }) => (
+            <AdminNavLink key={href} href={href} label={label} icon={icon} />
           ))}
         </nav>
-      </ScrollArea>
-
-      <Separator />
-
-      {/* Back to Site */}
-      <div className="p-4">
-        <Link href="/" onClick={onClose}>
-          <Button variant="outline" className="w-full justify-start">
-            <LogOut className="h-4 w-4 mr-2" />
-            Back to Website
-          </Button>
-        </Link>
-      </div>
-    </div>
-  )
-}
-
-export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const router = useRouter()
-  const pathname = usePathname()
-  const { user, isLoading, isAdmin, logout } = useAuth()
-  const [mobileOpen, setMobileOpen] = useState(false)
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    )
-  }
-
-  if (!user || !isAdmin) {
-    router.push("/")
-    return null
-  }
-
-  return (
-    <ErrorBoundary fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Something went wrong</h1>
-          <p className="text-muted-foreground mb-4">Please refresh the page and try again</p>
-          <Button onClick={() => window.location.reload()}>Refresh Page</Button>
-        </div>
-      </div>
-    }>
-      <div className="min-h-screen bg-muted/30">
-      {/* Desktop Sidebar */}
-      <aside className="fixed left-0 top-0 z-40 h-screen w-64 border-r bg-card hidden lg:block">
-        <SidebarContent activePath={pathname} />
       </aside>
 
-      {/* Mobile Header */}
-      <header className="fixed top-0 left-0 right-0 z-30 h-16 border-b bg-card lg:hidden flex items-center justify-between px-4">
-        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <Menu className="h-5 w-5" />
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="left" className="p-0 w-64">
-            <SidebarContent activePath={pathname} onClose={() => setMobileOpen(false)} />
-          </SheetContent>
-        </Sheet>
-
-        <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg gradient-primary flex items-center justify-center">
-            <Shield className="h-4 w-4 text-white" />
-          </div>
-          <span className="font-bold">Admin</span>
-        </div>
-
-        <Avatar className="h-8 w-8">
-          <AvatarFallback className="bg-primary text-primary-foreground text-xs">
-            {user.name?.[0] || user.email[0].toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-      </header>
-
-      {/* Main Content */}
-      <main className="lg:pl-64 pt-16 lg:pt-0">
-        {/* Top Bar */}
-        <div className="sticky top-0 z-20 h-16 border-b bg-card/80 backdrop-blur-sm hidden lg:flex items-center justify-between px-6">
-          <div>
-            <h1 className="font-semibold">Admin Dashboard</h1>
-            <p className="text-sm text-muted-foreground">Manage your affiliate platform</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="text-right">
-              <p className="text-sm font-medium">{user.name || "Admin"}</p>
-              <p className="text-xs text-muted-foreground">{user.email}</p>
-            </div>
-            <Avatar>
-              <AvatarFallback className="bg-primary text-primary-foreground">
-                {user.name?.[0] || user.email[0].toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <Button variant="ghost" size="icon" onClick={logout}>
-              <LogOut className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Page Content */}
-        <div className="p-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            {children}
-          </motion.div>
-        </div>
-      </main>
+      {/* Main content */}
+      <main className="flex-1 overflow-auto">{children}</main>
     </div>
-    </ErrorBoundary>
   )
 }
