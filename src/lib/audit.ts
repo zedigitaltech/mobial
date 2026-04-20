@@ -44,7 +44,11 @@ export type AuditAction =
   | 'wallet_deduct'
   | 'reward_created'
   | 'referral_code_created'
-  | 'gdpr_permanent_delete';
+  | 'gdpr_permanent_delete'
+  | 'admin_retry_fulfillment'
+  | 'admin_refund'
+  | 'admin_resend_email'
+  | 'admin_view_esim';
 
 interface AuditLogData {
   userId?: string;
