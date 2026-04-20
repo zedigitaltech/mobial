@@ -91,31 +91,50 @@ function EmptyState() {
 
 export default async function EsimPage({ searchParams }: PageProps) {
   const params = await searchParams
-  const page = Math.max(1, Number(params.page ?? 1))
+
+  // Fix 2: Safe NaN parsing for numeric params
+  const rawPage = parseInt(params.page ?? '1', 10)
+  const page = isNaN(rawPage) || rawPage < 1 ? 1 : rawPage
   const offset = (page - 1) * PAGE_SIZE
+
+  const rawMaxPrice = params.maxPrice ? parseFloat(params.maxPrice) : undefined
+  const safeMaxPrice =
+    rawMaxPrice !== undefined && !isNaN(rawMaxPrice) && rawMaxPrice > 0
+      ? rawMaxPrice
+      : undefined
+
+  // Fix 1: Validate URL params against known valid values before passing to DB
+  const allCountriesForValidation = getCountries()
+  const validCountryCodes = new Set(allCountriesForValidation.map((c) => c.code))
+  const validRegionSlugs = new Set(regions.map((r) => r.slug))
+
+  const safeCountry =
+    params.country && validCountryCodes.has(params.country) ? params.country : undefined
+  const safeRegion =
+    params.region && validRegionSlugs.has(params.region) ? params.region : undefined
 
   const filters: ProductFilters = {
     isActive: true,
     limit: PAGE_SIZE,
     offset,
     sortBy: mapSortParam(params.sort),
-    ...(params.region ? { region: params.region } : {}),
-    ...(params.country ? { country: params.country } : {}),
-    ...(params.maxPrice ? { maxPrice: Number(params.maxPrice) } : {}),
+    ...(safeRegion ? { region: safeRegion } : {}),
+    ...(safeCountry ? { country: safeCountry } : {}),
+    ...(safeMaxPrice !== undefined ? { maxPrice: safeMaxPrice } : {}),
   }
 
-  const [paginatedResult, allCountries] = await Promise.all([
+  const [paginatedResult] = await Promise.all([
     getProducts(filters),
-    Promise.resolve(getCountries()),
   ])
+  const allCountries = allCountriesForValidation
 
   const { products, total } = paginatedResult
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   const baseParams: Record<string, string> = {}
-  if (params.region) baseParams.region = params.region
-  if (params.country) baseParams.country = params.country
-  if (params.maxPrice) baseParams.maxPrice = params.maxPrice
+  if (safeRegion) baseParams.region = safeRegion
+  if (safeCountry) baseParams.country = safeCountry
+  if (safeMaxPrice !== undefined) baseParams.maxPrice = String(safeMaxPrice)
   if (params.sort) baseParams.sort = params.sort
 
   const regionList = regions.map((r) => ({ slug: r.slug, name: r.name }))
@@ -128,11 +147,11 @@ export default async function EsimPage({ searchParams }: PageProps) {
       {total > 0 && (
         <p className="text-sm text-muted-foreground font-medium mb-6">
           {total} plan{total !== 1 ? "s" : ""} available
-          {params.country
-            ? ` for ${allCountries.find((c) => c.code === params.country)?.name ?? params.country}`
+          {safeCountry
+            ? ` for ${allCountries.find((c) => c.code === safeCountry)?.name ?? safeCountry}`
             : ""}
-          {params.region
-            ? ` in ${regionList.find((r) => r.slug === params.region)?.name ?? params.region}`
+          {safeRegion
+            ? ` in ${regionList.find((r) => r.slug === safeRegion)?.name ?? safeRegion}`
             : ""}
         </p>
       )}

@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter, useSearchParams } from "next/navigation"
-import { useCallback, useState, useMemo } from "react"
+import { useCallback, useState, useMemo, useEffect } from "react"
 import { SlidersHorizontal, X, Search } from "lucide-react"
 import {
   Sheet,
@@ -81,6 +81,12 @@ function FiltersContent({
   )
   const [listOpen, setListOpen] = useState(false)
 
+  // Fix 3: Sync countryQuery when selectedCountry changes via URL (e.g. browser back/forward)
+  useEffect(() => {
+    const obj = countries.find((c) => c.code === selectedCountry) ?? null
+    setCountryQuery(obj ? `${obj.flag} ${obj.name}` : "")
+  }, [selectedCountry, countries])
+
   const filteredCountries = useMemo(() => {
     if (!countryQuery.trim()) return countries.slice(0, 10)
     const q = countryQuery.toLowerCase()
@@ -158,7 +164,25 @@ function FiltersContent({
               }}
               onFocus={() => setListOpen(true)}
               onBlur={() => setTimeout(() => setListOpen(false), 150)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") {
+                  setListOpen(false)
+                  setCountryQuery("")
+                }
+                if (e.key === "Enter" && filteredCountries.length > 0) {
+                  e.preventDefault()
+                  const first = filteredCountries[0]
+                  onFilterChange("country", first.code)
+                  setCountryQuery(`${first.flag} ${first.name}`)
+                  setListOpen(false)
+                }
+              }}
               placeholder="Search country…"
+              role="combobox"
+              aria-expanded={listOpen}
+              aria-haspopup="listbox"
+              aria-autocomplete="list"
+              aria-controls="country-listbox"
               className={cn(
                 "w-full h-9 rounded-lg border border-border/40 bg-background",
                 "pl-8 pr-8 text-sm font-medium text-foreground placeholder:text-muted-foreground",
@@ -182,6 +206,8 @@ function FiltersContent({
           {/* Dropdown list */}
           {listOpen && filteredCountries.length > 0 && (
             <ul
+              id="country-listbox"
+              role="listbox"
               className={cn(
                 "absolute z-50 w-full mt-1 rounded-lg border border-border/40 bg-popover shadow-lg",
                 "max-h-[200px] overflow-y-auto",
@@ -189,7 +215,7 @@ function FiltersContent({
               )}
             >
               {filteredCountries.map((c) => (
-                <li key={c.code}>
+                <li key={c.code} role="option" aria-selected={c.code === selectedCountry}>
                   <button
                     type="button"
                     onMouseDown={(e) => { e.preventDefault(); handleCountrySelect(c) }}
