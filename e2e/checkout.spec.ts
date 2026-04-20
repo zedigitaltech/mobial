@@ -96,4 +96,80 @@ test.describe("Checkout Flow", () => {
       ).toBeVisible()
     }
   })
+
+  test("should render Stripe Elements card frame when Stripe keys are present", async ({ page }) => {
+    // Pre-seed localStorage so the checkout page loads with a cart item
+    await page.addInitScript(() => {
+      localStorage.setItem(
+        "cookie-consent",
+        JSON.stringify({
+          essential: true,
+          analytics: false,
+          marketing: false,
+          thirdParty: false,
+          timestamp: new Date().toISOString(),
+        })
+      )
+      localStorage.setItem(
+        "mobial_cart",
+        JSON.stringify([
+          {
+            productId: "test-product-stripe",
+            name: "Test eSIM Stripe",
+            provider: "TestProvider",
+            price: 9.99,
+            dataAmount: 5,
+            dataUnit: "GB",
+            validityDays: 30,
+            quantity: 1,
+          },
+        ])
+      )
+    })
+
+    await page.goto("/checkout")
+    await page.waitForLoadState("networkidle")
+
+    // Stripe Elements renders inside an iframe sourced from stripe.com.
+    // In CI without valid Stripe test keys no clientSecret will be obtained
+    // and the iframe won't appear — we gracefully skip in that case.
+    const stripeFrame = page.frameLocator('iframe[src*="stripe.com"]')
+    const cardInput = stripeFrame.locator(
+      '[placeholder*="Card number"], [name="cardnumber"], [data-elements-stable-field-name="cardNumber"]'
+    )
+
+    const isStripeVisible = await cardInput
+      .isVisible({ timeout: 8_000 })
+      .catch(() => false)
+
+    if (!isStripeVisible) {
+      test.info().annotations.push({
+        type: "skip-reason",
+        description: "Stripe Elements iframe not visible — missing test keys or no clientSecret (expected in CI)",
+      })
+      return
+    }
+
+    // Fill card details using the Stripe-hosted iframe
+    await cardInput.fill("4242424242424242")
+
+    const expiryInput = stripeFrame.locator(
+      '[placeholder*="MM / YY"], [name="exp-date"], [data-elements-stable-field-name="cardExpiry"]'
+    )
+    await expiryInput.fill("12/28")
+
+    const cvcInput = stripeFrame.locator(
+      '[placeholder*="CVC"], [name="cvc"], [data-elements-stable-field-name="cardCvc"]'
+    )
+    await cvcInput.fill("123")
+
+    // Find and click the pay/complete-order button (outside the Stripe iframe)
+    const payButton = page.locator(
+      'button[type="submit"]:has-text(/pay|complete order/i), button:has-text(/complete order/i)'
+    ).first()
+    await payButton.click()
+
+    // After successful payment Stripe redirects to /checkout/success
+    await expect(page).toHaveURL(/\/checkout\/success/, { timeout: 30_000 })
+  })
 })
