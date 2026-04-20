@@ -64,8 +64,8 @@ export default function ReferralsPage() {
           setStats(data.data)
         }
       }
-    } catch (error) {
-      console.error("Failed to fetch referral stats:", error)
+    } catch {
+      // Non-critical — stats will just remain null
     } finally {
       setLoading(false)
     }
