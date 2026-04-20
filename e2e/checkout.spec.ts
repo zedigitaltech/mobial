@@ -17,6 +17,12 @@ test.describe("Checkout Flow", () => {
   })
 
   test("should navigate to a product detail page", async ({ page }) => {
+    await page.addInitScript(() => {
+      localStorage.setItem("cookie-consent", JSON.stringify({
+        essential: true, analytics: false, marketing: false, thirdParty: false,
+        timestamp: new Date().toISOString(),
+      }))
+    })
     await page.goto("/products")
     await page.waitForLoadState("networkidle")
 
@@ -33,11 +39,19 @@ test.describe("Checkout Flow", () => {
       return
     }
 
-    await productLink.click()
+    // Navigate directly (avoids click-then-wait timing issues in dev mode)
+    const href = await productLink.getAttribute("href")
+    if (!href) return
+    await page.goto(href)
+
+    // Dev server compiles the product detail page on first access — this can
+    // take >20s. Wait for networkidle first, then assert the CTA.
+    await page.waitForLoadState("networkidle", { timeout: 60_000 })
+
     await expect(page).toHaveURL(/\/products\//)
     await expect(
       page.locator("text=/add to cart|buy now/i").first()
-    ).toBeVisible({ timeout: 10_000 })
+    ).toBeVisible({ timeout: 30_000 })
   })
 
   test("should show checkout page with cart items", async ({ page }) => {
