@@ -15,8 +15,8 @@ export async function GET(request: NextRequest) {
     const url = new URL(request.url);
 
     // Parse query parameters
-    const status = url.searchParams.get('status') as OrderStatus | null;
-    const paymentStatus = url.searchParams.get('paymentStatus') as PaymentStatus | null;
+    const statusParam = url.searchParams.get('status');
+    const paymentStatusParam = url.searchParams.get('paymentStatus');
     const search = url.searchParams.get('search') as string | null;
     const startDate = url.searchParams.get('startDate') as string | null;
     const endDate = url.searchParams.get('endDate') as string | null;
@@ -35,15 +35,17 @@ export async function GET(request: NextRequest) {
 
     // Validate status
     const validStatuses: OrderStatus[] = ['PENDING', 'PROCESSING', 'COMPLETED', 'CANCELLED', 'REFUNDED', 'FAILED'];
-    if (status && !validStatuses.includes(status)) {
+    if (statusParam && !validStatuses.includes(statusParam as OrderStatus)) {
       return errorResponse(`Invalid status. Valid options: ${validStatuses.join(', ')}`, 400);
     }
+    const status = statusParam as OrderStatus | null;
 
     // Validate payment status
     const validPaymentStatuses: PaymentStatus[] = ['PENDING', 'PROCESSING', 'PAID', 'FAILED', 'REFUNDED', 'PARTIALLY_REFUNDED'];
-    if (paymentStatus && !validPaymentStatuses.includes(paymentStatus)) {
+    if (paymentStatusParam && !validPaymentStatuses.includes(paymentStatusParam as PaymentStatus)) {
       return errorResponse(`Invalid payment status. Valid options: ${validPaymentStatuses.join(', ')}`, 400);
     }
+    const paymentStatus = paymentStatusParam as PaymentStatus | null;
 
     // Build where clause
     const where: Prisma.OrderWhereInput = {};
@@ -91,7 +93,7 @@ export async function GET(request: NextRequest) {
         take: limit,
         skip: offset,
         include: {
-          user: { select: { id: true, email: true, name: true, role: true, createdAt: true } },
+          user: { select: { id: true, email: true, name: true } },
           items: true,
         },
       }),

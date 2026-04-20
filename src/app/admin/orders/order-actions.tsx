@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { toast } from "sonner"
+import { getAccessToken } from "@/lib/auth-token"
 
 interface OrderActionsProps {
   orderId: string
@@ -24,11 +25,13 @@ export function OrderActions({
   async function handleAction(action: "retry" | "refund" | "resend") {
     setLoading(action)
     try {
+      const token = getAccessToken()
       const res = await fetch(`/api/admin/orders/${orderId}/${action}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "X-Requested-With": "XMLHttpRequest",
+          "Authorization": `Bearer ${token}`,
         },
       })
       const data = await res.json()

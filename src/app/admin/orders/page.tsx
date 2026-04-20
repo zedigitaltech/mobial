@@ -142,13 +142,13 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     fetchOrders(page)
-  }, [page]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [page, fetchOrders])
 
   // Reset to page 1 and re-fetch when status filter changes
   useEffect(() => {
     setPage(1)
     fetchOrders(1)
-  }, [statusFilter]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [statusFilter, fetchOrders])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -157,26 +157,30 @@ export default function AdminOrdersPage() {
   }
 
   const handleExportCsv = async () => {
-    const token = getAccessToken()
-    const params = buildParams()
-    params.set("format", "csv")
+    try {
+      const token = getAccessToken()
+      const params = buildParams()
+      params.set("format", "csv")
 
-    const res = await fetch(`/api/admin/orders?${params.toString()}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+      const res = await fetch(`/api/admin/orders?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
 
-    if (!res.ok) {
+      if (!res.ok) {
+        toast.error("Export failed")
+        return
+      }
+
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `mobialo-orders-${new Date().toISOString().split("T")[0]}.csv`
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch {
       toast.error("Export failed")
-      return
     }
-
-    const blob = await res.blob()
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = `mobialo-orders-${new Date().toISOString().split("T")[0]}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
   }
 
   const formatDate = (dateString: string) => {
