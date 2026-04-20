@@ -4,9 +4,9 @@
  */
 
 import { NextRequest } from 'next/server';
-import { requireAdmin, errorResponse, successResponse } from '@/lib/auth-helpers';
+import { requireAdmin, AuthError, errorResponse, successResponse } from '@/lib/auth-helpers';
 import { db } from '@/lib/db';
-import { OrderStatus, PaymentStatus } from '@prisma/client';
+import { OrderStatus, PaymentStatus, Prisma } from '@prisma/client';
 import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
@@ -20,8 +20,18 @@ export async function GET(request: NextRequest) {
     const search = url.searchParams.get('search') as string | null;
     const startDate = url.searchParams.get('startDate') as string | null;
     const endDate = url.searchParams.get('endDate') as string | null;
+    const format = url.searchParams.get('format');
     const limit = Math.min(Math.max(parseInt(url.searchParams.get('limit') || '20', 10) || 20, 1), 200);
-    const offset = Math.min(Math.max(parseInt(url.searchParams.get('offset') || '0', 10) || 0, 0), 10000);
+
+    // Page-based pagination: if ?page is present, compute offset from it; otherwise fall back to ?offset
+    const pageParam = url.searchParams.get('page');
+    let offset: number;
+    if (pageParam !== null) {
+      const page = Math.max(parseInt(pageParam, 10) || 1, 1);
+      offset = (page - 1) * limit;
+    } else {
+      offset = Math.min(Math.max(parseInt(url.searchParams.get('offset') || '0', 10) || 0, 0), 10000);
+    }
 
     // Validate status
     const validStatuses: OrderStatus[] = ['PENDING', 'PROCESSING', 'COMPLETED', 'CANCELLED', 'REFUNDED', 'FAILED'];
@@ -36,24 +46,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Build where clause
-    const where: {
-      status?: OrderStatus;
-      paymentStatus?: PaymentStatus;
-      OR?: Array<{
-        orderNumber?: { contains: string; mode: 'insensitive' };
-        email?: { contains: string; mode: 'insensitive' };
-        user?: {
-          OR: Array<{
-            email?: { contains: string; mode: 'insensitive' };
-            name?: { contains: string; mode: 'insensitive' };
-          }>;
-        };
-      }>;
-      createdAt?: {
-        gte?: Date;
-        lte?: Date;
-      };
-    } = {};
+    const where: Prisma.OrderWhereInput = {};
 
     if (status) {
       where.status = status;
@@ -79,13 +72,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (startDate || endDate) {
-      where.createdAt = {};
-      if (startDate) {
-        where.createdAt.gte = new Date(startDate);
-      }
-      if (endDate) {
-        where.createdAt.lte = new Date(endDate);
-      }
+      const createdAt: Prisma.DateTimeFilter = {};
+      if (startDate) createdAt.gte = new Date(startDate);
+      if (endDate) createdAt.lte = new Date(endDate);
+      where.createdAt = createdAt;
     }
 
     // Get orders
@@ -98,19 +88,34 @@ export async function GET(request: NextRequest) {
         include: {
           user: { select: { id: true, email: true, name: true, role: true, createdAt: true } },
           items: true,
-          commission: {
-            include: {
-              affiliate: {
-                include: {
-                  user: { select: { id: true, email: true, name: true } },
-                },
-              },
-            },
-          },
         },
-      } as any),
+      }),
       db.order.count({ where }),
     ]);
+
+    // CSV export — no stats query needed for this branch
+    if (format === 'csv') {
+      const csv = [
+        'Order Number,Email,Product,Amount,Currency,Status,Payment,Date',
+        ...orders.map(o => [
+          o.orderNumber,
+          o.email,
+          o.items[0]?.productName ?? '',
+          o.total.toFixed(2),
+          o.currency,
+          o.status,
+          o.paymentStatus,
+          new Date(o.createdAt).toISOString(),
+        ].map(v => `"${String(v).replace(/"/g, '""')}"`).join(','))
+      ].join('\n');
+
+      return new Response(csv, {
+        headers: {
+          'Content-Type': 'text/csv',
+          'Content-Disposition': `attachment; filename="mobialo-orders-${new Date().toISOString().split('T')[0]}.csv"`,
+        },
+      });
+    }
 
     // Get order stats
     const stats = await db.order.aggregate({
@@ -123,8 +128,11 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    const currentPage = Math.floor(offset / limit) + 1;
+    const pages = Math.ceil(total / limit);
+
     return successResponse({
-      orders: (orders as any[]).map((o: any) => ({
+      orders: orders.map(o => ({
         id: o.id,
         orderNumber: o.orderNumber,
         status: o.status,
@@ -139,8 +147,6 @@ export async function GET(request: NextRequest) {
         completedAt: o.completedAt,
         user: o.user,
         items: o.items,
-        commission: o.commission,
-        affiliateClickId: o.affiliateClickId,
       })),
       stats: {
         total: stats._count,
@@ -150,6 +156,8 @@ export async function GET(request: NextRequest) {
       },
       pagination: {
         total,
+        page: currentPage,
+        pages,
         limit,
         offset,
         hasMore: offset + limit < total,
@@ -157,13 +165,8 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     logger.errorWithException('Admin orders error', error);
-    if (error instanceof Error) {
-      if (error.message === 'Authentication required') {
-        return errorResponse(error.message, 401);
-      }
-      if (error.message === 'Admin access required') {
-        return errorResponse(error.message, 403);
-      }
+    if (error instanceof AuthError) {
+      return errorResponse(error.message, error.statusCode);
     }
     return errorResponse('Failed to fetch orders', 500);
   }
