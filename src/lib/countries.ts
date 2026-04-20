@@ -131,8 +131,9 @@ export function getCountries(): { code: string; name: string; slug: string; flag
 }
 
 export function getTopDestinations(limit = 8): { code: string; name: string; slug: string; flag: string }[] {
-  return TOP_DESTINATIONS.slice(0, limit).map((slug) => {
+  return TOP_DESTINATIONS.slice(0, limit).flatMap((slug) => {
     const data = countries[slug]
-    return { slug, code: data.code, name: data.name, flag: data.flag }
+    if (!data) return []
+    return [{ slug, code: data.code, name: data.name, flag: data.flag }]
   })
 }
