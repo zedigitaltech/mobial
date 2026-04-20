@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useTranslations } from "next-intl"
 import { motion, AnimatePresence } from "framer-motion"
 import {
@@ -19,16 +19,12 @@ import { toast } from "sonner"
 import Link from "next/link"
 import { usePostHog } from "posthog-js/react"
 
-const DESTINATIONS = [
-  { country: "TR", name: "Turkey", flag: "\u{1F1F9}\u{1F1F7}", label: "Popular" },
-  { country: "TH", name: "Thailand", flag: "\u{1F1F9}\u{1F1ED}", label: "Popular" },
-  { country: "ES", name: "Spain", flag: "\u{1F1EA}\u{1F1F8}", label: "Europe" },
-  { country: "JP", name: "Japan", flag: "\u{1F1EF}\u{1F1F5}", label: "Asia" },
-  { country: "US", name: "United States", flag: "\u{1F1FA}\u{1F1F8}", label: "Americas" },
-  { country: "IT", name: "Italy", flag: "\u{1F1EE}\u{1F1F9}", label: "Europe" },
-  { country: "GB", name: "United Kingdom", flag: "\u{1F1EC}\u{1F1E7}", label: "Europe" },
-  { country: "DE", name: "Germany", flag: "\u{1F1E9}\u{1F1EA}", label: "Europe" },
-]
+interface Destination {
+  country: string
+  name: string
+  label: string
+  flag: string
+}
 
 export function FreeTrialForm() {
   const t = useTranslations("freeTrial")
@@ -36,7 +32,17 @@ export function FreeTrialForm() {
   const [selectedDestination, setSelectedDestination] = useState<string | null>(null)
   const [email, setEmail] = useState("")
   const [submitting, setSubmitting] = useState(false)
+  const [destinations, setDestinations] = useState<Destination[]>([])
   const posthog = usePostHog()
+
+  useEffect(() => {
+    fetch("/api/free-trial/destinations")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success) setDestinations(data.data)
+      })
+      .catch(() => {}) // fail silently, destinations already validated server-side
+  }, [])
 
   const handleClaim = async () => {
     if (!selectedDestination || !email) return
@@ -89,30 +95,38 @@ export function FreeTrialForm() {
                 {t("step1")}
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                {DESTINATIONS.map((dest) => (
-                  <button
-                    key={dest.country}
-                    onClick={() => setSelectedDestination(dest.country)}
-                    className={`relative p-4 rounded-xl border text-left transition-all ${
-                      selectedDestination === dest.country
-                        ? "border-primary bg-primary/5 ring-1 ring-primary"
-                        : "border-border/50 hover:border-primary/30 hover:bg-muted/50"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">{dest.flag}</span>
-                      <div>
-                        <p className="font-bold text-sm">{dest.name}</p>
-                        <p className="text-xs text-muted-foreground">{dest.label}</p>
+              {destinations.length === 0 ? (
+                <div className="grid grid-cols-2 gap-3">
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} className="animate-pulse bg-muted rounded-xl h-[72px]" />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  {destinations.map((dest) => (
+                    <button
+                      key={dest.country}
+                      onClick={() => setSelectedDestination(dest.country)}
+                      className={`relative p-4 rounded-xl border text-left transition-all ${
+                        selectedDestination === dest.country
+                          ? "border-primary bg-primary/5 ring-1 ring-primary"
+                          : "border-border/50 hover:border-primary/30 hover:bg-muted/50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{dest.flag}</span>
+                        <div>
+                          <p className="font-bold text-sm">{dest.name}</p>
+                          <p className="text-xs text-muted-foreground">{dest.label}</p>
+                        </div>
                       </div>
-                    </div>
-                    {selectedDestination === dest.country && (
-                      <Check className="h-4 w-4 text-primary absolute top-2 right-2" />
-                    )}
-                  </button>
-                ))}
-              </div>
+                      {selectedDestination === dest.country && (
+                        <Check className="h-4 w-4 text-primary absolute top-2 right-2" />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
 
               <Button
                 className="w-full font-bold"
@@ -142,11 +156,11 @@ export function FreeTrialForm() {
               <div className="p-4 rounded-xl bg-muted/50 border border-border/50">
                 <div className="flex items-center gap-3">
                   <span className="text-2xl">
-                    {DESTINATIONS.find((d) => d.country === selectedDestination)?.flag}
+                    {destinations.find((d) => d.country === selectedDestination)?.flag}
                   </span>
                   <div>
                     <p className="font-bold text-sm">
-                      {DESTINATIONS.find((d) => d.country === selectedDestination)?.name}
+                      {destinations.find((d) => d.country === selectedDestination)?.name}
                     </p>
                     <p className="text-xs text-muted-foreground">{t("freeTrialEsim")}</p>
                   </div>
@@ -209,7 +223,7 @@ export function FreeTrialForm() {
                 <h2 className="text-2xl font-black">{t("trialClaimed")}</h2>
                 <p className="text-muted-foreground">
                   {t("preparingEsim", {
-                    destination: DESTINATIONS.find((d) => d.country === selectedDestination)?.name ?? "",
+                    destination: destinations.find((d) => d.country === selectedDestination)?.name ?? "",
                     email,
                   })}
                 </p>
