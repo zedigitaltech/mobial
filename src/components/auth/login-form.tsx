@@ -66,6 +66,14 @@ export function LoginForm({ callbackUrl, onSuccess, onSwitchToRegister }: LoginF
         throw new Error(result.error || "Login failed")
       }
 
+      // If the server signals that 2FA is required, redirect to the 2FA challenge
+      // page before setting any tokens.
+      if (result.data?.requires2FA) {
+        const tempToken = result.data.tempToken ?? ''
+        router.push(`/2fa?token=${encodeURIComponent(tempToken)}&callbackUrl=${encodeURIComponent(callbackUrl ?? "/dashboard")}`)
+        return
+      }
+
       // Access token lives in an in-memory store (XSS-proof across refreshes
       // because /api/auth/refresh will re-mint it from the HttpOnly cookie).
       // Refresh token is set as an HttpOnly cookie by the server.
@@ -78,10 +86,10 @@ export function LoginForm({ callbackUrl, onSuccess, onSwitchToRegister }: LoginF
         onSuccess()
         router.refresh()
       } else {
+        router.refresh()
         router.push(callbackUrl ?? "/dashboard")
       }
     } catch (error) {
-      console.error("Login error:", error)
       toast.error(error instanceof Error ? error.message : t("loginFailed"))
       form.setError("root", {
         message: error instanceof Error ? error.message : "Login failed",

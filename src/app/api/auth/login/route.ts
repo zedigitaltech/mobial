@@ -3,6 +3,7 @@
  * Authenticate user and return tokens
  */
 
+import crypto from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { setAuthCookies, setVerifiedCookie } from "@/lib/auth-cookies";
 import { z } from "zod";
@@ -160,7 +161,19 @@ export async function POST(request: NextRequest) {
     // Check 2FA if enabled
     if (user.twoFactorEnabled) {
       if (!totpCode) {
-        return errorResponse("Two-factor authentication code required", 401);
+        // Return a challenge response so the client can redirect to the 2FA page.
+        // Generate a short-lived temp token (5 minutes) scoped to this user.
+        const tempToken = crypto.randomBytes(32).toString("hex");
+        const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+        await db.systemConfig.upsert({
+          where: { key: `2fa_temp_${user.id}` },
+          update: { value: JSON.stringify({ token: tempToken, expiresAt }) },
+          create: { key: `2fa_temp_${user.id}`, value: JSON.stringify({ token: tempToken, expiresAt }) },
+        });
+        return NextResponse.json(
+          { success: true, data: { requires2FA: true, tempToken } },
+          { status: 200 },
+        );
       }
 
       // Verify TOTP code (decrypt if stored encrypted, backward-compatible with plaintext)

@@ -206,19 +206,23 @@ describe('POST /api/auth/login', () => {
     expect(response.status).toBe(404)
   })
 
-  it('should require 2FA code when 2FA is enabled', async () => {
+  it('should return requires2FA challenge when 2FA is enabled and no code provided', async () => {
     const user = makeUser({
       twoFactorEnabled: true,
       twoFactorSecret: 'totp-secret',
     })
     vi.mocked(db.user.findUnique).mockResolvedValue(user as never)
+    vi.mocked(db.systemConfig.upsert).mockResolvedValue({} as never)
 
     const req = createLoginRequest({ email: 'user@example.com', password: 'password123' })
     const response = await POST(req)
     const json = await parseResponse(response)
 
-    expect(response.status).toBe(401)
-    expect(json.error).toContain('Two-factor')
+    expect(response.status).toBe(200)
+    expect(json.success).toBe(true)
+    expect(json.data.requires2FA).toBe(true)
+    expect(typeof json.data.tempToken).toBe('string')
+    expect(json.data.tempToken.length).toBeGreaterThan(0)
   })
 
   it('should accept valid TOTP code for 2FA-enabled user', async () => {

@@ -104,7 +104,6 @@ export function RegisterForm({ callbackUrl, onSuccess, onSwitchToLogin }: Regist
         router.push(verifyUrl)
       }
     } catch (error) {
-      console.error("Register error:", error)
       toast.error(error instanceof Error ? error.message : t("registrationFailed"))
       form.setError("root", {
         message: error instanceof Error ? error.message : "Registration failed",
