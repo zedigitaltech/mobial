@@ -123,9 +123,9 @@ export function ProductCard({ product }: ProductCardProps) {
         <span className="flex items-center gap-1 font-medium">
           <Globe className="h-3 w-3" />
           {countryCount === 1
-            ? "1 country"
+            ? "Works in 1 country"
             : countryCount > 1
-              ? `${countryCount} countries`
+              ? `Works in ${countryCount} countries`
               : "Global"}
         </span>
       </div>

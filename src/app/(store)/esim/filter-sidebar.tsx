@@ -1,8 +1,8 @@
 "use client"
 
 import { useRouter, useSearchParams } from "next/navigation"
-import { useCallback } from "react"
-import { SlidersHorizontal, X } from "lucide-react"
+import { useCallback, useState, useMemo } from "react"
+import { SlidersHorizontal, X, Search } from "lucide-react"
 import {
   Sheet,
   SheetContent,
@@ -71,6 +71,36 @@ function FiltersContent({
   const maxPrice = Number(params.get("maxPrice") ?? MAX_PRICE_DEFAULT)
   const selectedSort = params.get("sort") ?? ""
 
+  const selectedCountryObj = useMemo(
+    () => countries.find((c) => c.code === selectedCountry) ?? null,
+    [countries, selectedCountry],
+  )
+
+  const [countryQuery, setCountryQuery] = useState(
+    selectedCountryObj ? `${selectedCountryObj.flag} ${selectedCountryObj.name}` : "",
+  )
+  const [listOpen, setListOpen] = useState(false)
+
+  const filteredCountries = useMemo(() => {
+    if (!countryQuery.trim()) return countries.slice(0, 10)
+    const q = countryQuery.toLowerCase()
+    return countries
+      .filter((c) => c.name.toLowerCase().includes(q) || c.code.toLowerCase().includes(q))
+      .slice(0, 10)
+  }, [countries, countryQuery])
+
+  function handleCountrySelect(c: FilterSidebarCountry) {
+    setCountryQuery(`${c.flag} ${c.name}`)
+    setListOpen(false)
+    onFilterChange("country", c.code)
+  }
+
+  function handleCountryClear() {
+    setCountryQuery("")
+    setListOpen(false)
+    onFilterChange("country", null)
+  }
+
   return (
     <div className="space-y-6">
       {/* Clear all */}
@@ -109,28 +139,74 @@ function FiltersContent({
         </select>
       </div>
 
-      {/* Country */}
+      {/* Country — search-then-select */}
       <div>
         <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2">
           Country
         </label>
-        <select
-          value={selectedCountry}
-          onChange={(e) => onFilterChange("country", e.target.value || null)}
-          className={cn(
-            "w-full h-9 rounded-lg border border-border/40 bg-background",
-            "px-3 text-sm font-medium text-foreground",
-            "focus:outline-none focus:ring-2 focus:ring-primary/30",
-            "transition-colors",
+        <div className="relative">
+          {/* Search input */}
+          <div className="relative flex items-center">
+            <Search className="absolute left-2.5 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+            <input
+              type="search"
+              value={countryQuery}
+              onChange={(e) => {
+                setCountryQuery(e.target.value)
+                setListOpen(true)
+                if (!e.target.value) onFilterChange("country", null)
+              }}
+              onFocus={() => setListOpen(true)}
+              onBlur={() => setTimeout(() => setListOpen(false), 150)}
+              placeholder="Search country…"
+              className={cn(
+                "w-full h-9 rounded-lg border border-border/40 bg-background",
+                "pl-8 pr-8 text-sm font-medium text-foreground placeholder:text-muted-foreground",
+                "focus:outline-none focus:ring-2 focus:ring-primary/30",
+                "transition-colors",
+                selectedCountry && "border-primary/50",
+              )}
+            />
+            {countryQuery && (
+              <button
+                type="button"
+                onMouseDown={(e) => { e.preventDefault(); handleCountryClear() }}
+                className="absolute right-2.5 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Clear country filter"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* Dropdown list */}
+          {listOpen && filteredCountries.length > 0 && (
+            <ul
+              className={cn(
+                "absolute z-50 w-full mt-1 rounded-lg border border-border/40 bg-popover shadow-lg",
+                "max-h-[200px] overflow-y-auto",
+                "py-1",
+              )}
+            >
+              {filteredCountries.map((c) => (
+                <li key={c.code}>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => { e.preventDefault(); handleCountrySelect(c) }}
+                    className={cn(
+                      "w-full text-left px-3 py-1.5 text-sm font-medium",
+                      "hover:bg-accent hover:text-accent-foreground transition-colors",
+                      c.code === selectedCountry && "bg-primary/10 text-primary",
+                    )}
+                  >
+                    <span className="mr-2">{c.flag}</span>
+                    {c.name}
+                  </button>
+                </li>
+              ))}
+            </ul>
           )}
-        >
-          <option value="">All Countries</option>
-          {countries.map((c) => (
-            <option key={c.code} value={c.code}>
-              {c.flag} {c.name}
-            </option>
-          ))}
-        </select>
+        </div>
       </div>
 
       {/* Max Price */}
