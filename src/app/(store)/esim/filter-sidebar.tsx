@@ -167,7 +167,7 @@ function FiltersContent({
               onKeyDown={(e) => {
                 if (e.key === "Escape") {
                   setListOpen(false)
-                  setCountryQuery("")
+                  handleCountryClear()
                 }
                 if (e.key === "Enter" && filteredCountries.length > 0) {
                   e.preventDefault()
