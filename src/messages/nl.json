@@ -497,7 +497,9 @@
     "browseEsims": "Bekijk eSIMs",
     "quickActions": "Snelle acties",
     "viewAllOrders": "Alle bestellingen bekijken",
-    "accountSettings": "Accountinstellingen"
+    "accountSettings": "Accountinstellingen",
+    "walletBalance": "Portemonnee saldo",
+    "referralEarnings": "Verwijzingsinkomsten"
   },
   "resetPassword": {
     "title": "Wachtwoord opnieuw instellen",

@@ -497,7 +497,9 @@
     "browseEsims": "Разгледай eSIM",
     "quickActions": "Бързи действия",
     "viewAllOrders": "Виж всички поръчки",
-    "accountSettings": "Настройки на акаунта"
+    "accountSettings": "Настройки на акаунта",
+    "walletBalance": "Баланс на портфейла",
+    "referralEarnings": "Приходи от препоръки"
   },
   "resetPassword": {
     "title": "Нулиране на парола",

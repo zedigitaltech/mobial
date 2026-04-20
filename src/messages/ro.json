@@ -497,7 +497,9 @@
     "browseEsims": "Explorați eSIM-urile",
     "quickActions": "Acțiuni rapide",
     "viewAllOrders": "Vedeți toate comenzile",
-    "accountSettings": "Setări cont"
+    "accountSettings": "Setări cont",
+    "walletBalance": "Sold portofel",
+    "referralEarnings": "Câștiguri din referințe"
   },
   "resetPassword": {
     "title": "Resetați parola",

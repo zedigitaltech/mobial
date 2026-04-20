@@ -497,7 +497,9 @@
     "browseEsims": "Περιήγηση eSIM",
     "quickActions": "Γρήγορες Ενέργειες",
     "viewAllOrders": "Προβολή Όλων των Παραγγελιών",
-    "accountSettings": "Ρυθμίσεις Λογαριασμού"
+    "accountSettings": "Ρυθμίσεις Λογαριασμού",
+    "walletBalance": "Υπόλοιπο Πορτοφολιού",
+    "referralEarnings": "Κέρδη από Παραπομπές"
   },
   "resetPassword": {
     "title": "Επαναφορά κωδικού πρόσβασης",

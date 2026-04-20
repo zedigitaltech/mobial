@@ -497,7 +497,9 @@
     "browseEsims": "Parcourir les eSIMs",
     "quickActions": "Actions rapides",
     "viewAllOrders": "Voir toutes les commandes",
-    "accountSettings": "Paramètres du compte"
+    "accountSettings": "Paramètres du compte",
+    "walletBalance": "Solde du portefeuille",
+    "referralEarnings": "Gains de parrainage"
   },
   "resetPassword": {
     "title": "Réinitialisez votre mot de passe",

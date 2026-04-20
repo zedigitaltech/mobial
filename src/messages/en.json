@@ -494,7 +494,9 @@
     "browseEsims": "Browse eSIMs",
     "quickActions": "Quick Actions",
     "viewAllOrders": "View All Orders",
-    "accountSettings": "Account Settings"
+    "accountSettings": "Account Settings",
+    "walletBalance": "Wallet Balance",
+    "referralEarnings": "Referral Earnings"
   },
   "settings": {
     "backToDashboard": "Back to Dashboard",

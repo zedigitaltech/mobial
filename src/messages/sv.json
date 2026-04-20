@@ -497,7 +497,9 @@
     "browseEsims": "Bläddra bland eSIM",
     "quickActions": "Snabbåtgärder",
     "viewAllOrders": "Visa alla beställningar",
-    "accountSettings": "Kontoinställningar"
+    "accountSettings": "Kontoinställningar",
+    "walletBalance": "Plånbokssaldo",
+    "referralEarnings": "Hänvisningsintäkter"
   },
   "resetPassword": {
     "title": "Återställ ditt lösenord",

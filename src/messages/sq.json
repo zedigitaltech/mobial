@@ -497,7 +497,9 @@
     "browseEsims": "Shfleto eSIM-et",
     "quickActions": "Veprime të shpejta",
     "viewAllOrders": "Shiko të gjitha porositë",
-    "accountSettings": "Cilësimet e llogarisë"
+    "accountSettings": "Cilësimet e llogarisë",
+    "walletBalance": "Gjendja e Portofolit",
+    "referralEarnings": "Të Ardhura nga Referime"
   },
   "resetPassword": {
     "title": "Rivendosni fjalëkalimin tuaj",

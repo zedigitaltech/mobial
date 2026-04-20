@@ -497,7 +497,9 @@
     "browseEsims": "eSIM'lere Göz At",
     "quickActions": "Hızlı İşlemler",
     "viewAllOrders": "Tüm Siparişleri Gör",
-    "accountSettings": "Hesap Ayarları"
+    "accountSettings": "Hesap Ayarları",
+    "walletBalance": "Cüzdan Bakiyesi",
+    "referralEarnings": "Referans Kazançları"
   },
   "resetPassword": {
     "title": "Şifrenizi sıfırlayın",

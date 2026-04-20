@@ -7,7 +7,6 @@ import { useQuery } from "@tanstack/react-query"
 import {
   Wifi,
   Package,
-  ShieldCheck,
   ArrowRight,
   Loader2,
   Clock,
@@ -15,6 +14,8 @@ import {
   ShoppingBag,
   Zap,
   User as UserIcon,
+  Wallet,
+  Users,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -52,6 +53,37 @@ interface OrdersResponse {
   }
 }
 
+interface WalletResponse {
+  success: boolean
+  data: {
+    balance: number
+    currency: string
+  }
+}
+
+interface RewardsSummary {
+  totalEarned: number
+  totalSpent: number
+  netBalance: number
+  cashbackTotal: number
+  referralTotal: number
+}
+
+interface RewardsResponse {
+  success: boolean
+  data: {
+    rewards: Array<{
+      id: string
+      type: string
+      amount: number
+      orderId: string | null
+      description: string | null
+      createdAt: string
+    }>
+    summary: RewardsSummary
+  }
+}
+
 async function fetchOrders(): Promise<OrdersResponse> {
   const token = getAccessToken()
   if (!token) throw new Error("No auth token")
@@ -82,10 +114,43 @@ export default function DashboardPage() {
     enabled: !authLoading && !!user,
   })
 
+  const { data: walletData, isLoading: walletLoading } = useQuery<WalletResponse>({
+    queryKey: ["wallet"],
+    queryFn: async () => {
+      const token = getAccessToken()
+      if (!token) throw new Error("No auth token")
+      const res = await fetch("/api/wallet", { headers: { Authorization: `Bearer ${token}` } })
+      if (!res.ok) throw new Error("Failed to fetch wallet")
+      return res.json()
+    },
+    enabled: !authLoading && !!user,
+  })
+
+  const { data: rewardsData, isLoading: rewardsLoading } = useQuery<RewardsResponse>({
+    queryKey: ["rewards"],
+    queryFn: async () => {
+      const token = getAccessToken()
+      if (!token) throw new Error("No auth token")
+      const res = await fetch("/api/rewards", { headers: { Authorization: `Bearer ${token}` } })
+      if (!res.ok) throw new Error("Failed to fetch rewards")
+      return res.json()
+    },
+    enabled: !authLoading && !!user,
+  })
+
   const orders = ordersData?.data?.orders || []
   const totalOrders = ordersData?.data?.total || orders.length
-  const loading = authLoading || (!!user && ordersLoading)
-  const activeEsims = orders.filter((o) => o.status === "COMPLETED").length
+  const loading = authLoading || (!!user && (ordersLoading || walletLoading || rewardsLoading))
+
+  const now = Date.now()
+  const MS_90_DAYS = 90 * 24 * 60 * 60 * 1000
+  const activeEsims = orders.filter((o) => {
+    if (o.status !== "COMPLETED") return false
+    return (now - new Date(o.createdAt).getTime()) < MS_90_DAYS
+  }).length
+
+  const walletBalance = walletData?.data?.balance ?? 0
+  const referralEarnings = rewardsData?.data?.summary?.referralTotal ?? 0
 
   if (authLoading) {
     return (
@@ -162,29 +227,13 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12"
+            className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-12"
           >
             <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-                    <Wifi className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">
-                      {t("activeEsims")}
-                    </p>
-                    <p className="text-3xl font-black">{loading ? "..." : activeEsims}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-2xl bg-blue-500/10 flex items-center justify-center">
-                    <Package className="h-6 w-6 text-blue-500" />
+                  <div className="h-12 w-12 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "#6C4FFF1A" }}>
+                    <Package className="h-6 w-6" style={{ color: "#6C4FFF" }} />
                   </div>
                   <div>
                     <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">
@@ -199,16 +248,46 @@ export default function DashboardPage() {
             <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
               <CardContent className="p-6">
                 <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-2xl bg-green-500/10 flex items-center justify-center">
-                    <ShieldCheck className="h-6 w-6 text-green-500" />
+                  <div className="h-12 w-12 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "#00D9B81A" }}>
+                    <Wifi className="h-6 w-6" style={{ color: "#00D9B8" }} />
                   </div>
                   <div>
                     <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">
-                      {t("accountStatus")}
+                      {t("activeEsims")}
                     </p>
-                    <Badge className="mt-1 rounded-full font-bold bg-green-500/10 text-green-500 border-green-500/20">
-                      {t("verified")}
-                    </Badge>
+                    <p className="text-3xl font-black">{loading ? "..." : activeEsims}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "#6C4FFF1A" }}>
+                    <Wallet className="h-6 w-6" style={{ color: "#6C4FFF" }} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">
+                      {t("walletBalance")}
+                    </p>
+                    <p className="text-3xl font-black">{loading ? "..." : formatPrice(walletBalance)}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-2xl flex items-center justify-center" style={{ backgroundColor: "#00D9B81A" }}>
+                    <Users className="h-6 w-6" style={{ color: "#00D9B8" }} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">
+                      {t("referralEarnings")}
+                    </p>
+                    <p className="text-3xl font-black">{loading ? "..." : formatPrice(referralEarnings)}</p>
                   </div>
                 </div>
               </CardContent>

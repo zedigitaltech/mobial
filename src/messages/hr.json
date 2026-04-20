@@ -497,7 +497,9 @@
     "browseEsims": "Pregledaj eSIM-ove",
     "quickActions": "Brze radnje",
     "viewAllOrders": "Pogledaj sve narudžbe",
-    "accountSettings": "Postavke računa"
+    "accountSettings": "Postavke računa",
+    "walletBalance": "Stanje novčanika",
+    "referralEarnings": "Zarada od preporuka"
   },
   "resetPassword": {
     "title": "Resetirajte lozinku",

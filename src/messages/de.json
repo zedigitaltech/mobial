@@ -469,7 +469,9 @@
     "browseEsims": "eSIMs durchsuchen",
     "quickActions": "Schnellaktionen",
     "viewAllOrders": "Alle Bestellungen anzeigen",
-    "accountSettings": "Kontoeinstellungen"
+    "accountSettings": "Kontoeinstellungen",
+    "walletBalance": "Guthaben",
+    "referralEarnings": "Empfehlungseinnahmen"
   },
   "settings": {
     "backToDashboard": "Zurück zum Dashboard",
