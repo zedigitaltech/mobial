@@ -74,7 +74,12 @@ export async function GET(request: NextRequest) {
     if (startDate || endDate) {
       const createdAt: Prisma.DateTimeFilter = {};
       if (startDate) createdAt.gte = new Date(startDate);
-      if (endDate) createdAt.lte = new Date(endDate);
+      if (endDate) {
+        // Use end of day UTC so orders created throughout the specified date are included
+        const d = new Date(endDate)
+        d.setUTCHours(23, 59, 59, 999)
+        createdAt.lte = d
+      }
       where.createdAt = createdAt;
     }
 

@@ -111,29 +111,33 @@ export default function AdminOrdersPage() {
 
   const fetchOrders = useCallback(async (currentPage: number) => {
     setLoading(true)
-    const token = getAccessToken()
-    const params = buildParams()
-    params.set("page", String(currentPage))
+    try {
+      const token = getAccessToken()
+      const params = buildParams()
+      params.set("page", String(currentPage))
 
-    const response = await fetch(`/api/admin/orders?${params.toString()}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+      const response = await fetch(`/api/admin/orders?${params.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
 
-    if (!response.ok) {
+      if (!response.ok) {
+        toast.error("Failed to load orders")
+        return
+      }
+
+      const data = await response.json()
+      if (data.success && data.data) {
+        setOrders(data.data.orders)
+        setTotal(data.data.pagination.total)
+        setTotalPages(data.data.pagination.pages)
+      } else {
+        toast.error("Failed to load orders")
+      }
+    } catch {
       toast.error("Failed to load orders")
+    } finally {
       setLoading(false)
-      return
     }
-
-    const data = await response.json()
-    if (data.success && data.data) {
-      setOrders(data.data.orders)
-      setTotal(data.data.pagination.total)
-      setTotalPages(data.data.pagination.pages)
-    } else {
-      toast.error("Failed to load orders")
-    }
-    setLoading(false)
   }, [buildParams])
 
   useEffect(() => {
