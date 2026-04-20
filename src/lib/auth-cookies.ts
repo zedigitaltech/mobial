@@ -59,3 +59,29 @@ export function readRefreshCookie(request: Request): string | null {
 
 export const REFRESH_COOKIE_NAME = REFRESH_COOKIE;
 export const AUTH_STATE_COOKIE_NAME = AUTH_STATE_COOKIE;
+
+const VERIFIED_COOKIE = 'mobial_ev';
+
+export const VERIFIED_COOKIE_NAME = VERIFIED_COOKIE;
+
+export function setVerifiedCookie(response: NextResponse): void {
+  const isProd = process.env.NODE_ENV === 'production';
+  response.cookies.set(VERIFIED_COOKIE, '1', {
+    httpOnly: false,
+    secure: isProd,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: REFRESH_MAX_AGE,
+  });
+}
+
+export function clearVerifiedCookie(response: NextResponse): void {
+  const isProd = process.env.NODE_ENV === 'production';
+  response.cookies.set(VERIFIED_COOKIE, '', {
+    httpOnly: false,
+    secure: isProd,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 0,
+  });
+}

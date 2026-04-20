@@ -79,6 +79,17 @@ export async function proxy(request: NextRequest) {
   }
   // X-XSS-Protection removed — deprecated and causes issues in older browsers. CSP provides better protection.
 
+  // Email verification gate (UX-only redirect, real auth is in route handlers)
+  const EMAIL_VERIFIED_ROUTES = ["/dashboard", "/orders", "/settings"]
+  if (EMAIL_VERIFIED_ROUTES.some((r) => pathname.startsWith(r))) {
+    // Has auth marker (logged in) but no verified marker → redirect to verify
+    if (hasAuthMarker(request) && !request.cookies.get("mobial_ev")?.value) {
+      const url = new URL("/verify-email", request.url)
+      url.searchParams.set("required", "1")
+      return NextResponse.redirect(url)
+    }
+  }
+
   // Admin route protection
   const isProtectedPath =
     pathname.startsWith("/admin") || pathname.startsWith("/api/admin");

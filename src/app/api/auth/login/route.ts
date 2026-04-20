@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { setAuthCookies } from "@/lib/auth-cookies";
+import { setAuthCookies, setVerifiedCookie } from "@/lib/auth-cookies";
 import { z } from "zod";
 import { verifyPassword, isBcryptHash, hashPassword } from "@/lib/password";
 import { generateTokenPair } from "@/lib/jwt";
@@ -281,6 +281,9 @@ export async function POST(request: NextRequest) {
 
     for (const [k, v] of rateHeaders.entries()) response.headers.set(k, v);
     setAuthCookies(response, tokens.refreshToken);
+    if (user.emailVerified) {
+      setVerifiedCookie(response);
+    }
     return response;
   } catch (error) {
     logger.errorWithException("Login error", error);
