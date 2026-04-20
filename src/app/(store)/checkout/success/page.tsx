@@ -55,7 +55,9 @@ const PROCESSING_TIMEOUT_MS = 120_000
 
 function CheckoutSuccessContent() {
   const searchParams = useSearchParams()
+  // Support both Stripe Elements (?payment_intent=...) and hosted checkout (?session_id=...)
   const sessionId = searchParams.get("session_id")
+  const paymentIntentId = searchParams.get("payment_intent")
   const t = useTranslations("checkoutSuccess")
   const { clearCart } = useCart()
   const { formatPrice } = useCurrency()
@@ -74,10 +76,12 @@ function CheckoutSuccessContent() {
 
   const fetchOrder = useCallback(async () => {
     try {
-      // On first call, extract order reference from sessionStorage
+      // On first call, extract order reference from sessionStorage or URL params
       if (!orderRefRef.current) {
         const pendingRaw = sessionStorage.getItem("mobial_pending_order")
-        if (!pendingRaw && !sessionId) {
+        const hasStripeParam = !!sessionId || !!paymentIntentId
+
+        if (!pendingRaw && !hasStripeParam) {
           throw new Error("No order reference found")
         }
 
@@ -92,11 +96,13 @@ function CheckoutSuccessContent() {
         }
 
         // Fallback: if sessionStorage was lost (browser crash, hard refresh),
-        // use the Stripe session_id that is always present in the redirect URL.
-        if (!orderIdentifier && sessionId) {
-          const lookupRes = await fetch(
-            `/api/orders/by-session?stripe_session_id=${encodeURIComponent(sessionId)}`
-          )
+        // use the Stripe session_id or payment_intent that is always present in the redirect URL.
+        if (!orderIdentifier && hasStripeParam) {
+          const lookupParam = paymentIntentId
+            ? `payment_intent=${encodeURIComponent(paymentIntentId)}`
+            : `stripe_session_id=${encodeURIComponent(sessionId!)}`
+
+          const lookupRes = await fetch(`/api/orders/by-session?${lookupParam}`)
           if (lookupRes.ok) {
             const lookupData = await lookupRes.json()
             if (lookupData.success && lookupData.data?.orderNumber) {
@@ -139,7 +145,7 @@ function CheckoutSuccessContent() {
     } finally {
       setLoading(false)
     }
-  }, [sessionId, posthog])
+  }, [sessionId, paymentIntentId, posthog])
 
   // Initial fetch + polling while processing
   useEffect(() => {

@@ -17,14 +17,17 @@ import { successResponse, errorResponse, getAuthUser } from "@/lib/auth-helpers"
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const sessionId = searchParams.get("stripe_session_id");
+  const paymentIntentId = searchParams.get("payment_intent");
   const email = searchParams.get("email")?.toLowerCase();
 
-  if (!sessionId) {
-    return errorResponse("stripe_session_id is required", 400);
+  const lookupId = sessionId || paymentIntentId;
+
+  if (!lookupId) {
+    return errorResponse("stripe_session_id or payment_intent is required", 400);
   }
 
   const order = await db.order.findFirst({
-    where: { paymentReference: sessionId },
+    where: { paymentReference: lookupId },
     select: { orderNumber: true, email: true, userId: true },
   });
 
