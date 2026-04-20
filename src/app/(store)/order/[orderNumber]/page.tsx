@@ -1,16 +1,36 @@
-import { notFound } from "next/navigation"
+"use client"
+
+import { useEffect, useState } from "react"
+import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
-import { Check, ArrowLeft, Info, ShieldCheck, Wifi, Smartphone, Zap } from "lucide-react"
-import { getTranslations } from "next-intl/server"
-import { getOrderByNumber } from "@/services/order-service"
-import { decryptEsimField } from "@/lib/esim-encryption"
+import { Check, ArrowLeft, Info, ShieldCheck, Wifi, Smartphone, Zap, Loader2, AlertCircle } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { EsimCard } from "@/components/store/esim-card"
 import { UsageTracker } from "@/components/store/usage-tracker"
 import { Badge, orderStatusVariant } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { getAccessToken, authHeaders } from "@/lib/auth-token"
 
-interface PageProps {
-  params: Promise<{ orderNumber: string }>
+interface OrderItem {
+  productName: string
+  unitPrice: number
+  totalPrice: number
+}
+
+interface OrderData {
+  id: string
+  orderNumber: string
+  status: string
+  total: number
+  currency: string
+  createdAt: string
+  items: OrderItem[]
+  esim?: {
+    qrCode: string
+    activationCode?: string
+    smdpAddress?: string
+    status: string
+  } | null
 }
 
 const ORDER_STEP_KEYS = ["PENDING", "PROCESSING", "COMPLETED"] as const
@@ -76,19 +96,89 @@ function OrderProgress({
   )
 }
 
-export default async function OrderDetailPage({ params }: PageProps) {
-  const { orderNumber } = await params
-  const t = await getTranslations("orderDetail")
+export default function OrderDetailPage() {
+  const params = useParams()
+  const orderNumber = params.orderNumber as string
+  const router = useRouter()
+  const t = useTranslations("orderDetail")
 
-  const order = await getOrderByNumber(orderNumber)
+  const [order, setOrder] = useState<OrderData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  if (!order) {
-    notFound()
+  useEffect(() => {
+    async function fetchOrder() {
+      try {
+        const token = getAccessToken()
+
+        if (!token) {
+          // No access token — redirect to login with callback
+          router.replace(`/login?callbackUrl=/order/${encodeURIComponent(orderNumber)}`)
+          return
+        }
+
+        const res = await fetch(`/api/orders/${encodeURIComponent(orderNumber)}`, {
+          headers: authHeaders(),
+        })
+
+        if (res.status === 401 || res.status === 403) {
+          // Not authenticated or not the owner — redirect to login
+          router.replace(`/login?callbackUrl=/order/${encodeURIComponent(orderNumber)}`)
+          return
+        }
+
+        if (res.status === 404) {
+          setError("Order not found")
+          return
+        }
+
+        if (!res.ok) {
+          setError("Failed to load order details")
+          return
+        }
+
+        const data = await res.json()
+        if (!data.success || !data.data?.order) {
+          setError(data.error || "Failed to load order details")
+          return
+        }
+
+        setOrder(data.data.order)
+      } catch {
+        setError("Something went wrong. Please try again.")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchOrder()
+  }, [orderNumber, router])
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      </div>
+    )
   }
 
-  const lpaString = decryptEsimField(order.esimQrCode) ?? null
-  const activationCode = decryptEsimField(order.esimActivationCode) ?? null
-  const smdpAddress = decryptEsimField(order.esimSmdpAddress) ?? null
+  if (error || !order) {
+    return (
+      <div className="container mx-auto px-4 max-w-4xl pt-12">
+        <div className="flex flex-col items-center gap-4 py-16">
+          <AlertCircle className="h-12 w-12 text-destructive" />
+          <p className="text-lg font-semibold">{error || "Order not found"}</p>
+          <Button asChild variant="outline">
+            <Link href="/orders">Back to orders</Link>
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
+  const lpaString = order.esim?.qrCode ?? null
+  const activationCode = order.esim?.activationCode ?? null
+  const smdpAddress = order.esim?.smdpAddress ?? null
 
   const stepLabels = [t("stepOrdered"), t("stepProcessing"), t("stepActive")]
 

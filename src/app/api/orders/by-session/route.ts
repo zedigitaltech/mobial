@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
     }
   } else {
     if (!email || !order.email || order.email.toLowerCase() !== email) {
-      return errorResponse("Email required for guest lookup", 401);
+      return errorResponse("Order not found", 404);
     }
   }
 

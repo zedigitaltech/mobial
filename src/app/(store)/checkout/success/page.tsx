@@ -302,7 +302,7 @@ function CheckoutSuccessContent() {
                           <div className="bg-white p-6 rounded-2xl shadow-lg mb-4">
                             {order.esim.qrCode ? (
                               <img
-                                src={`/api/orders/${order.id}/qr?size=300`}
+                                src={`/api/qr?data=${encodeURIComponent(order.esim.qrCode)}&size=300`}
                                 alt="eSIM QR Code"
                                 className="w-48 h-48"
                               />

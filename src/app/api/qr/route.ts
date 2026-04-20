@@ -9,12 +9,17 @@
 import { NextRequest } from "next/server"
 import QRCode from "qrcode"
 
+// LPA format: LPA:1$<smdp-address>$<activation-code>
+// smdp-address: hostname (alphanumeric, dots, hyphens)
+// activation-code: alphanumeric string
+const LPA_PATTERN = /^LPA:1\$[A-Za-z0-9.\-]+\$[A-Za-z0-9]+$/
+
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl
   const data = searchParams.get("data")
 
-  if (!data) {
-    return new Response("data parameter is required", { status: 400 })
+  if (!data || !LPA_PATTERN.test(data)) {
+    return new Response("Invalid or missing data parameter", { status: 400 })
   }
 
   const size = Math.min(
