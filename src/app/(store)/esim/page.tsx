@@ -1,21 +1,11 @@
 import { Metadata } from "next"
 import Link from "next/link"
-import { Badge } from "@/components/ui/badge"
-import { Globe } from "lucide-react"
-import { countries, getAllCountrySlugs } from "@/lib/countries"
+import { ChevronLeft, ChevronRight, PackageSearch } from "lucide-react"
+import { getProducts, type ProductFilters } from "@/services/product-service"
 import { regions } from "@/lib/regions"
-import { getTranslations } from "next-intl/server"
-import { DestinationGrid } from "./destination-grid"
-import { db } from "@/lib/db"
-
-const REGION_EMOJI: Record<string, string> = {
-  europe: "\u{1F1EA}\u{1F1FA}",
-  asia: "\u{1F30F}",
-  americas: "\u{1F30E}",
-  "middle-east": "\u{1F54C}",
-  oceania: "\u{1F3DD}\uFE0F",
-  africa: "\u{1F30D}",
-}
+import { getCountries } from "@/lib/countries"
+import { FilterSidebar } from "./filter-sidebar"
+import { ProductCard } from "@/components/store/product-card"
 
 export const revalidate = 3600
 
@@ -44,126 +34,167 @@ export const metadata: Metadata = {
   },
 }
 
-async function getCountriesWithPricing(): Promise<
-  Array<{
-    slug: string
-    code: string
-    name: string
-    flag: string
-    minPrice: number | null
-    productCount: number
-  }>
-> {
-  const products = await db.product.findMany({
-    where: {
-      isActive: true,
-      externallyShown: true,
-      category: "esim_realtime",
-    },
-    select: { countries: true, price: true },
-    orderBy: { price: "asc" },
-  })
+const PAGE_SIZE = 24
 
-  const countryMap = new Map<string, { minPrice: number; count: number }>()
-  for (const p of products) {
-    if (!p.countries) continue
-    try {
-      const codes: string[] = JSON.parse(p.countries)
-      for (const code of codes) {
-        const existing = countryMap.get(code)
-        if (!existing) {
-          countryMap.set(code, { minPrice: p.price, count: 1 })
-        } else {
-          existing.count++
-          if (p.price < existing.minPrice) existing.minPrice = p.price
-        }
-      }
-    } catch {
-      // Skip invalid JSON
-    }
+type SortParam = "rank" | "price_asc" | "price_desc" | "data"
+
+function mapSortParam(sort: string | undefined): ProductFilters["sortBy"] {
+  switch (sort as SortParam) {
+    case "price_asc":
+      return "price_asc"
+    case "price_desc":
+      return "price_desc"
+    case "data":
+      return "data"
+    case "rank":
+      return "rank"
+    default:
+      return "rank"
   }
-
-  const slugs = getAllCountrySlugs()
-  return slugs
-    .map((slug) => {
-      const country = countries[slug]
-      const data = countryMap.get(country.code)
-      return {
-        slug,
-        ...country,
-        minPrice: data?.minPrice ?? null,
-        productCount: data?.count ?? 0,
-      }
-    })
-    .filter((c) => c.productCount > 0)
-    .sort((a, b) => b.productCount - a.productCount)
 }
 
-export default async function EsimDestinationsPage() {
-  const countriesWithPricing = await getCountriesWithPricing()
-  const t = await getTranslations("esim")
+interface PageProps {
+  searchParams: Promise<{
+    region?: string
+    country?: string
+    maxPrice?: string
+    sort?: string
+    page?: string
+  }>
+}
+
+function buildPaginationUrl(
+  base: Record<string, string>,
+  page: number,
+): string {
+  const params = new URLSearchParams({ ...base, page: String(page) })
+  return `/esim?${params.toString()}`
+}
+
+function EmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center py-20 text-center">
+      <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
+        <PackageSearch className="h-8 w-8 text-muted-foreground" />
+      </div>
+      <h2 className="text-xl font-black mb-2">No plans found</h2>
+      <p className="text-muted-foreground text-sm max-w-xs">
+        Try adjusting your filters or{" "}
+        <Link href="/esim" className="text-primary font-bold hover:underline">
+          clear all filters
+        </Link>{" "}
+        to see all available plans.
+      </p>
+    </div>
+  )
+}
+
+export default async function EsimPage({ searchParams }: PageProps) {
+  const params = await searchParams
+  const page = Math.max(1, Number(params.page ?? 1))
+  const offset = (page - 1) * PAGE_SIZE
+
+  const filters: ProductFilters = {
+    isActive: true,
+    limit: PAGE_SIZE,
+    offset,
+    sortBy: mapSortParam(params.sort),
+    ...(params.region ? { region: params.region } : {}),
+    ...(params.country ? { country: params.country } : {}),
+    ...(params.maxPrice ? { maxPrice: Number(params.maxPrice) } : {}),
+  }
+
+  const [paginatedResult, allCountries] = await Promise.all([
+    getProducts(filters),
+    Promise.resolve(getCountries()),
+  ])
+
+  const { products, total } = paginatedResult
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
+
+  const baseParams: Record<string, string> = {}
+  if (params.region) baseParams.region = params.region
+  if (params.country) baseParams.country = params.country
+  if (params.maxPrice) baseParams.maxPrice = params.maxPrice
+  if (params.sort) baseParams.sort = params.sort
+
+  const regionList = regions.map((r) => ({ slug: r.slug, name: r.name }))
 
   return (
-    <>
-      {/* Hero */}
-      <section className="relative pt-16 pb-8 overflow-hidden">
-        <div className="absolute inset-0 -z-10 overflow-hidden">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_center,_var(--primary)_0%,_transparent_70%)] opacity-[0.03]" />
-          <div className="absolute -top-[10%] -right-[10%] w-[30%] h-[30%] bg-primary/10 blur-[120px] rounded-full" />
-        </div>
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <h1 className="text-2xl md:text-3xl font-black tracking-tight mb-2">
+        Browse eSIM Plans
+      </h1>
+      {total > 0 && (
+        <p className="text-sm text-muted-foreground font-medium mb-6">
+          {total} plan{total !== 1 ? "s" : ""} available
+          {params.country
+            ? ` for ${allCountries.find((c) => c.code === params.country)?.name ?? params.country}`
+            : ""}
+          {params.region
+            ? ` in ${regionList.find((r) => r.slug === params.region)?.name ?? params.region}`
+            : ""}
+        </p>
+      )}
 
-        <div className="max-w-5xl mx-auto px-6 text-center space-y-4">
-          <Badge className="bg-primary/10 text-primary border-0 px-4 py-1.5 text-xs font-black uppercase tracking-wider">
-            <Globe className="h-3 w-3 mr-1" /> {t("destinationsBadge")}
-          </Badge>
-          <h1 className="text-3xl md:text-5xl font-black tracking-tight leading-[1.1]">
-            {t("title")}{" "}
-            <span className="text-primary italic">
-              {t("titleHighlight")}
-            </span>
-          </h1>
-          <p className="text-base text-muted-foreground max-w-xl mx-auto font-medium">
-            {t("heroDesc")}
-          </p>
-        </div>
-      </section>
+      <div className="flex flex-col md:grid md:grid-cols-[240px_1fr] md:gap-8 mt-6 md:items-start">
+        <FilterSidebar regions={regionList} countries={allCountries} />
 
-      {/* Regions */}
-      <section className="py-6">
-        <div className="max-w-5xl mx-auto px-6">
-          <h2 className="text-lg font-extrabold tracking-tight mb-4">
-            {t("browseByRegion")}
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-            {regions.map((region) => (
-              <Link
-                key={region.slug}
-                href={`/esim/region/${region.slug}`}
-                className="p-3 rounded-xl bg-card border border-border/30 hover:shadow-md hover:border-primary/20 transition-all group text-center"
-              >
-                <div className="text-2xl mx-auto mb-1.5 group-hover:scale-110 transition-transform">
-                  {REGION_EMOJI[region.slug] || "\u{1F30D}"}
-                </div>
-                <h3 className="font-bold text-xs group-hover:text-primary transition-colors">
-                  {region.name}
-                </h3>
-                <p className="text-[9px] text-muted-foreground mt-0.5">
-                  {t("countriesCount", {
-                    count: region.countries.length,
-                  })}
-                </p>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+        <main>
+          {products.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                {products.map((product) => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
 
-      {/* Destination Grid with Search */}
-      <section className="py-8">
-        <div className="max-w-5xl mx-auto px-6">
-          <DestinationGrid countries={countriesWithPricing} />
-        </div>
-      </section>
-    </>
+              {totalPages > 1 && (
+                <nav
+                  className="flex items-center justify-center gap-3"
+                  aria-label="Pagination"
+                >
+                  {page > 1 ? (
+                    <Link
+                      href={buildPaginationUrl(baseParams, page - 1)}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border/40 bg-card text-sm font-bold hover:border-primary/30 hover:text-primary transition-colors"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Previous
+                    </Link>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border/20 bg-card text-sm font-bold text-muted-foreground opacity-40 cursor-not-allowed">
+                      <ChevronLeft className="h-4 w-4" />
+                      Previous
+                    </span>
+                  )}
+
+                  <span className="text-sm font-bold text-muted-foreground px-2">
+                    Page {page} of {totalPages}
+                  </span>
+
+                  {page < totalPages ? (
+                    <Link
+                      href={buildPaginationUrl(baseParams, page + 1)}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border/40 bg-card text-sm font-bold hover:border-primary/30 hover:text-primary transition-colors"
+                    >
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </Link>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-border/20 bg-card text-sm font-bold text-muted-foreground opacity-40 cursor-not-allowed">
+                      Next
+                      <ChevronRight className="h-4 w-4" />
+                    </span>
+                  )}
+                </nav>
+              )}
+            </>
+          )}
+        </main>
+      </div>
+    </div>
   )
 }
