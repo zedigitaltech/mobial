@@ -18,6 +18,13 @@ import {
   X,
   Zap,
 } from "lucide-react";
+import { loadStripe } from "@stripe/stripe-js";
+import {
+  Elements,
+  PaymentElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,7 +35,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useCart, CartItem } from "@/contexts/cart-context";
 import { useCurrency } from "@/contexts/currency-context";
 
-// Types
+// Initialise Stripe outside of component render to avoid re-creating on every render
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
+);
+
+// ─── Types ─────────────────────────────────────────────────────────────────
+
 interface AffiliateValidation {
   valid: boolean;
   affiliateCode?: string;
@@ -36,7 +49,16 @@ interface AffiliateValidation {
   discount?: number;
 }
 
-// Validate affiliate code
+interface IntentData {
+  clientSecret: string;
+  orderId: string;
+  orderNumber: string;
+  total: number;
+  currency: string;
+}
+
+// ─── Helpers ───────────────────────────────────────────────────────────────
+
 async function validateAffiliateCode(
   code: string,
 ): Promise<AffiliateValidation> {
@@ -51,9 +73,12 @@ async function validateAffiliateCode(
   }
 }
 
+// ─── Cart summary item ─────────────────────────────────────────────────────
+
 function CartSummaryItem({ item }: { item: CartItem }) {
   const t = useTranslations("checkout");
   const { formatPrice } = useCurrency();
+
   const formatData = () => {
     if (item.dataAmount && item.dataUnit) {
       return `${item.dataAmount} ${item.dataUnit}`;
@@ -93,20 +118,91 @@ function CartSummaryItem({ item }: { item: CartItem }) {
   );
 }
 
+// ─── Inner Stripe payment form (must be inside <Elements>) ─────────────────
+
+interface CheckoutFormProps {
+  total: number;
+  currency: string;
+}
+
+function CheckoutForm({ total, currency }: CheckoutFormProps) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+
+    setIsLoading(true);
+    setErrorMessage(null);
+
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: `${window.location.origin}/checkout/success`,
+      },
+    });
+
+    if (error) {
+      setErrorMessage(error.message ?? "Payment failed. Please try again.");
+      setIsLoading(false);
+    }
+    // On success Stripe redirects to return_url — no action needed here
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <PaymentElement />
+      {errorMessage && (
+        <p className="text-sm text-destructive">{errorMessage}</p>
+      )}
+      <Button
+        className="w-full gradient-accent text-accent-foreground"
+        size="lg"
+        type="submit"
+        disabled={!stripe || !elements || isLoading}
+      >
+        {isLoading ? (
+          <>
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            Processing...
+          </>
+        ) : (
+          <>
+            <CreditCard className="h-4 w-4 mr-2" />
+            Pay {currency} {total.toFixed(2)}
+          </>
+        )}
+      </Button>
+    </form>
+  );
+}
+
+// ─── Main checkout page ────────────────────────────────────────────────────
+
 export default function CheckoutPage() {
   const t = useTranslations("checkout");
   const router = useRouter();
   const { items, total, isHydrated } = useCart();
   const { formatPrice } = useCurrency();
 
+  // Contact info
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+
+  // Affiliate / promo
   const [affiliateCode, setAffiliateCode] = useState("");
   const [affiliateValidation, setAffiliateValidation] =
     useState<AffiliateValidation | null>(null);
   const [validatingCode, setValidatingCode] = useState(false);
-  const [processing, setProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  // PaymentIntent creation
+  const [intentData, setIntentData] = useState<IntentData | null>(null);
+  const [isCreatingIntent, setIsCreatingIntent] = useState(false);
+  const [intentError, setIntentError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
 
   // Redirect if cart is empty (only after localStorage has been read)
   useEffect(() => {
@@ -145,20 +241,10 @@ export default function CheckoutPage() {
           totalAmount: total,
         }),
       }).catch(() => {});
-    }, 2000); // Debounce 2 seconds after email entry
+    }, 2000);
 
     return () => clearTimeout(timeout);
   }, [email, items, total]);
-
-  // Validate affiliate code
-  const handleValidateCode = async () => {
-    if (!affiliateCode.trim()) return;
-
-    setValidatingCode(true);
-    const result = await validateAffiliateCode(affiliateCode.trim());
-    setAffiliateValidation(result);
-    setValidatingCode(false);
-  };
 
   // Calculate discount
   const discountAmount =
@@ -168,81 +254,66 @@ export default function CheckoutPage() {
 
   const finalTotal = total - discountAmount;
 
-  // Handle checkout - Create order and redirect to Stripe
-  const handleCheckout = async () => {
-    if (!email.trim()) {
-      setError(t("enterEmail"));
+  const handleValidateCode = async () => {
+    if (!affiliateCode.trim()) return;
+    setValidatingCode(true);
+    const result = await validateAffiliateCode(affiliateCode.trim());
+    setAffiliateValidation(result);
+    setValidatingCode(false);
+  };
+
+  // Step 1: validate contact info and create PaymentIntent
+  const handleContinueToPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+      setEmailError(t("validEmail"));
       return;
     }
-
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError(t("validEmail"));
-      return;
-    }
-
-    setProcessing(true);
-    setError(null);
+    setEmailError(null);
+    setIsCreatingIntent(true);
+    setIntentError(null);
 
     try {
-      // 1. Create order via API
-      const orderRes = await fetch("/api/orders", {
+      const res = await fetch("/api/checkout/intent", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+        },
         body: JSON.stringify({
-          items: items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
+          items: items.map((i) => ({
+            productId: i.productId,
+            quantity: i.quantity,
           })),
           email: email.trim(),
-          phone: phone.trim() || undefined,
-          affiliateCode: affiliateValidation?.valid
-            ? affiliateValidation.affiliateCode
-            : undefined,
+          currency: "usd",
         }),
       });
 
-      const orderData = await orderRes.json();
-
-      if (!orderRes.ok || !orderData.success) {
-        throw new Error(orderData.message || "Failed to create order");
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setIntentError(data.error || "Failed to create order. Please try again.");
+        return;
       }
-
-      const orderId = orderData.data.order.id;
-      const orderNumber = orderData.data.order.orderNumber;
 
       // Store order reference for success page
       sessionStorage.setItem(
         "mobial_pending_order",
-        JSON.stringify({ orderId, orderNumber, email: email.trim() }),
+        JSON.stringify({
+          orderId: data.data.orderId,
+          orderNumber: data.data.orderNumber,
+          email: email.trim(),
+        }),
       );
 
-      // 2. Create Stripe checkout session
-      const sessionRes = await fetch("/api/checkout/session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId }),
-      });
-
-      const sessionData = await sessionRes.json();
-
-      if (!sessionRes.ok || !sessionData.success) {
-        throw new Error(
-          sessionData.message || "Failed to create checkout session",
-        );
-      }
-
-      // 3. Redirect to Stripe checkout
-      const stripeUrl = sessionData.data.url;
-      if (!stripeUrl) {
-        throw new Error("No checkout URL received");
-      }
-
-      window.location.href = stripeUrl;
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "An unexpected error occurred",
+      setIntentData(data.data as IntentData);
+    } catch {
+      setIntentError(
+        "Network error. Please check your connection and try again.",
       );
-      setProcessing(false);
+    } finally {
+      setIsCreatingIntent(false);
     }
   };
 
@@ -273,161 +344,194 @@ export default function CheckoutPage() {
           </motion.div>
 
           <div className="grid lg:grid-cols-5 gap-8">
-            {/* Left Column - Form */}
+            {/* Left Column — Contact + Payment */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               className="lg:col-span-3 space-y-6"
             >
-              {/* Customer Info */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">{t("contactInfo")}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">{t("emailRequired")}</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder={t("emailPlaceholder")}
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      {t("emailHelp")}
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">{t("phone")}</Label>
-                    <Input
-                      id="phone"
-                      type="tel"
-                      placeholder="+1 234 567 8900"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
+              {/* ── Step 1: contact info ── */}
+              {!intentData && (
+                <>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">
+                        {t("contactInfo")}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <form
+                        id="contact-form"
+                        onSubmit={handleContinueToPayment}
+                        className="space-y-4"
+                      >
+                        <div className="space-y-2">
+                          <Label htmlFor="email">{t("emailRequired")}</Label>
+                          <Input
+                            id="email"
+                            type="email"
+                            placeholder={t("emailPlaceholder")}
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            required
+                          />
+                          {emailError && (
+                            <p className="text-xs text-destructive">
+                              {emailError}
+                            </p>
+                          )}
+                          <p className="text-xs text-muted-foreground">
+                            {t("emailHelp")}
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="phone">{t("phone")}</Label>
+                          <Input
+                            id="phone"
+                            type="tel"
+                            placeholder="+1 234 567 8900"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                          />
+                        </div>
+                      </form>
+                    </CardContent>
+                  </Card>
 
-              {/* Affiliate Code (Optional) */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <Tag className="h-5 w-5" />
-                    {t("promoCode")}{" "}
-                    <span className="text-sm font-normal text-muted-foreground">
-                      {t("promoOptional")}
-                    </span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder={t("promoPlaceholder")}
-                      value={affiliateCode}
-                      onChange={(e) => {
-                        setAffiliateCode(e.target.value);
-                        setAffiliateValidation(null);
-                      }}
-                      disabled={affiliateValidation?.valid}
-                    />
-                    {affiliateValidation?.valid ? (
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setAffiliateCode("");
-                          setAffiliateValidation(null);
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        onClick={handleValidateCode}
-                        disabled={validatingCode || !affiliateCode.trim()}
-                      >
-                        {validatingCode ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                  {/* Affiliate / promo code */}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <Tag className="h-5 w-5" />
+                        {t("promoCode")}{" "}
+                        <span className="text-sm font-normal text-muted-foreground">
+                          {t("promoOptional")}
+                        </span>
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder={t("promoPlaceholder")}
+                          value={affiliateCode}
+                          onChange={(e) => {
+                            setAffiliateCode(e.target.value);
+                            setAffiliateValidation(null);
+                          }}
+                          disabled={affiliateValidation?.valid}
+                        />
+                        {affiliateValidation?.valid ? (
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setAffiliateCode("");
+                              setAffiliateValidation(null);
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                         ) : (
-                          t("apply")
+                          <Button
+                            variant="outline"
+                            onClick={handleValidateCode}
+                            disabled={
+                              validatingCode || !affiliateCode.trim()
+                            }
+                          >
+                            {validatingCode ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              t("apply")
+                            )}
+                          </Button>
                         )}
-                      </Button>
+                      </div>
+                      {affiliateValidation?.valid && (
+                        <div className="mt-3 flex items-center gap-2 text-sm text-primary">
+                          <Check className="h-4 w-4" />
+                          <span>
+                            {t("codeApplied", {
+                              discount: affiliateValidation.discount ?? 0,
+                            })}
+                          </span>
+                        </div>
+                      )}
+                      {affiliateValidation && !affiliateValidation.valid && (
+                        <p className="mt-3 text-sm text-muted-foreground">
+                          {t("invalidCode")}
+                        </p>
+                      )}
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        {t("noCode")}
+                      </p>
+                    </CardContent>
+                  </Card>
+
+                  {/* Intent creation error */}
+                  {intentError && (
+                    <Alert variant="destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription>{intentError}</AlertDescription>
+                    </Alert>
+                  )}
+
+                  {/* Continue to payment button */}
+                  <Button
+                    size="lg"
+                    className="w-full gradient-accent text-accent-foreground"
+                    form="contact-form"
+                    type="submit"
+                    disabled={isCreatingIntent}
+                  >
+                    {isCreatingIntent ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        {t("processing")}
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingCart className="h-4 w-4 mr-2" />
+                        {t("completeOrder")} — {formatPrice(finalTotal)}
+                      </>
                     )}
-                  </div>
-                  {affiliateValidation?.valid && (
-                    <div className="mt-3 flex items-center gap-2 text-sm text-primary">
-                      <Check className="h-4 w-4" />
-                      <span>
-                        {t("codeApplied", {
-                          discount: affiliateValidation.discount ?? 0,
-                        })}
-                      </span>
-                    </div>
-                  )}
-                  {affiliateValidation && !affiliateValidation.valid && (
-                    <p className="mt-3 text-sm text-muted-foreground">
-                      {t("invalidCode")}
-                    </p>
-                  )}
-                  <p className="mt-2 text-xs text-muted-foreground">
-                    {t("noCode")}
+                  </Button>
+
+                  <p className="text-xs text-center text-muted-foreground">
+                    {t("receiveQr")}
                   </p>
-                </CardContent>
-              </Card>
-
-              {/* Payment Placeholder */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    <CreditCard className="h-5 w-5" />
-                    {t("payment")}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="p-8 border-2 border-dashed rounded-lg text-center text-muted-foreground">
-                    <Shield className="h-12 w-12 mx-auto mb-3 text-primary" />
-                    <p className="font-medium mb-1">{t("secureCheckout")}</p>
-                    <p className="text-sm">{t("redirectStripe")}</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Error Alert */}
-              {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
+                </>
               )}
 
-              {/* Submit Button */}
-              <Button
-                size="lg"
-                className="w-full gradient-accent text-accent-foreground"
-                onClick={handleCheckout}
-                disabled={processing}
-              >
-                {processing ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    {t("processing")}
-                  </>
-                ) : (
-                  <>
-                    <ShoppingCart className="h-4 w-4 mr-2" />
-                    {t("completeOrder")} - {formatPrice(finalTotal)}
-                  </>
-                )}
-              </Button>
-              <p className="text-xs text-center text-muted-foreground mt-2">
-                {t("receiveQr")}
-              </p>
+              {/* ── Step 2: Stripe Elements payment form ── */}
+              {intentData && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <CreditCard className="h-5 w-5" />
+                      {t("payment")}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Elements
+                      stripe={stripePromise}
+                      options={{
+                        clientSecret: intentData.clientSecret,
+                        appearance: {
+                          theme: "night",
+                          variables: { colorPrimary: "#6C4FFF" },
+                        },
+                      }}
+                    >
+                      <CheckoutForm
+                        total={intentData.total}
+                        currency={intentData.currency}
+                      />
+                    </Elements>
+                  </CardContent>
+                </Card>
+              )}
 
-              {/* Trust Signals */}
+              {/* Trust signals */}
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
                   <Shield className="h-4 w-4 text-blue-500 shrink-0" />
@@ -448,7 +552,7 @@ export default function CheckoutPage() {
               </div>
             </motion.div>
 
-            {/* Right Column - Order Summary */}
+            {/* Right Column — Order Summary */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}

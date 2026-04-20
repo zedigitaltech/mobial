@@ -43,6 +43,9 @@ const DEFAULT_CONFIGS: Record<string, RateLimitConfig> = {
   // Orders
   'order:create': { windowMs: 60 * 1000, maxRequests: 5 }, // 5 per minute
 
+  // Checkout PaymentIntent creation (Stripe Elements flow)
+  'checkout:intent': { windowMs: 60 * 1000, maxRequests: 10 }, // 10 per minute
+
   // Reviews
   'review:submit': { windowMs: 60 * 60 * 1000, maxRequests: 5 }, // 5 per hour
 };

@@ -511,6 +511,42 @@ export async function POST(request: NextRequest) {
         break;
       }
 
+      case "payment_intent.succeeded": {
+        const paymentIntent = event.data.object;
+        const orderId = paymentIntent.metadata?.orderId;
+
+        if (!orderId) {
+          log.warn("payment_intent.succeeded: no orderId in metadata", {
+            metadata: { paymentIntentId: paymentIntent.id },
+          });
+          break;
+        }
+
+        // Idempotency: skip if already paid
+        const existing = await db.order.findUnique({
+          where: { id: orderId },
+          select: { paymentStatus: true },
+        });
+
+        if (!existing || existing.paymentStatus === "PAID") {
+          break;
+        }
+
+        await db.order.update({
+          where: { id: orderId },
+          data: {
+            paymentStatus: "PAID",
+            paymentReference: paymentIntent.id,
+            paidAt: new Date(),
+            status: "PROCESSING",
+          },
+        });
+
+        await processOrderWithMobimatter(orderId, "STRIPE_ELEMENTS");
+
+        break;
+      }
+
       case "payment_intent.payment_failed": {
         const paymentIntent = event.data.object;
         const orderId = paymentIntent.metadata.orderId;
