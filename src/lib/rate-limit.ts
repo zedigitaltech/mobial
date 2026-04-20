@@ -28,6 +28,7 @@ const DEFAULT_CONFIGS: Record<string, RateLimitConfig> = {
   
   // Email verification
   'email-verify': { windowMs: 15 * 60 * 1000, maxRequests: 10 }, // 10 per 15 min
+  'email:resend-verification': { windowMs: 60 * 60 * 1000, maxRequests: 5 }, // 5 per hour
 
   // Free trial (per-email secondary limit)
   'free-trial-email': { windowMs: 24 * 60 * 60 * 1000, maxRequests: 3 }, // 3 per day per email

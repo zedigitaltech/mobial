@@ -5,7 +5,7 @@ import { db } from '@/lib/db';
 import { generateTokenPair } from '@/lib/jwt';
 import { errorResponse, parseJsonBody } from '@/lib/auth-helpers';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { setAuthCookies } from '@/lib/auth-cookies';
+import { setAuthCookies, setVerifiedCookie } from '@/lib/auth-cookies';
 import { logger } from '@/lib/logger';
 
 const googleAuthSchema = z.object({
@@ -168,6 +168,7 @@ export async function POST(request: NextRequest) {
       },
     }, { status: 200 });
     setAuthCookies(response, tokens.refreshToken);
+    if (user.emailVerified) { setVerifiedCookie(response); }
     return response;
   } catch (error) {
     logger.errorWithException('Google auth error', error);

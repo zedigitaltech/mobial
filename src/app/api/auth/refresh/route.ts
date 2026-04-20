@@ -11,7 +11,7 @@ import {
   errorResponse,
   parseJsonBody,
 } from '@/lib/auth-helpers';
-import { readRefreshCookie, setAuthCookies } from '@/lib/auth-cookies';
+import { readRefreshCookie, setAuthCookies, setVerifiedCookie } from '@/lib/auth-cookies';
 import { logger } from '@/lib/logger';
 
 export async function POST(request: NextRequest) {
@@ -99,6 +99,7 @@ export async function POST(request: NextRequest) {
       message: 'Token refreshed successfully',
     }, { status: 200 });
     setAuthCookies(response, tokens.refreshToken);
+    if (session.user.emailVerified) { setVerifiedCookie(response); }
     return response;
 
   } catch (error) {
