@@ -21,7 +21,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { useAuth } from "@/components/providers/auth-provider";
 import { useCurrency } from "@/contexts/currency-context";
@@ -51,13 +50,6 @@ interface Order {
   esimIccid?: string;
 }
 
-interface UsageData {
-  dataUsed: number;
-  dataTotal: number;
-  remainingDays: number | null;
-  status: string;
-}
-
 const statusColors: Record<string, string> = {
   PENDING: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20",
   PROCESSING: "bg-blue-500/10 text-blue-700 border-blue-500/20",
@@ -65,57 +57,6 @@ const statusColors: Record<string, string> = {
   CANCELLED: "bg-red-500/10 text-red-700 border-red-500/20",
   FAILED: "bg-red-500/10 text-red-700 border-red-500/20",
 };
-
-function UsageIndicator({ orderId }: { orderId: string }) {
-  const t = useTranslations("orders");
-  const [usage, setUsage] = useState<UsageData | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Stagger requests to avoid fan-out of N simultaneous API calls
-    const delay = Math.random() * 2000;
-    const timer = setTimeout(async () => {
-      try {
-        const res = await fetch(`/api/orders/${orderId}/usage`);
-        if (res.ok) {
-          const data = await res.json();
-          setUsage(data.data);
-        }
-      } catch {
-        // Usage data is non-critical; fail silently
-      } finally {
-        setLoading(false);
-      }
-    }, delay);
-    return () => clearTimeout(timer);
-  }, [orderId]);
-
-  if (loading)
-    return <div className="h-4 w-24 bg-muted animate-pulse rounded" />;
-  if (!usage) return null;
-
-  const percentUsed = (usage.dataUsed / usage.dataTotal) * 100;
-  const dataRemaining = (usage.dataTotal - usage.dataUsed).toFixed(2);
-
-  return (
-    <div className="space-y-2 mt-4 pt-4 border-t border-border/50">
-      <div className="flex justify-between text-xs font-bold">
-        <span className="text-muted-foreground uppercase tracking-wider">
-          {t("dataRemaining")}
-        </span>
-        <span className="text-primary">
-          {t("gbLeft", { amount: dataRemaining })}
-        </span>
-      </div>
-      <Progress value={100 - percentUsed} className="h-2 bg-muted" />
-      <p className="text-[10px] text-muted-foreground">
-        {usage.remainingDays != null
-          ? t("daysRemaining", { days: usage.remainingDays })
-          : t("validityUnavailable")}
-      </p>
-    </div>
-  );
-}
 
 function OrderDetails({ order }: { order: Order }) {
   const t = useTranslations("orders");
@@ -141,7 +82,7 @@ function OrderDetails({ order }: { order: Order }) {
             <>
               <div className="bg-white p-4 rounded-3xl shadow-xl mb-4">
                 <img
-                  src={`/api/orders/${order.id}/qr?size=200`}
+                  src={`/api/qr?data=${encodeURIComponent(order.esimQrCode!)}&size=200`}
                   alt="eSIM QR Code"
                   className="w-40 h-40"
                 />
@@ -304,10 +245,6 @@ function OrderCard({ order }: { order: Order }) {
               )}
             </div>
           </div>
-
-          {order.status === "COMPLETED" && !isExpanded && (
-            <UsageIndicator orderId={order.id} />
-          )}
 
           <AnimatePresence>
             {isExpanded && (
