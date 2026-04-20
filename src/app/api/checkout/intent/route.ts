@@ -13,6 +13,7 @@ import {
 } from "@/lib/auth-helpers";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { db } from "@/lib/db";
 
 const log = logger.child("checkout:intent");
 
@@ -58,15 +59,29 @@ export async function POST(request: NextRequest) {
     return errorResponse("Order total is below the minimum amount", 400);
   }
 
-  const { order } = await createOrder({ items, email }, undefined);
+  // Guest checkout — userId resolved server-side via auth if available
+  const { order } = await createOrder({ items, email }, undefined, ip);
 
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: amountCents,
-    currency: currency.toLowerCase(),
-    receipt_email: email,
-    metadata: { orderId: order.id, orderNumber: order.orderNumber },
-    automatic_payment_methods: { enabled: true },
-  });
+  let paymentIntent;
+  try {
+    paymentIntent = await stripe.paymentIntents.create({
+      amount: amountCents,
+      currency: currency.toLowerCase(),
+      receipt_email: email,
+      metadata: { orderId: order.id, orderNumber: order.orderNumber },
+      automatic_payment_methods: { enabled: true },
+    });
+  } catch (stripeErr) {
+    // Compensate: cancel the order so it doesn't sit stuck in PENDING forever
+    await db.order.update({
+      where: { id: order.id },
+      data: { status: "CANCELLED", paymentStatus: "FAILED" },
+    });
+    log.errorWithException("Stripe PaymentIntent creation failed", stripeErr, {
+      metadata: { orderId: order.id },
+    });
+    return errorResponse("Payment system unavailable. Please try again.", 503);
+  }
 
   log.info("PaymentIntent created", { metadata: { orderId: order.id } });
 

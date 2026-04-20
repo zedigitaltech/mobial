@@ -291,8 +291,17 @@ export default function CheckoutPage() {
         }),
       });
 
+      if (!res.ok) {
+        let errorMsg = "Failed to create order. Please try again.";
+        try {
+          const errData = await res.json();
+          if (errData?.error) errorMsg = errData.error;
+        } catch { /* ignore parse errors on non-JSON error responses */ }
+        setIntentError(errorMsg);
+        return;
+      }
       const data = await res.json();
-      if (!res.ok || !data.success) {
+      if (!data.success) {
         setIntentError(data.error || "Failed to create order. Please try again.");
         return;
       }

@@ -522,18 +522,10 @@ export async function POST(request: NextRequest) {
           break;
         }
 
-        // Idempotency: skip if already paid
-        const existing = await db.order.findUnique({
-          where: { id: orderId },
-          select: { paymentStatus: true },
-        });
-
-        if (!existing || existing.paymentStatus === "PAID") {
-          break;
-        }
-
-        await db.order.update({
-          where: { id: orderId },
+        // Atomic idempotency: only write when not already PAID, check row count to
+        // avoid a TOCTOU race between a read-then-write pattern.
+        const updated = await db.order.updateMany({
+          where: { id: orderId, paymentStatus: { not: "PAID" } },
           data: {
             paymentStatus: "PAID",
             paymentReference: paymentIntent.id,
@@ -542,6 +534,13 @@ export async function POST(request: NextRequest) {
           },
         });
 
+        if (updated.count === 0) {
+          log.info("payment_intent.succeeded already processed, skipping", {
+            metadata: { orderId },
+          });
+          break;
+        }
+
         await processOrderWithMobimatter(orderId, "STRIPE_ELEMENTS");
 
         break;
@@ -549,7 +548,7 @@ export async function POST(request: NextRequest) {
 
       case "payment_intent.payment_failed": {
         const paymentIntent = event.data.object;
-        const orderId = paymentIntent.metadata.orderId;
+        const orderId = paymentIntent.metadata?.orderId;
 
         if (orderId) {
           await db.order.update({
