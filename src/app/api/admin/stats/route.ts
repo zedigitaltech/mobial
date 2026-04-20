@@ -112,9 +112,24 @@ async function buildOrderStats(
 }
 
 async function buildSystemHealth(): Promise<SystemHealth> {
-  const mobimatterApiUp = Boolean(process.env.MOBIMATTER_API_KEY);
   const emailServiceUp = Boolean(process.env.RESEND_API_KEY);
 
+  // Real health ping — call getWalletBalance with a 3-second timeout
+  let mobimatterApiUp = false;
+  try {
+    const { getWalletBalance } = await import('@/lib/mobimatter');
+    await Promise.race([
+      getWalletBalance(),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('timeout')), 3000),
+      ),
+    ]);
+    mobimatterApiUp = true;
+  } catch {
+    mobimatterApiUp = false;
+  }
+
+  // Only return a timestamp if an actual Stripe-related audit log exists
   let stripeWebhookLastReceived: string | null = null;
   try {
     const lastStripeLog = await db.auditLog.findFirst({
@@ -124,15 +139,6 @@ async function buildSystemHealth(): Promise<SystemHealth> {
     });
     if (lastStripeLog) {
       stripeWebhookLastReceived = lastStripeLog.createdAt.toISOString();
-    } else {
-      // Fallback: last audit log of any kind
-      const lastLog = await db.auditLog.findFirst({
-        orderBy: { createdAt: 'desc' },
-        select: { createdAt: true },
-      });
-      if (lastLog) {
-        stripeWebhookLastReceived = lastLog.createdAt.toISOString();
-      }
     }
   } catch {
     stripeWebhookLastReceived = null;
@@ -166,6 +172,7 @@ export async function GET(request: NextRequest) {
       totalRevenueResult,
       totalUsers,
       recentOrders,
+      recentFailedOrders,
     ] = await Promise.all([
       db.order.count(),
       db.order.count({ where: { status: 'PENDING' } }),
@@ -194,6 +201,19 @@ export async function GET(request: NextRequest) {
           createdAt: true,
         },
       }),
+      db.order.findMany({
+        where: { status: 'FAILED' },
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          id: true,
+          orderNumber: true,
+          email: true,
+          total: true,
+          currency: true,
+          createdAt: true,
+        },
+      }).catch(() => [] as { id: string; orderNumber: string; email: string; total: number; currency: string; createdAt: Date }[]),
     ]);
 
     const totalRevenue = totalRevenueResult._sum.total || 0;
@@ -272,6 +292,7 @@ export async function GET(request: NextRequest) {
         CANCELLED: cancelledOrders,
       },
       recentOrders,
+      recentFailedOrders,
       ...affiliateData,
       walletBalance,
       conversionRate:

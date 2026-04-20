@@ -64,6 +64,7 @@ interface DashboardStats {
   orders: OrderStats
   fulfillmentRate: number
   systemHealth: SystemHealth
+  recentFailedOrders: FailedOrder[]
   // Legacy fields (kept for backward compat with existing UI if any)
   recentOrders: FailedOrder[]
   ordersByStatus: Record<string, number>
@@ -229,12 +230,7 @@ export default function AdminDashboardPage() {
         const json: { data: DashboardStats & { recentOrders?: FailedOrder[]; ordersByStatus?: Record<string, number> } } = await res.json()
         const data = json.data
         setStats(data)
-
-        // Derive failed orders from recentOrders filtered by status
-        const failed = (data.recentOrders ?? []).filter(
-          (o) => (o as FailedOrder & { status?: string }).status === "FAILED"
-        )
-        setFailedOrders(failed)
+        setFailedOrders(data.recentFailedOrders ?? [])
       }
     } finally {
       setLoading(false)
