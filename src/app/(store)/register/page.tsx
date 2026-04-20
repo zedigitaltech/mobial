@@ -1,13 +1,13 @@
 import { Metadata } from "next"
 import Link from "next/link"
-import { LoginForm } from "@/components/auth/login-form"
+import { RegisterForm } from "@/components/auth/register-form"
 
 export const metadata: Metadata = {
-  title: "Sign In | Mobialo",
-  description: "Sign in to your Mobialo account to manage your eSIMs and orders.",
+  title: "Create Account | Mobialo",
+  description: "Create your free Mobialo account and get instant access to eSIM plans for 150+ countries.",
 }
 
-export default async function LoginPage({
+export default async function RegisterPage({
   searchParams,
 }: {
   searchParams: Promise<{ callbackUrl?: string }>
@@ -25,23 +25,23 @@ export default async function LoginPage({
     <div className="min-h-[80vh] flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center space-y-1">
-          <h1 className="text-2xl font-bold">Welcome back</h1>
+          <h1 className="text-2xl font-bold">Create your account</h1>
           <p className="text-sm text-muted-foreground">
-            Sign in to your Mobialo account
+            Get instant access to eSIM plans for 150+ countries
           </p>
         </div>
 
         <div className="p-6 rounded-2xl border border-border bg-card space-y-6">
-          <LoginForm callbackUrl={callbackUrl} />
+          <RegisterForm callbackUrl={callbackUrl} />
         </div>
 
         <p className="text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{" "}
+          Already have an account?{" "}
           <Link
-            href={`/register?callbackUrl=${encodeURIComponent(callbackUrl)}`}
+            href={`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`}
             className="text-primary hover:underline font-medium"
           >
-            Sign up free
+            Sign in
           </Link>
         </p>
       </div>

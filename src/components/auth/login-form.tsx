@@ -32,11 +32,12 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>
 
 interface LoginFormProps {
+  callbackUrl?: string
   onSuccess?: () => void
   onSwitchToRegister?: () => void
 }
 
-export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
+export function LoginForm({ callbackUrl, onSuccess, onSwitchToRegister }: LoginFormProps) {
   const t = useTranslations("auth")
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -73,8 +74,12 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
       }
 
       toast.success(t("welcomeBackToast"))
-      onSuccess?.()
-      router.refresh()
+      if (onSuccess) {
+        onSuccess()
+        router.refresh()
+      } else {
+        router.push(callbackUrl ?? "/dashboard")
+      }
     } catch (error) {
       console.error("Login error:", error)
       toast.error(error instanceof Error ? error.message : t("loginFailed"))
@@ -191,14 +196,28 @@ export function LoginForm({ onSuccess, onSwitchToRegister }: LoginFormProps) {
 
       <div className="text-center text-sm">
         <span className="text-muted-foreground">{t("noAccount")} </span>
-        <Button
-          variant="link"
-          className="px-0"
-          type="button"
-          onClick={onSwitchToRegister}
-        >
-          {t("signUp")}
-        </Button>
+        {onSwitchToRegister ? (
+          <Button
+            variant="link"
+            className="px-0"
+            type="button"
+            onClick={onSwitchToRegister}
+          >
+            {t("signUp")}
+          </Button>
+        ) : (
+          <Button variant="link" className="px-0" type="button" asChild>
+            <Link
+              href={
+                callbackUrl
+                  ? `/register?callbackUrl=${encodeURIComponent(callbackUrl)}`
+                  : "/register"
+              }
+            >
+              {t("signUp")}
+            </Link>
+          </Button>
+        )}
       </div>
     </motion.div>
   )

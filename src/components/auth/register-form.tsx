@@ -7,6 +7,7 @@ import { z } from "zod"
 import { motion } from "framer-motion"
 import { Loader2, Mail, Lock, Eye, EyeOff, User } from "lucide-react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { setAccessToken } from "@/lib/auth-token"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -45,11 +46,12 @@ const registerSchema = z.object({
 type RegisterFormValues = z.infer<typeof registerSchema>
 
 interface RegisterFormProps {
+  callbackUrl?: string
   onSuccess?: () => void
   onSwitchToLogin?: () => void
 }
 
-export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) {
+export function RegisterForm({ callbackUrl, onSuccess, onSwitchToLogin }: RegisterFormProps) {
   const t = useTranslations("auth")
   const [isLoading, setIsLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -92,8 +94,15 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
       }
 
       toast.success(t("accountCreated"))
-      onSuccess?.()
-      router.refresh()
+      if (onSuccess) {
+        onSuccess()
+        router.refresh()
+      } else {
+        const verifyUrl = callbackUrl
+          ? `/verify-email?email=${encodeURIComponent(data.email.toLowerCase())}&callbackUrl=${encodeURIComponent(callbackUrl)}`
+          : `/verify-email?email=${encodeURIComponent(data.email.toLowerCase())}`
+        router.push(verifyUrl)
+      }
     } catch (error) {
       console.error("Register error:", error)
       toast.error(error instanceof Error ? error.message : t("registrationFailed"))
@@ -280,14 +289,28 @@ export function RegisterForm({ onSuccess, onSwitchToLogin }: RegisterFormProps) 
 
       <div className="text-center text-sm">
         <span className="text-muted-foreground">{t("hasAccount")} </span>
-        <Button
-          variant="link"
-          className="px-0"
-          type="button"
-          onClick={onSwitchToLogin}
-        >
-          {t("signInLink")}
-        </Button>
+        {onSwitchToLogin ? (
+          <Button
+            variant="link"
+            className="px-0"
+            type="button"
+            onClick={onSwitchToLogin}
+          >
+            {t("signInLink")}
+          </Button>
+        ) : (
+          <Button variant="link" className="px-0" type="button" asChild>
+            <Link
+              href={
+                callbackUrl
+                  ? `/login?callbackUrl=${encodeURIComponent(callbackUrl)}`
+                  : "/login"
+              }
+            >
+              {t("signInLink")}
+            </Link>
+          </Button>
+        )}
       </div>
     </motion.div>
   )
