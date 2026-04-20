@@ -1,7 +1,3 @@
-"use client"
-
-import { usePathname } from "next/navigation"
-import Link from "next/link"
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -10,6 +6,7 @@ import {
   BarChart3,
   Zap,
 } from "lucide-react"
+import { AdminNavLink } from "./admin-nav-link"
 
 const NAV_ITEMS = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard },
@@ -18,36 +15,6 @@ const NAV_ITEMS = [
   { href: "/admin/monitoring", label: "Monitoring", icon: BarChart3 },
   { href: "/admin/settings", label: "Settings", icon: Settings },
 ]
-
-function AdminNavLink({
-  href,
-  label,
-  icon: Icon,
-}: {
-  href: string
-  label: string
-  icon: React.ElementType
-}) {
-  const pathname = usePathname()
-  // Exact match for /admin (overview), prefix match for sub-routes
-  const isActive =
-    href === "/admin" ? pathname === "/admin" : pathname.startsWith(href)
-
-  return (
-    <Link
-      href={href}
-      aria-current={isActive ? "page" : undefined}
-      className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
-        isActive
-          ? "bg-primary/10 text-primary font-medium"
-          : "text-muted-foreground hover:text-foreground hover:bg-accent"
-      }`}
-    >
-      <Icon className="size-4 shrink-0" />
-      {label}
-    </Link>
-  )
-}
 
 export default function AdminLayout({
   children,
