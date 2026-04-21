@@ -221,6 +221,8 @@ export function ProductDetailClient({
                     <img
                       src={product.providerLogo}
                       alt={product.provider}
+                      width="64"
+                      height="64"
                       className="h-16 w-16 rounded-xl object-contain bg-white p-2"
                     />
                   ) : (

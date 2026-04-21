@@ -19,10 +19,15 @@ const CATEGORY_COLORS: Record<string, string> = {
 export default function BlogPage() {
   const [activeCategory, setActiveCategory] = useState<BlogCategory>("All")
 
+  const PAGE_LIMIT = 10
+
   const filteredPosts =
     activeCategory === "All"
       ? blogPosts
       : blogPosts.filter((p) => p.category === activeCategory)
+
+  const visiblePosts = filteredPosts.slice(0, PAGE_LIMIT)
+  const hasMore = filteredPosts.length > PAGE_LIMIT
 
   return (
     <>
@@ -73,7 +78,7 @@ export default function BlogPage() {
             </div>
 
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredPosts.map((post, i) => (
+              {visiblePosts.map((post, i) => (
                 <motion.div
                   key={post.slug}
                   initial={{ opacity: 0, y: 20 }}
@@ -120,6 +125,18 @@ export default function BlogPage() {
                 </motion.div>
               ))}
             </div>
+
+            {hasMore && (
+              <div className="text-center mt-10">
+                <Link
+                  href="/blog"
+                  onClick={() => setActiveCategory("All")}
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 transition-opacity"
+                >
+                  View all posts <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            )}
 
             {filteredPosts.length === 0 && (
               <div className="text-center py-20 text-muted-foreground">
