@@ -115,8 +115,9 @@ export function ReviewForm({ destination, countryCode, orderId }: ReviewFormProp
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium mb-1 block">{t("name")}</label>
+              <label htmlFor="review-name" className="text-sm font-medium mb-1 block">{t("name")}</label>
               <Input
+                id="review-name"
                 placeholder={t("namePlaceholder")}
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -124,8 +125,9 @@ export function ReviewForm({ destination, countryCode, orderId }: ReviewFormProp
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">{t("email")}</label>
+              <label htmlFor="review-email" className="text-sm font-medium mb-1 block">{t("email")}</label>
               <Input
+                id="review-email"
                 type="email"
                 placeholder={t("emailPlaceholder")}
                 value={email}
@@ -136,8 +138,9 @@ export function ReviewForm({ destination, countryCode, orderId }: ReviewFormProp
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-1 block">{t("title")}</label>
+            <label htmlFor="review-title" className="text-sm font-medium mb-1 block">{t("title")}</label>
             <Input
+              id="review-title"
               placeholder={t("titlePlaceholder")}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
@@ -147,8 +150,9 @@ export function ReviewForm({ destination, countryCode, orderId }: ReviewFormProp
           </div>
 
           <div>
-            <label className="text-sm font-medium mb-1 block">{t("yourReview")}</label>
+            <label htmlFor="review-body" className="text-sm font-medium mb-1 block">{t("yourReview")}</label>
             <Textarea
+              id="review-body"
               placeholder={t("reviewPlaceholder")}
               value={text}
               onChange={(e) => setText(e.target.value)}

@@ -176,6 +176,7 @@ export function FreeTrialForm() {
               <div className="space-y-2">
                 <Input
                   type="email"
+                  aria-label="Email address"
                   placeholder="your@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
