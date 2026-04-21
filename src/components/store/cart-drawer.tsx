@@ -233,7 +233,7 @@ export function CartDrawer({ trigger, open, onOpenChange }: CartDrawerProps) {
   const isMobile = useIsMobile()
 
   const defaultTrigger = (
-    <Button variant="outline" size="icon" className="relative">
+    <Button variant="outline" size="icon" className="relative" aria-label="Open cart">
       <ShoppingCart className="h-5 w-5" />
       {itemCount > 0 && (
         <Badge

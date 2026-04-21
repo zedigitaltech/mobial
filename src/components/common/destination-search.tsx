@@ -406,7 +406,7 @@ function MobileSearch() {
           >
             {/* Search header */}
             <div className="flex items-center gap-3 px-4 py-3 border-b safe-area-top">
-              <Button variant="ghost" size="icon" onClick={handleClose} className="shrink-0">
+              <Button variant="ghost" size="icon" onClick={handleClose} aria-label="Close search" className="shrink-0">
                 <ArrowLeft className="h-5 w-5" />
               </Button>
               <div className="flex-1 relative">
@@ -427,6 +427,7 @@ function MobileSearch() {
                 {search.query && !search.isSearching && (
                   <button
                     className="absolute right-3 top-1/2 -translate-y-1/2"
+                    aria-label="Clear search"
                     onClick={() => search.setQuery("")}
                   >
                     <X className="h-4 w-4 text-muted-foreground" />
@@ -526,7 +527,7 @@ function DesktopSearch() {
         </AnimatePresence>
       </div>
 
-      {open && <div className="fixed inset-0 -z-10" onClick={() => setOpen(false)} />}
+      {open && <div className="fixed inset-0 -z-10" role="presentation" onClick={() => setOpen(false)} />}
     </div>
   )
 }

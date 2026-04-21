@@ -122,6 +122,7 @@ function OrderDetails({ order }: { order: Order }) {
                   size="icon"
                   variant="ghost"
                   className="h-8 w-8"
+                  aria-label="Copy SM-DP+ address"
                   onClick={() =>
                     order.esimSmdpAddress &&
                     copyToClipboard(order.esimSmdpAddress, "smdp")
@@ -148,6 +149,7 @@ function OrderDetails({ order }: { order: Order }) {
                   size="icon"
                   variant="ghost"
                   className="h-8 w-8"
+                  aria-label="Copy activation code"
                   onClick={() =>
                     order.esimActivationCode &&
                     copyToClipboard(order.esimActivationCode, "auth")

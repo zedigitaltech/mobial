@@ -352,6 +352,7 @@ export default function CheckUsagePage() {
                         size="icon"
                         onClick={handleLookup}
                         disabled={isLoading}
+                        aria-label="Refresh usage data"
                         className="rounded-xl h-11 w-11 border-white/10"
                       >
                         <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />

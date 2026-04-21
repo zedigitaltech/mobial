@@ -151,6 +151,7 @@ export function ReviewsSection() {
                 variant="outline"
                 size="icon"
                 className="rounded-full h-10 w-10 border-border/50 hover:border-primary/50"
+                aria-label="Scroll reviews left"
                 onClick={() => scroll("left")}
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -159,6 +160,7 @@ export function ReviewsSection() {
                 variant="outline"
                 size="icon"
                 className="rounded-full h-10 w-10 border-border/50 hover:border-primary/50"
+                aria-label="Scroll reviews right"
                 onClick={() => scroll("right")}
               >
                 <ChevronRight className="h-4 w-4" />

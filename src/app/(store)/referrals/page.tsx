@@ -230,6 +230,7 @@ export default function ReferralsPage() {
                         variant="outline"
                         size="icon"
                         className="shrink-0 h-12 w-12"
+                        aria-label="Copy referral code"
                         onClick={() => copyToClipboard(stats.code!)}
                       >
                         {copied ? (

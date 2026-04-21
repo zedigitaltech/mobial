@@ -306,6 +306,7 @@ export default function AdminAffiliatesPage() {
                             <Button
                               variant="ghost"
                               size="icon"
+                              aria-label="Affiliate actions"
                               disabled={updating === affiliate.id}
                             >
                               {updating === affiliate.id ? (

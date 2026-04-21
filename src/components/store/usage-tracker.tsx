@@ -248,6 +248,7 @@ export function UsageTracker({ orderId, orderNumber, className }: UsageTrackerPr
             size="icon"
             onClick={() => refetch()}
             disabled={isFetching}
+            aria-label="Refresh usage data"
             className="rounded-xl h-11 w-11 border-white/10"
           >
             <RefreshCw className={cn("h-4 w-4", isFetching && "animate-spin")} />

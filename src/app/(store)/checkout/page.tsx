@@ -421,6 +421,8 @@ export default function CheckoutPage() {
                     <CardContent>
                       <div className="flex gap-2">
                         <Input
+                          id="promo-code"
+                          aria-label={t("promoCode")}
                           placeholder={t("promoPlaceholder")}
                           value={affiliateCode}
                           onChange={(e) => {
@@ -432,6 +434,7 @@ export default function CheckoutPage() {
                         {affiliateValidation?.valid ? (
                           <Button
                             variant="outline"
+                            aria-label={t("removeCode")}
                             onClick={() => {
                               setAffiliateCode("");
                               setAffiliateValidation(null);
